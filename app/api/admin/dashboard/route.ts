@@ -11,7 +11,7 @@ export async function GET() {
     }
 
     const [totalUsers, totalLeads, totalOpportunities, opportunities] = await Promise.all([
-        prisma.user.count(),
+        prisma.user.count({ where: { role: { not: 'Administrator' } } }),
         prisma.lead.count(),
         prisma.opportunity.count(),
         prisma.opportunity.findMany({ select: { stage: true } })
