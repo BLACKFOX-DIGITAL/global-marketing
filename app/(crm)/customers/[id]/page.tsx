@@ -560,7 +560,7 @@ export default function LeadDetailPage({ params }: { params: Promise<{ id: strin
             }
         }, 1500)
         return () => clearTimeout(timeout)
-        // eslint-disable-next-line react-hooks/exhaustive-deps
+         
     }, [currentNotes, id])
 
     const handleDeleteAttachment = async (attachId: string) => {

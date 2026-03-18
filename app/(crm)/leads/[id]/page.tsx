@@ -595,7 +595,7 @@ export default function LeadDetailPage({ params }: { params: Promise<{ id: strin
             }
         }, 1500)
         return () => clearTimeout(timeout)
-        // eslint-disable-next-line react-hooks/exhaustive-deps
+         
     }, [currentNotes, id])
 
     const handleDeleteAttachment = async (attachId: string) => {
@@ -646,7 +646,7 @@ export default function LeadDetailPage({ params }: { params: Promise<{ id: strin
             </div>
             <h2 style={{ color: 'var(--text-primary)', marginBottom: 10 }}>Lead Not Found</h2>
             <p style={{ color: 'var(--text-secondary)', maxWidth: 400, margin: '0 auto 10px' }}>
-                We couldn't find the lead you're looking for. It may have been deleted or moved.
+                We couldn&apos;t find the lead you&apos;re looking for. It may have been deleted or moved.
             </p>
             <Link href="/leads" className="btn-primary" style={{ display: 'inline-flex', textDecoration: 'none' }}>Go Back to Leads</Link>
         </div>
