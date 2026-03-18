@@ -85,9 +85,9 @@ export default function ExecutiveDashboard() {
                     
                     {/* Top Metrics Row */}
                     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 20 }}>
-                        <StatCard label="Total Deals Won" value={data.globalGoals?.DEALS?.actual || 0} subValue="vs last month" trend={14.2} icon={BadgeDollarSign} color="var(--accent-emerald)" isPrimary />
-                        <StatCard label="Pipeline Size" value={data.totalOpportunities || 0} subValue="Open Opportunities" trend={6.1} icon={Target} color="var(--accent-primary)" />
-                        <StatCard label="Active Leads" value={data.globalGoals?.LEADS?.actual || 0} subValue={`Goal: ${data.globalGoals?.LEADS?.target || 0}`} trend={-2.1} icon={Users} color="#f59e0b" />
+                        <StatCard label="Total Deals Won" value={data.globalGoals?.DEALS?.actual || 0} subValue="vs last month" trend={data.trends?.deals || 0} icon={BadgeDollarSign} color="var(--accent-emerald)" isPrimary />
+                        <StatCard label="Pipeline Size" value={data.totalOpportunities || 0} subValue="Open Opportunities" trend={data.trends?.pipeline || 0} icon={Target} color="var(--accent-primary)" />
+                        <StatCard label="Active Leads" value={data.globalGoals?.LEADS?.actual || 0} subValue={`Goal: ${data.globalGoals?.LEADS?.target || 0}`} trend={data.trends?.leads || 0} icon={Users} color="#f59e0b" />
                         <StatCard label="Total Reps" value={data.totalUsers || 0} subValue="Active System Users" icon={Briefcase} color="var(--accent-cyan)" />
                     </div>
 

@@ -37,6 +37,9 @@ export async function GET() {
 
     const now = new Date()
     const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1)
+    const startOfLastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1)
+    const endOfLastMonth = new Date(now.getFullYear(), now.getMonth(), 0, 23, 59, 59, 999)
+
     const [actualWon, actualLeads, actualTasks, repsData] = await Promise.all([
         prisma.opportunity.count({ where: { stage: 'Closed Won', updatedAt: { gte: startOfMonth } } }),
         prisma.lead.count({ where: { createdAt: { gte: startOfMonth }, isDeleted: false } }),
@@ -56,6 +59,23 @@ export async function GET() {
             }
         })
     ])
+
+    const [lastMonthDeals, lastMonthPipeline, lastMonthLeads] = await Promise.all([
+        prisma.opportunity.count({ where: { stage: 'Closed Won', updatedAt: { gte: startOfLastMonth, lte: endOfLastMonth } } }),
+        prisma.opportunity.count({ where: { createdAt: { lte: endOfLastMonth } } }),
+        prisma.lead.count({ where: { createdAt: { gte: startOfLastMonth, lte: endOfLastMonth }, isDeleted: false } })
+    ])
+
+    const calculateTrend = (current: number, previous: number) => {
+        if (previous === 0) return current > 0 ? 100 : 0;
+        return Number((((current - previous) / previous) * 100).toFixed(1));
+    }
+
+    const trends = {
+        deals: calculateTrend(actualWon, lastMonthDeals),
+        pipeline: calculateTrend(totalOpportunities, lastMonthPipeline),
+        leads: calculateTrend(actualLeads, lastMonthLeads)
+    }
 
     const globalGoals = {
         DEALS: { target: goals.filter((g: { category: string }) => g.category === 'DEALS').reduce((s: number, g: { targetValue: number }) => s + g.targetValue, 0), actual: actualWon },
@@ -81,6 +101,7 @@ export async function GET() {
         stageBreakdown,
         recentLeads,
         globalGoals,
-        leaderboard
+        leaderboard,
+        trends
     })
 }
