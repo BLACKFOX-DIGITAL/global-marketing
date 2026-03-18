@@ -1,0 +1,338 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id                String             @id @default(cuid())
+  name              String
+  email             String             @unique
+  password          String
+  role              String             @default("SalesRep")
+  xp                Int                @default(0)
+  level             Int                @default(1)
+  currentStreak     Int                @default(0)
+  longestStreak     Int                @default(0)
+  lastActiveDay     DateTime?
+  baseSalary        Float              @default(0)
+  createdAt         DateTime           @default(now())
+  updatedAt         DateTime           @updatedAt
+  activityLogs      ActivityLog[]
+  attachments       Attachment[]
+  attendance        AttendanceRecord[]
+  leads             Lead[]
+  leaveRequests     LeaveRequest[]
+  notifications     Notification[]
+  opportunities     Opportunity[]
+  tasks             Task[]
+  goals             UserGoal[]
+  achievements      UserAchievement[]
+  xpHistory         XPHistory[]
+  resendSenderEmail String?
+  createdHolidays   Holiday[]          @relation("HolidayCreator")
+}
+
+model Lead {
+  id              String   @id @default(cuid())
+  name            String
+  company         String?
+  email           String?
+  phone           String?
+  website         String?
+  country         String?
+  status          String   @default("New")
+  notes           String?
+  ownerId         String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  callOutcome     String?
+  socials         String?
+  industry        String?
+  priority        String?
+  callCount       Int      @default(0)
+  mailCount       Int      @default(0)
+  lastCallOutcome String?
+  lastMailOutcome String?
+
+  // Recirculation and Pool tracking
+  lastActivityAt    DateTime @default(now())
+  previousOwnerId   String?
+  isClaimedFromPool Boolean  @default(false)
+
+  // Soft Delete Lifecycle
+  isDeleted Boolean   @default(false)
+  deletedAt DateTime?
+  deletedBy String?
+
+  activityLogs  ActivityLog[]
+  attachments   Attachment[]
+  contacts      Contact[]
+  owner         User?         @relation(fields: [ownerId], references: [id])
+  opportunities Opportunity[]
+  tasks         Task[]
+  callAttempts  CallAttempt[]
+  mailAttempts  MailAttempt[]
+
+  @@index([ownerId, isDeleted])
+  @@index([status, isDeleted])
+  @@index([createdAt])
+  @@index([ownerId, status, isDeleted])
+  @@index([name])
+  @@index([email])
+  @@index([company])
+}
+
+model CallAttempt {
+  id        String   @id @default(cuid())
+  leadId    String
+  outcome   String // no_answer, voicemail, connected_interested, connected_not_interested, call_back_later
+  note      String?
+  createdAt DateTime @default(now())
+  createdBy String?
+  lead      Lead     @relation(fields: [leadId], references: [id], onDelete: Cascade)
+
+  @@index([leadId, createdAt])
+}
+
+model MailAttempt {
+  id             String   @id @default(cuid())
+  leadId         String
+  outcome        String // sent, follow_up, response_interested, response_not_interested
+  note           String?
+  createdAt      DateTime @default(now())
+  createdBy      String?
+  resendId       String?  @unique
+  deliveryStatus String? // Delivered, Opened, Clicked, Bounced, etc.
+  lead           Lead     @relation(fields: [leadId], references: [id], onDelete: Cascade)
+
+  @@index([leadId, createdAt])
+  @@index([resendId])
+}
+
+model Contact {
+  id        String  @id @default(cuid())
+  name      String
+  email     String?
+  phone     String?
+  position  String?
+  isPrimary Boolean @default(false)
+  leadId    String
+  socials   String?
+  lead      Lead    @relation(fields: [leadId], references: [id], onDelete: Cascade)
+}
+
+model Opportunity {
+  id           String         @id @default(cuid())
+  title        String
+  company      String?
+  stage        String         @default("Test Job Received")
+  probability  Int            @default(20)
+  closeDate    DateTime?
+  notes        String?
+  region       String?
+  ownerId      String?
+  leadId       String?
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @updatedAt
+  activityLogs ActivityLog[]
+  attachments  Attachment[]
+  lead         Lead?          @relation(fields: [leadId], references: [id])
+  owner        User?          @relation(fields: [ownerId], references: [id])
+  stageHistory StageHistory[]
+  tasks        Task[]
+
+  @@index([ownerId, stage])
+  @@index([updatedAt])
+  @@index([ownerId, stage, updatedAt])
+}
+
+model ActivityLog {
+  id            String       @id @default(cuid())
+  userId        String
+  type          String
+  action        String
+  description   String
+  referenceId   String?
+  leadId        String?
+  opportunityId String?
+  createdAt     DateTime     @default(now())
+  opportunity   Opportunity? @relation(fields: [opportunityId], references: [id], onDelete: Cascade)
+  lead          Lead?        @relation(fields: [leadId], references: [id], onDelete: Cascade)
+  user          User         @relation(fields: [userId], references: [id])
+}
+
+model Notification {
+  id        String   @id @default(cuid())
+  userId    String
+  title     String
+  message   String
+  type      String
+  isRead    Boolean  @default(false)
+  link      String?
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id])
+}
+
+model Attachment {
+  id            String       @id @default(cuid())
+  name          String
+  fileUrl       String
+  fileType      String?
+  fileSize      Int?
+  userId        String
+  leadId        String?
+  opportunityId String?
+  createdAt     DateTime     @default(now())
+  opportunity   Opportunity? @relation(fields: [opportunityId], references: [id], onDelete: Cascade)
+  lead          Lead?        @relation(fields: [leadId], references: [id], onDelete: Cascade)
+  user          User         @relation(fields: [userId], references: [id])
+}
+
+model UserGoal {
+  id          String   @id @default(cuid())
+  userId      String
+  category    String
+  targetValue Float
+  period      String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  user        User     @relation(fields: [userId], references: [id])
+
+  @@unique([userId, category, period])
+}
+
+model StageHistory {
+  id            String      @id @default(cuid())
+  stage         String
+  opportunityId String
+  createdAt     DateTime    @default(now())
+  opportunity   Opportunity @relation(fields: [opportunityId], references: [id], onDelete: Cascade)
+}
+
+model Task {
+  id            String       @id @default(cuid())
+  title         String
+  description   String?
+  taskType      String       @default("Follow-up")
+  priority      String       @default("Medium")
+  status        String       @default("Pending")
+  dueDate       DateTime?
+  recurrence    String       @default("None")
+  completed     Boolean      @default(false)
+  completedAt   DateTime?
+  ownerId       String?
+  leadId        String?
+  opportunityId String?
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+  opportunity   Opportunity? @relation(fields: [opportunityId], references: [id], onDelete: Cascade)
+  lead          Lead?        @relation(fields: [leadId], references: [id], onDelete: Cascade)
+  owner         User?        @relation(fields: [ownerId], references: [id])
+
+  @@index([ownerId, completed, dueDate])
+  @@index([leadId])
+  @@index([opportunityId])
+}
+
+model AttendanceRecord {
+  id        String    @id @default(cuid())
+  userId    String
+  punchIn   DateTime  @default(now())
+  punchOut  DateTime?
+  duration  Int?
+  notes     String?
+  createdAt DateTime  @default(now())
+  user      User      @relation(fields: [userId], references: [id])
+}
+
+model LeaveRequest {
+  id        String   @id @default(cuid())
+  userId    String
+  type      String
+  startDate DateTime
+  endDate   DateTime
+  reason    String?
+  status    String   @default("Pending")
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id])
+}
+
+model SystemOption {
+  id        String   @id @default(cuid())
+  category  String
+  value     String
+  color     String?
+  order     Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([category, value])
+}
+
+model SystemSetting {
+  id        String   @id @default(cuid())
+  key       String   @unique
+  value     String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Achievement {
+  id          String            @id @default(cuid())
+  name        String            @unique
+  description String
+  icon        String
+  category    String            @default("general")
+  threshold   Int               @default(1)
+  createdAt   DateTime          @default(now())
+  users       UserAchievement[]
+}
+
+model UserAchievement {
+  id            String      @id @default(cuid())
+  userId        String
+  achievementId String
+  unlockedAt    DateTime    @default(now())
+  user          User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  achievement   Achievement @relation(fields: [achievementId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, achievementId])
+}
+
+model XPHistory {
+  id         String   @id @default(cuid())
+  userId     String
+  actionType String
+  entityId   String?
+  xpAwarded  Int
+  createdAt  DateTime @default(now())
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, actionType])
+}
+
+model Holiday {
+  id          String   @id @default(cuid())
+  name        String
+  description String?
+  date        DateTime @unique
+  createdBy   String?
+  creator     User?    @relation("HolidayCreator", fields: [createdBy], references: [id])
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([date])
+}
+
+model EmailTemplate {
+  id        String   @id @default(cuid())
+  name      String   @unique
+  subject   String
+  body      String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
