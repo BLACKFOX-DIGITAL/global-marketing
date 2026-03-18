@@ -1,29 +1,41 @@
-FROM node:18-alpine
+FROM node:20-alpine AS base
 
-# Install necessary libraries for Prisma Engine on Alpine Linux
-RUN apk add --no-cache openssl libc6-compat
-
-# Set working directory
+# Install dependencies only when needed
+FROM base AS deps
+RUN apk add --no-cache libc6-compat openssl
 WORKDIR /app
-
-# Copy package files to install dependencies
-COPY package.json package-lock.json ./
-
-# Install dependencies using clean install
+COPY package.json package-lock.json* ./
 RUN npm ci
 
-# Copy the rest of the application
+# Rebuild the source code only when needed
+FROM base AS builder
+RUN apk add --no-cache openssl
+WORKDIR /app
+COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 
-# Generate Prisma client
+# Pass a dummy database url so next build succeeds without a real db
+ENV DATABASE_URL="file:/app/data/prod.db"
 RUN npx prisma generate
-
-# Build the Next.js app for production
-ENV NEXT_TELEMETRY_DISABLED 1
 RUN npm run build
 
-# Expose the default Next.js port
-EXPOSE 3000
+# Production image, copy all the files and run next
+FROM base AS runner
+RUN apk add --no-cache openssl bash
+WORKDIR /app
 
-# Start the application
-CMD ["npm", "start"]
+ENV NODE_ENV=production
+ENV DATABASE_URL="file:/app/data/prod.db"
+
+COPY --from=builder /app/public ./public
+COPY --from=builder /app/.next ./.next
+COPY --from=builder /app/node_modules ./node_modules
+COPY --from=builder /app/package.json ./package.json
+COPY --from=builder /app/prisma ./prisma
+
+# Expose Next.js port
+EXPOSE 3000
+ENV PORT=3000
+
+# Push the database and start the Next.js server
+CMD ["sh", "-c", "npx prisma db push && npm start"]

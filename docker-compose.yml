@@ -1,17 +1,21 @@
 version: '3.8'
 
 services:
-  crm-web:
-    build: .
-    container_name: crm-production
-    restart: always
+  crm:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: global-marketing-crm
+    restart: unless-stopped
     ports:
-      - "3000:3000"
+      - "80:3000" # Expose the CRM directly onto port 80 of your VPS 
     volumes:
-      # Mount the database to a persistent folder on the host VPS machine
-      - ./prisma_data:/app/prisma_data
+      - crm_data:/app/data
     environment:
       - NODE_ENV=production
-      - DATABASE_URL=file:/app/prisma_data/dev.db
-      - JWT_SECRET=${JWT_SECRET}
-      - CRON_SECRET=${CRON_SECRET}
+      - DATABASE_URL=file:/app/data/prod.db
+      - JWT_SECRET=${JWT_SECRET:-fallback_secret_change_me_in_live}
+
+volumes:
+  crm_data:
+    name: "crm_production_data"
