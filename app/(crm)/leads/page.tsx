@@ -148,7 +148,7 @@ export default function LeadsPage() {
     return (
         <div style={{ display: 'flex', flexDirection: 'column', height: '100%', overflow: 'hidden' }}>
             <Header title="Leads Management" user={null} />
-            <div className="crm-content" style={{ display: 'flex', flexDirection: 'column', flex: 1, overflow: 'hidden' }}>
+            <div className="crm-content" style={{ display: 'flex', flexDirection: 'column', flex: 1, minHeight: 0, overflow: 'hidden' }}>
                 <div className="page-header">
                     <div>
                         <h2>Leads</h2>
@@ -218,7 +218,7 @@ export default function LeadsPage() {
                         <div style={{ width: '14%', textAlign: 'right' }}>Actions</div>
                     </div>
 
-                    <div style={{ flex: 1, position: 'relative' }}>
+                    <div style={{ flex: 1, position: 'relative', minHeight: 0 }}>
                         {loading ? (
                             <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                                 <div className="spinner" />
@@ -232,7 +232,7 @@ export default function LeadsPage() {
                                 <List
                                     rowCount={leads.length}
                                     rowHeight={80} 
-                                    style={{ height: height as any, width: width as any, overflowY: 'overlay' as any }}
+                                    style={{ height: height as any, width: width as any, overflowY: 'auto' as any }}
                                     rowProps={{}}
                                     rowComponent={({ index, style }: any) => {
                                         const lead = leads[index]

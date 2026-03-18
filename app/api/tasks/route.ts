@@ -12,12 +12,27 @@ export async function GET(req: NextRequest) {
     const priority = searchParams.get('priority') || ''
     const leadId = searchParams.get('leadId') || ''
 
-    const where: Record<string, unknown> = {}
-    if (status === 'Pending') where.completed = false
-    else if (status === 'Completed') where.completed = true
-    else if (status === 'Overdue') {
+    const where: any = {}
+    if (status === 'Pending') {
+        where.completed = false
+    } else if (status === 'Completed') {
+        where.completed = true
+        // Show completed tasks from the last 7 days on the Completed tab
+        const sevenDaysAgo = new Date()
+        sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7)
+        where.OR = [{ completedAt: { gte: sevenDaysAgo } }, { completedAt: null }]
+    } else if (status === 'Overdue') {
         where.completed = false
         where.dueDate = { lt: new Date() }
+    } else {
+        // "All" tab: hide completed tasks older than 7 days
+        const sevenDaysAgo = new Date()
+        sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7)
+        where.OR = [
+            { completed: false },
+            { completedAt: { gte: sevenDaysAgo } },
+            { completedAt: null },
+        ]
     }
     if (priority) where.priority = priority
     if (leadId) where.leadId = leadId
