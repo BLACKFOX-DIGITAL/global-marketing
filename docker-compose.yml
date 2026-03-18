@@ -1,0 +1,17 @@
+version: '3.8'
+
+services:
+  crm-web:
+    build: .
+    container_name: crm-production
+    restart: always
+    ports:
+      - "3000:3000"
+    volumes:
+      # Mount the database to a persistent folder on the host VPS machine
+      - ./prisma_data:/app/prisma_data
+    environment:
+      - NODE_ENV=production
+      - DATABASE_URL=file:/app/prisma_data/dev.db
+      - JWT_SECRET=${JWT_SECRET}
+      - CRON_SECRET=${CRON_SECRET}
