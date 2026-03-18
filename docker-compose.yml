@@ -11,6 +11,7 @@ services:
       - crm_data:/app/data
     environment:
       - NODE_ENV=production
+      - CRON_SECRET=${CRON_SECRET:-my_secure_cron_secret_123}
       - DATABASE_URL=file:/app/data/prod.db
       - JWT_SECRET=${JWT_SECRET:-fallback_secret_change_me_in_live}
 
