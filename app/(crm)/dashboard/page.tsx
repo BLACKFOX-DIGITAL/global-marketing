@@ -302,13 +302,11 @@ export default function DashboardPage() {
                     {[
                         {
                             label: 'Active Leads', value: data?.stats.totalLeads || 0,
-                            sub: 'Total in pipeline', icon: <Users size={18} />, color: 'var(--accent-primary)', bg: 'rgba(99,102,241,0.1)',
-                            trend: '+12%', trendUp: true
+                            sub: 'Total in pipeline', icon: <Users size={18} />, color: 'var(--accent-primary)', bg: 'rgba(99,102,241,0.1)'
                         },
                         {
                             label: 'Open Deals', value: totalPipelineDeals,
-                            sub: 'Across all stages', icon: <Briefcase size={18} />, color: '#8b5cf6', bg: 'rgba(139,92,246,0.1)',
-                            trend: '+5%', trendUp: true
+                            sub: 'Across all stages', icon: <Briefcase size={18} />, color: '#8b5cf6', bg: 'rgba(139,92,246,0.1)'
                         },
                         {
                             label: 'Tasks Due Today', value: data?.stats.tasksDueToday || 0,
@@ -320,8 +318,7 @@ export default function DashboardPage() {
                         },
                         {
                             label: 'Closed Won', value: data?.stats.closedWon || 0,
-                            sub: 'Last 30 days', icon: <CheckCircle size={18} />, color: '#10b981', bg: 'rgba(16,185,129,0.1)',
-                            trend: '+3', trendUp: true
+                            sub: 'Last 30 days', icon: <CheckCircle size={18} />, color: '#10b981', bg: 'rgba(16,185,129,0.1)'
                         },
                     ].map((kpi, i) => (
                         <div key={i} className="dash-card" style={{

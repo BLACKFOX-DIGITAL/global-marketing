@@ -22,8 +22,8 @@ export function AttendanceWidget() {
         async function fetchStatus() {
             try {
                 const [statusRes, historyRes] = await Promise.all([
-                    fetch('/api/attendance/status'),
-                    fetch('/api/attendance?period=month&limit=5')
+                    fetch('/api/attendance/status', { cache: 'no-store' }),
+                    fetch('/api/attendance?period=month&limit=5', { cache: 'no-store' })
                 ])
                 
                 const status = await statusRes.json()
@@ -68,7 +68,7 @@ export function AttendanceWidget() {
                 setPunchedIn(false)
                 setPunchRecord(null)
                 // Refresh history
-                const hRes = await fetch('/api/attendance?period=month&limit=5')
+                const hRes = await fetch('/api/attendance?period=month&limit=5', { cache: 'no-store' })
                 const history = await hRes.json()
                 if (history && Array.isArray(history.records)) setLastRecords(history.records.slice(0, 3))
             }
