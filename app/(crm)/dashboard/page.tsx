@@ -330,11 +330,7 @@ export default function DashboardPage() {
                                 <div style={{ width: 40, height: 40, borderRadius: 12, background: kpi.bg, display: 'flex', alignItems: 'center', justifyContent: 'center', color: kpi.color }}>
                                     {kpi.icon}
                                 </div>
-                                {kpi.trend && (
-                                    <span style={{ fontSize: 11, fontWeight: 700, color: kpi.trendUp ? '#10b981' : '#ef4444', background: kpi.trendUp ? 'rgba(16,185,129,0.1)' : 'rgba(239,68,68,0.1)', padding: '3px 8px', borderRadius: 100 }}>
-                                        {kpi.trend}
-                                    </span>
-                                )}
+
                                 {kpi.alert && (
                                     <span style={{ fontSize: 11, fontWeight: 700, color: '#ef4444', background: 'rgba(239,68,68,0.1)', padding: '3px 8px', borderRadius: 100 }}>
                                         Alert
