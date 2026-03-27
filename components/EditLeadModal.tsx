@@ -43,6 +43,8 @@ export default function EditLeadModal({ id, onSuccess, onClose }: { id: string, 
     const [websiteError, setWebsiteError] = useState('')
     const [industryOptions, setIndustryOptions] = useState<{ value: string }[]>([])
     const [showNotes, setShowNotes] = useState(false)
+    const [recentCountries, setRecentCountries] = useState<string[]>([])
+    const [showCountryDropdown, setShowCountryDropdown] = useState(false)
 
     const cleanWebsite = (url: string) => url.toLowerCase().replace(/^https?:\/\//, '').replace(/^www\./, '').replace(/\/$/, '')
 
@@ -85,6 +87,17 @@ export default function EditLeadModal({ id, onSuccess, onClose }: { id: string, 
                 .then(d => { if (d.options) setIndustryOptions(d.options) })
                 .catch(console.error)
         }, 300)
+
+        // Load recent countries
+        const saved = localStorage.getItem('recent_countries')
+        if (saved) {
+            try {
+                setRecentCountries(JSON.parse(saved))
+            } catch (e) {
+                console.error('Failed to parse recent countries', e)
+            }
+        }
+
         return () => clearTimeout(timeout)
     }, [])
 
@@ -120,6 +133,10 @@ export default function EditLeadModal({ id, onSuccess, onClose }: { id: string, 
             const match = COUNTRIES.find(c => c.toLowerCase() === form.country.trim().toLowerCase());
             if (!match) { setError('Please enter a valid country name.'); return; }
             finalCountry = match;
+
+            // Update recent countries
+            const updatedRecent = [finalCountry, ...recentCountries.filter(c => c !== finalCountry)].slice(0, 5)
+            localStorage.setItem('recent_countries', JSON.stringify(updatedRecent))
         }
 
         let finalIndustry = form.industry;
@@ -236,6 +253,8 @@ export default function EditLeadModal({ id, onSuccess, onClose }: { id: string, 
                                                     style={{ position: 'relative', zIndex: 2, background: 'transparent' }}
                                                     placeholder="e.g. United States"
                                                     value={form.country}
+                                                    onFocus={() => setShowCountryDropdown(true)}
+                                                    onBlur={() => setTimeout(() => setShowCountryDropdown(false), 200)}
                                                     onChange={e => set('country', e.target.value)}
                                                     onKeyDown={e => {
                                                         if ((e.key === 'Tab' || e.key === 'ArrowRight') && form.country) {
@@ -245,8 +264,37 @@ export default function EditLeadModal({ id, onSuccess, onClose }: { id: string, 
                                                                 set('country', form.country + match.slice(form.country.length))
                                                             }
                                                         }
+                                                        if (e.key === 'Escape') setShowCountryDropdown(false)
                                                     }}
                                                 />
+                                                {showCountryDropdown && recentCountries.length > 0 && (
+                                                    <div style={{
+                                                        position: 'absolute', top: '100%', left: 0, right: 0,
+                                                        background: 'var(--bg-card)', border: '1px solid var(--border)',
+                                                        borderRadius: 8, marginTop: 4, zIndex: 100,
+                                                        boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.3)',
+                                                        overflow: 'hidden', animation: 'fadeIn 0.15s ease-out'
+                                                    }}>
+                                                        <div style={{ padding: '6px 10px', fontSize: 10, fontWeight: 700, color: 'var(--text-muted)', borderBottom: '1px solid var(--border)', background: 'rgba(255,255,255,0.02)' }}>RECENT COUNTRIES</div>
+                                                        {recentCountries.map(c => (
+                                                            <div
+                                                                key={c}
+                                                                onClick={() => {
+                                                                    set('country', c)
+                                                                    setShowCountryDropdown(false)
+                                                                }}
+                                                                style={{
+                                                                    padding: '8px 12px', fontSize: 12, cursor: 'pointer',
+                                                                    transition: 'background 0.15s', borderBottom: '1px solid rgba(255,255,255,0.03)'
+                                                                }}
+                                                                onMouseOver={e => e.currentTarget.style.background = 'rgba(99,102,241,0.1)'}
+                                                                onMouseOut={e => e.currentTarget.style.background = 'transparent'}
+                                                            >
+                                                                {c}
+                                                            </div>
+                                                        ))}
+                                                    </div>
+                                                )}
                                             </div>
                                         </div>
                                     </div>

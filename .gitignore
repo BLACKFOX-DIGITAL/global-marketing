@@ -25,6 +25,7 @@
 
 # env files
 .env*
+!.env.example
 
 # databases
 *.db
