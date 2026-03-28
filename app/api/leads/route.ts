@@ -2,6 +2,9 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { getCurrentUser } from '@/lib/auth'
 import { awardXP } from '@/lib/gamification'
+import { rateLimit, getClientIp } from '@/lib/rateLimit'
+import { sanitizeObject } from '@/lib/sanitize'
+import { logger } from '@/lib/logger'
 
 export const dynamic = 'force-dynamic'
 
@@ -81,7 +84,7 @@ export async function GET(req: NextRequest) {
             totalPages: Math.ceil(total / limit)
         })
     } catch (err) {
-        console.error('API Leads Error:', err)
+        logger.error('Leads GET failed', { error: String(err) })
         return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 })
     }
 }
@@ -90,8 +93,18 @@ export async function POST(req: NextRequest) {
     const user = await getCurrentUser()
     if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
+    // Rate limit: max 30 lead creations per minute per user
+    const rl = rateLimit(`leads-create:${user.userId}`, { limit: 30, windowMs: 60_000 })
+    if (!rl.allowed) {
+        logger.warn('Rate limit hit on lead creation', { userId: user.userId, ip: getClientIp(req) })
+        return NextResponse.json({ error: 'Too many requests. Please slow down.' }, { status: 429 })
+    }
+
     try {
-        const body = await req.json()
+        const rawBody = await req.json()
+
+        // Sanitize all free-text string fields before saving
+        const body = sanitizeObject(rawBody, ['name', 'company', 'email', 'phone', 'website', 'country', 'notes', 'socials', 'industry'])
 
         const orConditions = []
         if (body.website) orConditions.push({ website: body.website })
@@ -140,7 +153,7 @@ export async function POST(req: NextRequest) {
 
         return NextResponse.json({ ...lead, gamificationResult }, { status: 201 })
     } catch (err) {
-        console.error(err)
+        logger.error('Lead creation failed', { error: String(err), userId: user?.userId })
         return NextResponse.json({ error: 'Failed to create lead' }, { status: 500 })
     }
 }
