@@ -2,11 +2,11 @@ import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { subDays } from 'date-fns'
 import { logActivity } from '@/lib/activity'
+import { logger } from '@/lib/logger'
 
 export async function GET(req: Request) {
-    // In production, authenticate this via a secret token from your cron service
     const expectedSecret = process.env.CRON_SECRET || 'local_cron_secret'
-    
+
     if (process.env.NODE_ENV === 'production' && !process.env.CRON_SECRET) {
         return new NextResponse('Internal Server Error: CRON_SECRET not configured', { status: 500 })
     }
@@ -21,17 +21,20 @@ export async function GET(req: Request) {
 
         // Fetch dynamic settings
         const settings = await prisma.systemSetting.findMany({
-            where: { key: { in: ['STALE_DAYS', 'RECYCLE_DAYS'] } }
+            where: { key: { in: ['RECYCLE_DAYS', 'CLAIM_LIMIT'] } }
         })
-        const staleDays = parseInt(settings.find((s: any) => s.key === 'STALE_DAYS')?.value || '14')
         const recycleDays = parseInt(settings.find((s: any) => s.key === 'RECYCLE_DAYS')?.value || '60')
-
-        const fourteenDaysAgo = subDays(now, staleDays)
-        const twelveDaysAgo = subDays(now, staleDays - 2)
         const sixtyDaysAgo = subDays(now, recycleDays)
 
-        // 1. Recirculate Lost Leads (60+ days)
-        // Set ownerId to null, status to 'New', isClaimedFromPool to false
+        // Priority-based reclaim windows (in days)
+        // High priority leads must be worked more urgently
+        const priorityWindows: Record<string, { warn: number; reclaim: number }> = {
+            'High':   { warn: 5,  reclaim: 7  },
+            'Medium': { warn: 12, reclaim: 14 },
+            'Low':    { warn: 19, reclaim: 21 },
+        }
+
+        // 1. Recirculate Lost Leads (60+ days of inactivity)
         const lostLeads = await prisma.lead.findMany({
             where: {
                 status: 'Lost',
@@ -47,99 +50,118 @@ export async function GET(req: Request) {
                 data: {
                     ownerId: null,
                     status: 'Open Pool',
-                    previousOwnerId: lead.ownerId, // So they can't reclaim it immediately
+                    previousOwnerId: lead.ownerId,
                     isClaimedFromPool: false,
-                    lastActivityAt: new Date(), // Reset clock
+                    lastActivityAt: new Date(),
                 }
             })
-            // Log it
             await logActivity({
                 userId: lead.ownerId!,
                 type: 'SYSTEM',
                 action: 'RECIRCULATED',
-                description: 'Lost lead automatically recirculated to open pool after 60 days of inactivity.',
+                description: `Lost lead auto-recirculated to open pool after ${recycleDays} days of inactivity.`,
                 leadId: lead.id
             })
             recirculatedCount++
         }
 
-        // 2. Strip Stale Active Leads (> 14 days no activity)
-        const staleLeads = await prisma.lead.findMany({
-            where: {
-                ownerId: { not: null },
-                status: { notIn: ['Lost', 'Won', 'Converted', 'Active Client'] },
-                lastActivityAt: { lt: fourteenDaysAgo }
-            }
-        })
-
+        // 2. Priority-Based Stale Lead Reclaim
+        // Uses lastMeaningfulActivityAt (calls/emails only) — notes do NOT reset the clock
         let reclaimedCount = 0
-        for (const lead of staleLeads) {
-            await prisma.lead.update({
-                where: { id: lead.id },
-                data: {
-                    ownerId: null,
-                    status: 'Open Pool',
-                    previousOwnerId: lead.ownerId,
-                    isClaimedFromPool: false,
-                    lastActivityAt: new Date(), // Reset clock
-                }
-            })
-
-            await logActivity({
-                userId: lead.ownerId!,
-                type: 'SYSTEM',
-                action: 'RECLAIMED',
-                description: 'Lead reclaimed from rep due to 14 days of inactivity.',
-                leadId: lead.id
-            })
-            reclaimedCount++
-        }
-
-        // 3. Issue Warnings (12 days no activity + warning not already generated recently)
-        // A simple way to check if a warning wasn't already generated is to check if there is a task created in the last 2 days with the title "Warning: Lead will be reclaimed"
-        const warningLeads = await prisma.lead.findMany({
-            where: {
-                ownerId: { not: null },
-                status: { notIn: ['Lost', 'Won', 'Converted', 'Active Client'] },
-                lastActivityAt: { lt: twelveDaysAgo, gte: fourteenDaysAgo }
-            }
-        })
-
         let warningsIssued = 0
-        for (const lead of warningLeads) {
-            const existingTask = await prisma.task.findFirst({
+
+        for (const [priority, { warn, reclaim }] of Object.entries(priorityWindows)) {
+            const reclaimCutoff = subDays(now, reclaim)
+            const warnCutoff = subDays(now, warn)
+
+            // Reclaim leads that have had no meaningful activity beyond the priority window
+            const staleLeads = await prisma.lead.findMany({
                 where: {
-                    leadId: lead.id,
-                    title: { startsWith: 'WARNING: Auto-Reclaim' }
+                    ownerId: { not: null },
+                    priority,
+                    status: { notIn: ['Lost', 'Won', 'Converted', 'Active Client', 'Open Pool'] },
+                    OR: [
+                        { lastMeaningfulActivityAt: { lt: reclaimCutoff } },
+                        {
+                            lastMeaningfulActivityAt: null,
+                            lastActivityAt: { lt: reclaimCutoff }
+                        }
+                    ]
                 }
             })
 
-            if (!existingTask) {
-                await prisma.task.create({
+            for (const lead of staleLeads) {
+                await prisma.lead.update({
+                    where: { id: lead.id },
                     data: {
-                        title: 'WARNING: Auto-Reclaim in 48 hours',
-                        description: 'You have not interacted with this lead for 12 days. It will be reclaimed and put in the Open Pool in 48 hours unless you log an activity (task, note, call, etc).',
-                        priority: 'High',
-                        taskType: 'System Warning',
-                        status: 'Pending',
-                        dueDate: subDays(now, -2), // Due in 2 days
-                        ownerId: lead.ownerId,
-                        leadId: lead.id
+                        ownerId: null,
+                        status: 'Open Pool',
+                        previousOwnerId: lead.ownerId,
+                        isClaimedFromPool: false,
+                        lastActivityAt: new Date(),
                     }
                 })
-                warningsIssued++
+                await logActivity({
+                    userId: lead.ownerId!,
+                    type: 'SYSTEM',
+                    action: 'RECLAIMED',
+                    description: `${priority}-priority lead reclaimed after ${reclaim} days without a meaningful sales action (call/email).`,
+                    leadId: lead.id
+                })
+                reclaimedCount++
+            }
+
+            // Issue warnings for leads approaching the reclaim cutoff
+            const warningLeads = await prisma.lead.findMany({
+                where: {
+                    ownerId: { not: null },
+                    priority,
+                    status: { notIn: ['Lost', 'Won', 'Converted', 'Active Client', 'Open Pool'] },
+                    OR: [
+                        { lastMeaningfulActivityAt: { lt: warnCutoff, gte: reclaimCutoff } },
+                        {
+                            lastMeaningfulActivityAt: null,
+                            lastActivityAt: { lt: warnCutoff, gte: reclaimCutoff }
+                        }
+                    ]
+                }
+            })
+
+            for (const lead of warningLeads) {
+                const existing = await prisma.task.findFirst({
+                    where: { leadId: lead.id, title: { startsWith: 'WARNING: Auto-Reclaim' } }
+                })
+                if (!existing) {
+                    const daysLeft = reclaim - warn
+                    await prisma.task.create({
+                        data: {
+                            title: `WARNING: Auto-Reclaim in ${daysLeft * 24} hours`,
+                            description: `This ${priority}-priority lead has had no real sales activity (calls/emails) for ${warn} days. It will be moved to the Open Pool in ${daysLeft} days unless you log a call or send an email. Notes alone do not count.`,
+                            priority: 'High',
+                            taskType: 'System Warning',
+                            status: 'Pending',
+                            dueDate: subDays(now, -daysLeft),
+                            ownerId: lead.ownerId,
+                            leadId: lead.id
+                        }
+                    })
+                    warningsIssued++
+                }
             }
         }
+
+        logger.info('Lead maintenance complete', { recirculatedCount, reclaimedCount, warningsIssued })
 
         return NextResponse.json({
             success: true,
             recirculatedCount,
             reclaimedCount,
-            warningsIssued
+            warningsIssued,
+            priorityWindows,
         })
 
     } catch (error) {
-        console.error(error)
+        logger.error('Lead maintenance failed', { error: String(error) })
         return NextResponse.json({ error: 'Maintenance failed' }, { status: 500 })
     }
 }

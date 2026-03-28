@@ -28,13 +28,11 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
             data: {
                 mailCount: { increment: 1 },
                 lastMailOutcome: outcome,
-                // Advance status to "Mail Sent"
                 ...(outcome === 'sent' || outcome === 'follow_up' ? { status: 'Mail Sent' } : {}),
-                // If got response, interested — stay at Mail Sent
                 ...(outcome === 'response_interested' ? { status: 'Mail Sent' } : {}),
-                // If not interested, mark as lost
                 ...(outcome === 'response_not_interested' ? { status: 'Lost' } : {}),
                 lastActivityAt: new Date(),
+                lastMeaningfulActivityAt: new Date(), // Real sales action — resets reclaim clock
             }
         })
 

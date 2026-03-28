@@ -59,7 +59,8 @@ model Lead {
   lastMailOutcome String?
 
   // Recirculation and Pool tracking
-  lastActivityAt    DateTime @default(now())
+  lastActivityAt          DateTime @default(now())
+  lastMeaningfulActivityAt DateTime? // Updated only on real sales actions (calls/emails) — used for priority-based reclaim
   previousOwnerId   String?
   isClaimedFromPool Boolean  @default(false)
 

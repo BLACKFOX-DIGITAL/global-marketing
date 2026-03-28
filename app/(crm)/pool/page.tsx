@@ -1,9 +1,12 @@
 'use client'
-import { useState, useEffect, useCallback } from 'react'
+import { useState } from 'react'
 import Header from '@/components/Header'
-import { Search, ChevronLeft, ChevronRight, Hand, Waves } from 'lucide-react'
+import { Search, ChevronLeft, ChevronRight, Hand, Waves, MapPin, AtSign, Clock } from 'lucide-react'
 import StatusBadge from '@/components/StatusBadge'
-import { format, formatDistanceToNow } from 'date-fns'
+import { formatDistanceToNow } from 'date-fns'
+import { List } from 'react-window'
+import { AutoSizer } from 'react-virtualized-auto-sizer'
+import useSWR from 'swr'
 
 interface Lead {
     id: string
@@ -12,11 +15,17 @@ interface Lead {
     email: string | null
     phone: string | null
     status: string
-    country: string | null
+    industry: string | null
+    website: string | null
     lastActivityAt: string
 }
 
-import useSWR from 'swr'
+function Avatar({ name }: { name: string }) {
+    const initials = name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)
+    const colors = ['#6366f1', '#8b5cf6', '#06b6d4', '#10b981', '#f59e0b']
+    const bg = colors[name.charCodeAt(0) % colors.length]
+    return <div className="avatar" style={{ background: bg, color: 'white', fontSize: 11, width: 30, height: 30 }}>{initials}</div>
+}
 
 const fetcher = (url: string) => fetch(url).then(res => res.json())
 
@@ -26,7 +35,7 @@ export default function PoolPage() {
     const [statusFilter, setStatusFilter] = useState('')
     const [claiming, setClaiming] = useState<string | null>(null)
 
-    const params = new URLSearchParams({ page: String(page), limit: '10' })
+    const params = new URLSearchParams({ page: String(page), limit: '50' })
     if (search) params.set('search', search)
     if (statusFilter) params.set('status', statusFilter)
 
@@ -43,7 +52,6 @@ export default function PoolPage() {
 
         if (res.ok) {
             fetchPool()
-            // Optional: You could redirect to the lead page immediately, or just let them stay on the pool page
         } else {
             const err = await res.json()
             alert(err.error || 'Failed to claim lead')
@@ -56,7 +64,7 @@ export default function PoolPage() {
     return (
         <div style={{ display: 'flex', flexDirection: 'column', height: '100%', overflow: 'hidden' }}>
             <Header title="Open Pool" user={null} />
-            <div className="crm-content">
+            <div className="crm-content" style={{ display: 'flex', flexDirection: 'column', flex: 1, minHeight: 0, overflow: 'hidden' }}>
                 <div className="page-header">
                     <div>
                         <h2 style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
@@ -66,11 +74,11 @@ export default function PoolPage() {
                     </div>
                 </div>
 
-                <div style={{ display: 'flex', gap: 10, marginBottom: 20, alignItems: 'center' }}>
-                    <div className="search-bar" style={{ flex: 1, maxWidth: 320 }}>
+                <div style={{ display: 'flex', gap: 10, marginBottom: 24, alignItems: 'center' }}>
+                    <div className="search-bar" style={{ flex: 1, maxWidth: 480 }}>
                         <Search size={15} color="var(--text-muted)" />
                         <input
-                            placeholder="Search pool..."
+                            placeholder="Find leads in the pool..."
                             value={search}
                             onChange={e => { setSearch(e.target.value); setPage(1) }}
                         />
@@ -89,66 +97,88 @@ export default function PoolPage() {
                     </select>
                 </div>
 
-                <div className="card" style={{ padding: 0 }}>
-                    <table className="data-table">
-                        <thead>
-                            <tr>
-                                <th>Name & Company</th>
-                                <th>Contact Info</th>
-                                <th>Location</th>
-                                <th>Idle Time</th>
-                                <th>Last Status</th>
-                                <th style={{ textAlign: 'right' }}>Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {loading ? (
-                                <tr>
-                                    <td colSpan={6} style={{ textAlign: 'center', padding: 40 }}>
-                                        <div className="spinner" style={{ margin: '0 auto' }} />
-                                    </td>
-                                </tr>
-                            ) : leads.length === 0 ? (
-                                <tr>
-                                    <td colSpan={6} style={{ textAlign: 'center', padding: 40, color: 'var(--text-muted)' }}>
-                                        No leads available in the pool right now.
-                                    </td>
-                                </tr>
-                            ) : leads.map(lead => (
-                                <tr key={lead.id}>
-                                    <td>
-                                        <div style={{ fontWeight: 600, color: 'var(--text-primary)', fontSize: 13 }}>{lead.name}</div>
-                                        {lead.company && <div style={{ fontSize: 12, color: 'var(--text-secondary)', marginTop: 2 }}>{lead.company}</div>}
-                                    </td>
-                                    <td style={{ fontSize: 13, color: 'var(--text-secondary)' }}>
-                                        {lead.email && <div>{lead.email}</div>}
-                                        {lead.phone && <div style={{ marginTop: 2 }}>{lead.phone}</div>}
-                                        {!lead.email && !lead.phone && '—'}
-                                    </td>
-                                    <td style={{ fontSize: 13, color: 'var(--text-secondary)' }}>{lead.country || '—'}</td>
-                                    <td style={{ fontSize: 12, color: 'var(--text-secondary)' }}>
-                                        {formatDistanceToNow(new Date(lead.lastActivityAt))} ago
-                                    </td>
-                                    <td><StatusBadge status={lead.status} /></td>
-                                    <td style={{ textAlign: 'right' }}>
-                                        <button
-                                            className="btn-primary"
-                                            style={{ padding: '6px 12px', fontSize: 12, display: 'inline-flex', alignItems: 'center', gap: 6 }}
-                                            onClick={() => handleClaim(lead.id)}
-                                            disabled={claiming === lead.id}
-                                        >
-                                            {claiming === lead.id ? <div className="spinner" style={{ width: 14, height: 14, borderColor: '#fff', borderTopColor: 'transparent' }} /> : <Hand size={14} />}
-                                            Claim
-                                        </button>
-                                    </td>
-                                </tr>
-                            ))}
-                        </tbody>
-                    </table>
+                <div className="card" style={{ padding: 0, height: 'calc(100vh - 350px)', minHeight: 400, display: 'flex', flexDirection: 'column', flex: 1, overflow: 'hidden' }}>
+                    <div style={{ 
+                        display: 'flex', background: 'var(--bg-card)', 
+                        borderBottom: '1px solid var(--border)', 
+                        padding: '12px 18px', fontWeight: 600, fontSize: 13, color: 'var(--text-muted)',
+                        textTransform: 'uppercase', letterSpacing: '0.05em', height: 44, alignItems: 'center'
+                    }}>
+                        <div style={{ width: '25%' }}>Name & Company</div>
+                        <div style={{ width: '25%' }}>Website & Email</div>
+                        <div style={{ width: '15%' }}>Industry</div>
+                        <div style={{ width: '15%' }}>Idle Time</div>
+                        <div style={{ width: '10%' }}>Last Status</div>
+                        <div style={{ width: '10%', textAlign: 'right' }}>Actions</div>
+                    </div>
 
-                    <div style={{ padding: '12px 16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: '1px solid var(--border)' }}>
+                    <div style={{ flex: 1, position: 'relative', minHeight: 0 }}>
+                        {loading ? (
+                            <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                <div className="spinner" />
+                            </div>
+                        ) : leads.length === 0 ? (
+                            <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-muted)' }}>
+                                No leads available in the pool right now.
+                            </div>
+                        ) : (
+                            <AutoSizer renderProp={({ height, width }: any) => (
+                                <List
+                                    rowCount={leads.length}
+                                    rowHeight={80} 
+                                    style={{ height: height as any, width: width as any, overflowY: 'auto' as any }}
+                                    rowProps={{}}
+                                    rowComponent={({ index, style }: any) => {
+                                        const lead = leads[index]
+                                        return (
+                                            <div style={{ 
+                                                ...style, 
+                                                display: 'flex', alignItems: 'center', 
+                                                padding: '0 18px', borderBottom: '1px solid var(--border)',
+                                                background: index % 2 === 0 ? 'transparent' : 'rgba(0,0,0,0.01)'
+                                            }} className="lead-row-container">
+                                                <div style={{ width: '25%', display: 'flex', alignItems: 'center', gap: 10 }}>
+                                                    <Avatar name={lead.company || lead.name} />
+                                                    <div style={{ overflow: 'hidden' }}>
+                                                        <div style={{ fontWeight: 600, color: 'var(--text-primary)', fontSize: 13, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{lead.company || lead.name}</div>
+                                                        {lead.name && lead.name !== lead.company && <div style={{ fontSize: 11, color: 'var(--text-muted)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{lead.name}</div>}
+                                                    </div>
+                                                </div>
+                                                <div style={{ width: '25%', paddingRight: 10 }}>
+                                                    <div style={{ color: 'var(--text-secondary)', fontSize: 12, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{lead.website || '—'}</div>
+                                                    {lead.email && <div style={{ fontSize: 11, color: 'var(--text-muted)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{lead.email}</div>}
+                                                </div>
+                                                <div style={{ width: '15%', color: 'var(--text-secondary)', fontSize: 12, fontWeight: 500 }}>
+                                                    {lead.industry || '—'}
+                                                </div>
+                                                <div style={{ width: '15%', fontSize: 12, color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', gap: 6 }}>
+                                                    <Clock size={12} color="var(--text-muted)" /> {formatDistanceToNow(new Date(lead.lastActivityAt))} ago
+                                                </div>
+                                                <div style={{ width: '10%' }}>
+                                                    <StatusBadge status={lead.status} />
+                                                </div>
+                                                <div style={{ width: '10%', textAlign: 'right' }}>
+                                                    <button
+                                                        className="btn-primary"
+                                                        style={{ padding: '6px 16px', fontSize: 12, display: 'inline-flex', alignItems: 'center', gap: 6, borderRadius: 10 }}
+                                                        onClick={() => handleClaim(lead.id)}
+                                                        disabled={claiming === lead.id}
+                                                    >
+                                                        {claiming === lead.id ? <div className="spinner" style={{ width: 14, height: 14, borderColor: '#fff', borderTopColor: 'transparent' }} /> : <Hand size={14} />}
+                                                        Claim
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        )
+                                    }}
+                                />
+                            )} />
+                        )}
+                    </div>
+
+                    <div style={{ padding: '12px 16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: '1px solid var(--border)', background: 'var(--bg-card)' }}>
                         <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>
-                            Showing {total > 0 ? ((page - 1) * 10) + 1 : 0}–{Math.min(page * 10, total)} of <strong style={{ color: 'var(--text-primary)' }}>{total}</strong> open leads
+                            Showing {total > 0 ? ((page - 1) * 50) + 1 : 0}–{Math.min(page * 50, total)} of <strong style={{ color: 'var(--text-primary)' }}>{total}</strong> open leads
                         </span>
                         <div className="pagination">
                             <button className="page-btn" onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page === 1}>
