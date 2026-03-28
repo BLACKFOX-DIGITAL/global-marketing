@@ -176,14 +176,14 @@ export default function AttendancePage() {
                                 width: 200, height: 52, borderRadius: 14,
                                 background: punchedIn
                                     ? 'linear-gradient(135deg, #ef4444, #dc2626)'
-                                    : 'linear-gradient(135deg, #6366f1, #4f46e5)',
+                                    : 'linear-gradient(135deg, #10b981, #059669)',
                                 color: 'white', border: 'none', fontSize: 16, fontWeight: 700,
                                 cursor: punching ? 'not-allowed' : 'pointer',
                                 display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10,
                                 transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
                                 boxShadow: punchedIn
                                     ? '0 8px 24px rgba(239, 68, 68, 0.25)'
-                                    : '0 8px 24px rgba(99, 102, 241, 0.25)',
+                                    : '0 8px 24px rgba(16, 185, 129, 0.25)',
                                 opacity: punching ? 0.7 : 1,
                             }}
                         >

@@ -105,7 +105,7 @@ export function AttendanceWidget() {
         }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                    <div style={{ width: 40, height: 40, borderRadius: 12, background: punchedIn ? 'rgba(16, 185, 129, 0.1)' : 'rgba(99, 102, 241, 0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: punchedIn ? '#10b981' : 'var(--accent-primary)' }}>
+                    <div style={{ width: 40, height: 40, borderRadius: 12, background: punchedIn ? 'rgba(16, 185, 129, 0.1)' : 'rgba(16, 185, 129, 0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#10b981' }}>
                         <Timer size={22} />
                     </div>
                     <div>
@@ -136,10 +136,10 @@ export function AttendanceWidget() {
                     disabled={punching}
                     style={{
                         flex: 1, height: 44, borderRadius: 12, border: 'none',
-                        background: punchedIn ? '#ef4444' : 'var(--accent-primary)',
+                        background: punchedIn ? '#ef4444' : '#10b981',
                         color: 'white', fontWeight: 700, fontSize: 14,
                         display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
-                        boxShadow: punchedIn ? '0 4px 12px rgba(239, 68, 68, 0.2)' : '0 4px 12px rgba(99, 102, 241, 0.3)',
+                        boxShadow: punchedIn ? '0 4px 12px rgba(239, 68, 68, 0.2)' : '0 4px 12px rgba(16, 185, 129, 0.3)',
                         cursor: punching ? 'wait' : 'pointer',
                         transition: 'all 0.2s'
                     }}

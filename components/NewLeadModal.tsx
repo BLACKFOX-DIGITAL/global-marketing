@@ -43,7 +43,11 @@ export default function NewLeadModal({ onSuccess, onClose }: { onSuccess: () => 
     const [industryOptions, setIndustryOptions] = useState<{ value: string }[]>([])
     const [showNotes, setShowNotes] = useState(false)
     const [recentCountries, setRecentCountries] = useState<string[]>([])
+    const [recentIndustries, setRecentIndustries] = useState<string[]>([])
+    const [recentPositions, setRecentPositions] = useState<string[]>([])
     const [showCountryDropdown, setShowCountryDropdown] = useState(false)
+    const [showIndustryDropdown, setShowIndustryDropdown] = useState(false)
+    const [activePositionIdx, setActivePositionIdx] = useState<number | null>(null)
 
     const cleanWebsite = (url: string) => url.toLowerCase().replace(/^https?:\/\//, '').replace(/^www\./, '').replace(/\/$/, '')
 
@@ -55,14 +59,18 @@ export default function NewLeadModal({ onSuccess, onClose }: { onSuccess: () => 
                 .catch(console.error)
         }, 300)
 
-        // Load recent countries
-        const saved = localStorage.getItem('recent_countries')
-        if (saved) {
-            try {
-                setRecentCountries(JSON.parse(saved))
-            } catch (e) {
-                console.error('Failed to parse recent countries', e)
-            }
+        // Load recent countries, industries, and positions
+        try {
+            const savedCountries = localStorage.getItem('recent_countries')
+            if (savedCountries) setRecentCountries(JSON.parse(savedCountries))
+            
+            const savedIndustries = localStorage.getItem('recent_industries')
+            if (savedIndustries) setRecentIndustries(JSON.parse(savedIndustries))
+            
+            const savedPositions = localStorage.getItem('recent_positions')
+            if (savedPositions) setRecentPositions(JSON.parse(savedPositions))
+        } catch (e) {
+            console.error('Failed to parse recent data from localStorage', e)
         }
 
         return () => clearTimeout(timeout)
@@ -107,6 +115,7 @@ export default function NewLeadModal({ onSuccess, onClose }: { onSuccess: () => 
             // Update recent countries
             const updatedRecent = [finalCountry, ...recentCountries.filter(c => c !== finalCountry)].slice(0, 5)
             localStorage.setItem('recent_countries', JSON.stringify(updatedRecent))
+            setRecentCountries(updatedRecent)
         }
 
         let finalIndustry = form.industry;
@@ -114,13 +123,33 @@ export default function NewLeadModal({ onSuccess, onClose }: { onSuccess: () => 
             const match = industryOptions.find(i => i.value.toLowerCase() === form.industry.trim().toLowerCase());
             if (!match) { setError('Please select a valid Industry from the suggestions.'); return; }
             finalIndustry = match.value;
+
+            // Update recent industries
+            const updatedRecent = [finalIndustry, ...recentIndustries.filter(i => i !== finalIndustry)].slice(0, 5)
+            localStorage.setItem('recent_industries', JSON.stringify(updatedRecent))
+            setRecentIndustries(updatedRecent)
         }
 
+        const newRecentPositions = [...recentPositions]
         for (const contact of contacts) {
             if (contact.position) {
                 const match = POSITIONS.find(p => p.toLowerCase() === contact.position.trim().toLowerCase());
                 if (!match) { setError('Please select a valid Position/Title from the suggestions.'); return; }
+                
+                // Track recent positions
+                if (!newRecentPositions.includes(match)) {
+                    newRecentPositions.unshift(match)
+                } else {
+                    const idx = newRecentPositions.indexOf(match)
+                    newRecentPositions.splice(idx, 1)
+                    newRecentPositions.unshift(match)
+                }
             }
+        }
+        const finalRecentPositions = newRecentPositions.slice(0, 5)
+        if (finalRecentPositions.length > 0) {
+            localStorage.setItem('recent_positions', JSON.stringify(finalRecentPositions))
+            setRecentPositions(finalRecentPositions)
         }
 
         const primary = contacts[0]
@@ -328,6 +357,8 @@ export default function NewLeadModal({ onSuccess, onClose }: { onSuccess: () => 
                                             style={{ position: 'relative', zIndex: 2, background: 'transparent' }}
                                             placeholder="Start typing..."
                                             value={form.industry}
+                                            onFocus={() => setShowIndustryDropdown(true)}
+                                            onBlur={() => setTimeout(() => setShowIndustryDropdown(false), 200)}
                                             onChange={e => set('industry', e.target.value)}
                                             onKeyDown={e => {
                                                 if ((e.key === 'Tab' || e.key === 'ArrowRight') && form.industry) {
@@ -337,8 +368,37 @@ export default function NewLeadModal({ onSuccess, onClose }: { onSuccess: () => 
                                                         set('industry', form.industry + match.value.slice(form.industry.length))
                                                     }
                                                 }
+                                                if (e.key === 'Escape') setShowIndustryDropdown(false)
                                             }}
                                         />
+                                        {showIndustryDropdown && recentIndustries.length > 0 && (
+                                            <div style={{
+                                                position: 'absolute', top: '100%', left: 0, right: 0,
+                                                background: 'var(--bg-card)', border: '1px solid var(--border)',
+                                                borderRadius: 8, marginTop: 4, zIndex: 100,
+                                                boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.3)',
+                                                overflow: 'hidden', animation: 'fadeIn 0.15s ease-out'
+                                            }}>
+                                                <div style={{ padding: '6px 10px', fontSize: 10, fontWeight: 700, color: 'var(--text-muted)', borderBottom: '1px solid var(--border)', background: 'rgba(255,255,255,0.02)' }}>RECENT INDUSTRIES</div>
+                                                {recentIndustries.map(i => (
+                                                    <div
+                                                        key={i}
+                                                        onClick={() => {
+                                                            set('industry', i)
+                                                            setShowIndustryDropdown(false)
+                                                        }}
+                                                        style={{
+                                                            padding: '8px 12px', fontSize: 12, cursor: 'pointer',
+                                                            transition: 'background 0.15s', borderBottom: '1px solid rgba(255,255,255,0.03)'
+                                                        }}
+                                                        onMouseOver={e => e.currentTarget.style.background = 'rgba(99,102,241,0.1)'}
+                                                        onMouseOut={e => e.currentTarget.style.background = 'transparent'}
+                                                    >
+                                                        {i}
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        )}
                                     </div>
                                 </div>
                             </div>
@@ -414,6 +474,8 @@ export default function NewLeadModal({ onSuccess, onClose }: { onSuccess: () => 
                                                     style={{ position: 'relative', zIndex: 2, background: 'transparent' }}
                                                     placeholder="e.g. Senior Retoucher"
                                                     value={contact.position}
+                                                    onFocus={() => setActivePositionIdx(i)}
+                                                    onBlur={() => setTimeout(() => setActivePositionIdx(null), 200)}
                                                     onChange={e => {
                                                         const n = [...contacts]; n[i].position = e.target.value; setContacts(n)
                                                     }}
@@ -425,8 +487,36 @@ export default function NewLeadModal({ onSuccess, onClose }: { onSuccess: () => 
                                                                 const n = [...contacts]; n[i].position = contact.position + match.slice(contact.position.length); setContacts(n)
                                                             }
                                                         }
+                                                        if (e.key === 'Escape') setActivePositionIdx(null)
                                                     }}
                                                 />
+                                                {activePositionIdx === i && recentPositions.length > 0 && (
+                                                    <div style={{
+                                                        position: 'absolute', top: '100%', left: 0, right: 0,
+                                                        background: 'var(--bg-card)', border: '1px solid var(--border)',
+                                                        borderRadius: 8, marginTop: 4, zIndex: 100,
+                                                        boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.3)',
+                                                        overflow: 'hidden', animation: 'fadeIn 0.15s ease-out'
+                                                    }}>
+                                                        <div style={{ padding: '6px 10px', fontSize: 10, fontWeight: 700, color: 'var(--text-muted)', borderBottom: '1px solid var(--border)', background: 'rgba(255,255,255,0.02)' }}>RECENT POSITIONS</div>
+                                                        {recentPositions.map(p => (
+                                                            <div
+                                                                key={p}
+                                                                onClick={() => {
+                                                                    const n = [...contacts]; n[i].position = p; setContacts(n); setActivePositionIdx(null)
+                                                                }}
+                                                                style={{
+                                                                    padding: '8px 12px', fontSize: 12, cursor: 'pointer',
+                                                                    transition: 'background 0.15s', borderBottom: '1px solid rgba(255,255,255,0.03)'
+                                                                }}
+                                                                onMouseOver={e => e.currentTarget.style.background = 'rgba(99,102,241,0.1)'}
+                                                                onMouseOut={e => e.currentTarget.style.background = 'transparent'}
+                                                            >
+                                                                {p}
+                                                            </div>
+                                                        ))}
+                                                    </div>
+                                                )}
                                             </div>
                                         </div>
                                     </div>

@@ -13,13 +13,12 @@ export async function getXPValues() {
         LEAD_CONVERTED: map['XP_LEAD_CONVERTED'] ?? 50,
         OPPORTUNITY_WON: map['XP_OPPORTUNITY_WON'] ?? 100,
         POOL_CLAIM: map['XP_POOL_CLAIM'] ?? 5,
-        // Hardcoded fallbacks for less common actions not yet in Admin UI
+        LEAD_CREATED: map['XP_LEAD_CREATED'] ?? 5,
+        TASK_CREATED: map['XP_TASK_CREATED'] ?? 3,
+        // Hardcoded fallbacks for secondary actions
         TASK_ON_TIME_BONUS: 5,
         LEAD_UPDATED: 3,
-        LEAD_CREATED: 5,
-        OPPORTUNITY_CREATED: 10,
         OPPORTUNITY_UPDATED: 5,
-        TASK_CREATED: 3,
     }
 }
 

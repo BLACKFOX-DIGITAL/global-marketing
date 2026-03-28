@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { getCurrentUser } from '@/lib/auth'
-import { awardXP } from '@/lib/gamification'
 
 export const dynamic = 'force-dynamic'
 
@@ -75,9 +74,7 @@ export async function POST(req: NextRequest) {
             data: { stage: opportunity.stage, opportunityId: opportunity.id },
         })
 
-        const gamificationResult = await awardXP(user.userId, 'OPPORTUNITY_CREATED', 'OPPORTUNITY_CREATED', opportunity.id)
-
-        return NextResponse.json({ ...opportunity, gamificationResult }, { status: 201 })
+        return NextResponse.json({ ...opportunity }, { status: 201 })
     } catch (err) {
         console.error(err)
         return NextResponse.json({ error: 'Failed to create opportunity' }, { status: 500 })

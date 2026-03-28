@@ -56,6 +56,7 @@ export default function AdminSettings() {
     const [configs, setConfigs] = useState<Record<string, string>>({
         STALE_DAYS: '14', RECYCLE_DAYS: '60', CLAIM_LIMIT: '50', RESEND_API_KEY: '', RESEND_WEBHOOK_SECRET: '',
         XP_CALL_ATTEMPT: '15', XP_MAIL_ATTEMPT: '10', XP_TASK_COMPLETED: '10', XP_LEAD_CONVERTED: '50', XP_OPPORTUNITY_WON: '100', XP_POOL_CLAIM: '5',
+        XP_LEAD_CREATED: '5', XP_TASK_CREATED: '3',
     })
 
     const [adding, setAdding] = useState(false)
@@ -306,10 +307,23 @@ export default function AdminSettings() {
                         ) : activeCategory === 'GAMIFICATION' ? (
                             <div style={{ maxWidth: 800 }}>
                                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 24 }}>
-                                    {['CALL_ATTEMPT', 'MAIL_ATTEMPT', 'TASK_COMPLETED', 'LEAD_CONVERTED', 'OPPORTUNITY_WON', 'POOL_CLAIM'].map(action => (
-                                        <div key={action}>
-                                            <label style={{ display: 'block', fontSize: 13, fontWeight: 600, marginBottom: 8 }}>{action.replace('_', ' ')} XP</label>
-                                            <input type="number" value={configs[`XP_${action}`]} onChange={e => handleUpdateConfig(`XP_${action}`, e.target.value)} style={{ width: '100%', padding: '10px 12px', borderRadius: 8, border: '1px solid var(--border)', background: 'var(--bg-main)', color: 'var(--text-primary)', outline: 'none' }} />
+                                    {[
+                                        { key: 'CALL_ATTEMPT', label: '📞 Log a Call', desc: 'Calling a lead' },
+                                        { key: 'MAIL_ATTEMPT', label: '✉️ Send a Mail', desc: 'Emailing a lead' },
+                                        { key: 'TASK_COMPLETED', label: '✅ Complete a Task', desc: 'Marking a task done' },
+                                        { key: 'TASK_CREATED', label: '📝 Create a Task', desc: 'Adding a new task' },
+                                        { key: 'LEAD_CREATED', label: '➕ Create a Lead', desc: 'Adding a new lead' },
+                                        { key: 'LEAD_CONVERTED', label: '🔄 Convert a Lead', desc: 'Lead → Opportunity' },
+                                        { key: 'OPPORTUNITY_WON', label: '🏆 Win an Opportunity', desc: 'Closing a deal' },
+                                        { key: 'POOL_CLAIM', label: '🎣 Claim from Pool', desc: 'Claiming a pooled lead' },
+                                    ].map(({ key, label, desc }) => (
+                                        <div key={key} style={{ background: 'var(--bg-main)', borderRadius: 10, padding: '16px 20px', border: '1px solid var(--border)' }}>
+                                            <label style={{ display: 'block', fontSize: 13, fontWeight: 700, marginBottom: 2 }}>{label}</label>
+                                            <label style={{ display: 'block', fontSize: 11, color: 'var(--text-muted)', marginBottom: 10 }}>{desc}</label>
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                                                <input type="number" value={configs[`XP_${key}`]} onChange={e => handleUpdateConfig(`XP_${key}`, e.target.value)} style={{ flex: 1, padding: '8px 12px', borderRadius: 8, border: '1px solid var(--border)', background: 'var(--bg-card)', color: 'var(--text-primary)', outline: 'none' }} />
+                                                <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-muted)' }}>XP</span>
+                                            </div>
                                         </div>
                                     ))}
                                 </div>

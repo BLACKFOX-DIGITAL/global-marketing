@@ -333,14 +333,12 @@ export default function LeaderboardPage() {
                                         { label: 'Win Opportunity', points: '+100 XP', color: '#10b981', icon: '🏆' },
                                         { label: 'Convert a Lead', points: '+50 XP', color: '#8b5cf6', icon: '⚔️' },
                                         { label: 'Log a Call', points: '+15 XP', color: '#6366f1', icon: '📞' },
-                                        { label: 'Create Opportunity', points: '+10 XP', color: '#14b8a6', icon: '🎯' },
                                         { label: 'Complete Task', points: '+10 XP', color: '#f59e0b', icon: '✅' },
                                         { label: 'Send Mail', points: '+10 XP', color: '#06b6d4', icon: '📧' },
-                                        { label: 'Update Opportunity', points: '+5 XP', color: '#8b5cf6', icon: '📈' },
-                                        { label: 'Claim from Pool', points: '+5 XP', color: '#94a3b8', icon: '🏊' },
-                                        { label: 'Add a Lead', points: '+5 XP', color: '#ec4899', icon: '📝' },
+                                        { label: 'Add a Lead', points: '+5 XP', color: '#ec4899', icon: '➕' },
+                                        { label: 'Claim from Pool', points: '+5 XP', color: '#94a3b8', icon: '🎣' },
+                                        { label: 'Create a Task', points: '+3 XP', color: '#f59e0b', icon: '📝' },
                                         { label: 'Update a Lead', points: '+3 XP', color: '#64748b', icon: '✏️' },
-                                        { label: 'Create a Task', points: '+3 XP', color: '#f59e0b', icon: '➕' },
                                     ].map(item => (
                                         <div key={item.label} style={{
                                             display: 'flex', justifyContent: 'space-between', alignItems: 'center',

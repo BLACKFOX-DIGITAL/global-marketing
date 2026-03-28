@@ -210,12 +210,14 @@ export default function LeadsPage() {
                         padding: '12px 18px', fontWeight: 600, fontSize: 13, color: 'var(--text-muted)',
                         textTransform: 'uppercase', letterSpacing: '0.05em', height: 44, alignItems: 'center'
                     }}>
-                        <div style={{ width: '22%' }}>Name & Company</div>
-                        <div style={{ width: '22%' }}>Website & Email</div>
-                        <div style={{ width: '12%' }}>Industry</div>
-                        <div style={{ width: '10%' }}>Priority</div>
-                        <div style={{ width: '20%' }}>Status</div>
-                        <div style={{ width: '14%', textAlign: 'right' }}>Actions</div>
+                        <div style={{ width: '20%' }}>Name & Company</div>
+                        <div style={{ width: '18%' }}>Website & Email</div>
+                        <div style={{ width: '10%' }}>Industry</div>
+                        <div style={{ width: '8%' }}>Priority</div>
+                        <div style={{ width: '14%' }}>Call Activity</div>
+                        <div style={{ width: '14%' }}>Mail Activity</div>
+                        <div style={{ width: '8%' }}>Status</div>
+                        <div style={{ width: '8%', textAlign: 'right' }}>Actions</div>
                     </div>
 
                     <div style={{ flex: 1, position: 'relative', minHeight: 0 }}>
@@ -243,19 +245,19 @@ export default function LeadsPage() {
                                                 padding: '0 18px', borderBottom: '1px solid var(--border)',
                                                 background: index % 2 === 0 ? 'transparent' : 'rgba(0,0,0,0.01)'
                                             }} className="lead-row-container">
-                                                <div style={{ width: '22%', display: 'flex', alignItems: 'center', gap: 10 }}>
+                                                <div style={{ width: '20%', display: 'flex', alignItems: 'center', gap: 10 }}>
                                                     <Avatar name={lead.company || lead.name} />
                                                     <div style={{ overflow: 'hidden' }}>
                                                         <Link href={`/leads/${lead.id}`} style={{ fontWeight: 600, color: 'var(--text-primary)', textDecoration: 'none', fontSize: 13, display: 'block', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{lead.company || lead.name}</Link>
                                                         {lead.name && lead.name !== lead.company && <div style={{ fontSize: 11, color: 'var(--text-muted)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{lead.name}</div>}
                                                     </div>
                                                 </div>
-                                                <div style={{ width: '22%', paddingRight: 10 }}>
+                                                <div style={{ width: '18%', paddingRight: 10 }}>
                                                     <div style={{ color: 'var(--text-secondary)', fontSize: 12, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{lead.website || '—'}</div>
                                                     {lead.email && <div style={{ fontSize: 11, color: 'var(--text-muted)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{lead.email}</div>}
                                                 </div>
-                                                <div style={{ width: '12%', color: 'var(--text-secondary)', fontSize: 12, fontWeight: 500 }}>{lead.industry || '—'}</div>
-                                                <div style={{ width: '10%' }}>
+                                                <div style={{ width: '10%', color: 'var(--text-secondary)', fontSize: 12, fontWeight: 500 }}>{lead.industry || '—'}</div>
+                                                <div style={{ width: '8%' }}>
                                                     {lead.priority ? (
                                                         <span style={{
                                                             fontSize: 10, padding: '3px 8px', borderRadius: 4, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.5px',
@@ -265,27 +267,30 @@ export default function LeadsPage() {
                                                         }}>{lead.priority}</span>
                                                     ) : '—'}
                                                 </div>
-                                                <div style={{ width: '20%' }}>
-                                                    <StatusBadge status={lead.status} />
-                                                    <div style={{ fontSize: 10, color: 'var(--text-muted)', marginTop: 5, display: 'flex', alignItems: 'center', gap: 3, whiteSpace: 'nowrap', minHeight: 14 }}>
-                                                        {lead.lastCallOutcome && (
-                                                            <>
-                                                                <PhoneCall size={9} />
-                                                                <span style={{ textTransform: 'capitalize' }}>{lead.lastCallOutcome.replace(/_/g, ' ')}</span>
-                                                            </>
-                                                        )}
-                                                        {lead.lastCallOutcome && lead.lastMailOutcome && (
-                                                            <span style={{ margin: '0 2px', opacity: 0.4 }}>·</span>
-                                                        )}
-                                                        {lead.lastMailOutcome && (
-                                                            <>
-                                                                <Mail size={9} />
-                                                                <span style={{ textTransform: 'capitalize' }}>{lead.lastMailOutcome.replace(/_/g, ' ')}</span>
-                                                            </>
-                                                        )}
-                                                    </div>
+                                                <div style={{ width: '14%' }}>
+                                                    {lead.lastCallOutcome ? (
+                                                        <div style={{ fontSize: 11, color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: 6, fontWeight: 500 }}>
+                                                            <div style={{ width: 22, height: 22, borderRadius: '50%', background: 'rgba(245, 158, 11, 0.1)', color: '#f59e0b', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                                                <PhoneCall size={10} />
+                                                            </div>
+                                                            <span style={{ textTransform: 'capitalize' }}>{lead.lastCallOutcome.replace(/_/g, ' ')}</span>
+                                                        </div>
+                                                    ) : <span style={{ color: 'var(--text-muted)', fontSize: 11 }}>No Calls</span>}
                                                 </div>
-                                                <div style={{ width: '14%', display: 'flex', gap: 6, justifyContent: 'flex-end' }}>
+                                                <div style={{ width: '14%' }}>
+                                                    {lead.lastMailOutcome ? (
+                                                        <div style={{ fontSize: 11, color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: 6, fontWeight: 500 }}>
+                                                            <div style={{ width: 22, height: 22, borderRadius: '50%', background: 'rgba(16, 185, 129, 0.1)', color: '#10b981', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                                                <Mail size={10} />
+                                                            </div>
+                                                            <span style={{ textTransform: 'capitalize' }}>{lead.lastMailOutcome.replace(/_/g, ' ')}</span>
+                                                        </div>
+                                                    ) : <span style={{ color: 'var(--text-muted)', fontSize: 11 }}>No Emails</span>}
+                                                </div>
+                                                <div style={{ width: '8%' }}>
+                                                    <StatusBadge status={lead.status} />
+                                                </div>
+                                                <div style={{ width: '8%', display: 'flex', gap: 6, justifyContent: 'flex-end' }}>
                                                     <button className="btn-ghost" style={{ padding: '5px 8px' }} onClick={() => setEditLeadId(lead.id)}>
                                                         <Pencil size={13} />
                                                     </button>
