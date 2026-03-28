@@ -1,6 +1,19 @@
 import { NextResponse } from 'next/server'
-import { validate } from 'deep-email-validator'
 import { getCurrentUser } from '@/lib/auth'
+import dns from 'dns/promises'
+
+// Common disposable/throwaway email domains
+const DISPOSABLE_DOMAINS = new Set([
+    'mailinator.com', 'guerrillamail.com', 'tempmail.com', 'throwaway.email',
+    'yopmail.com', 'sharklasers.com', 'guerrillamailblock.com', 'grr.la',
+    'guerrillamail.info', 'guerrillamail.biz', 'guerrillamail.de', 'guerrillamail.net',
+    'guerrillamail.org', 'spam4.me', 'trashmail.com', 'trashmail.me',
+    'trashmail.net', 'dispostable.com', 'maildrop.cc', 'getairmail.com',
+    'fakeinbox.com', 'mailnull.com', 'spamgourmet.com', 'temp-mail.org',
+    'discard.email', 'tempr.email', 'garbagemail.org', 'filzmail.com',
+    'spamherelots.com', 'throwam.com', '10minutemail.com', 'mailexpire.com',
+    'wegwerfmail.de', 'wegwerfmail.net', 'wegwerfmail.org',
+])
 
 export async function POST(req: Request) {
     const user = await getCurrentUser()
@@ -14,54 +27,31 @@ export async function POST(req: Request) {
 
         const trimmed = email.trim().toLowerCase()
 
-        // Basic format check first (instant)
+        // 1. Basic format check (instant)
         const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
         if (!emailRegex.test(trimmed)) {
             return NextResponse.json({ valid: false, reason: 'Invalid email format' })
         }
 
-        // Deep validation: checks regex, typo, MX records, disposable, and SMTP
-        const result = await validate({
-            email: trimmed,
-            validateRegex: true,
-            validateMx: true,
-            validateTypo: false,       // Skip typo suggestions
-            validateDisposable: true,  // Block throwaway emails
-            validateSMTP: true,        // Try SMTP handshake to verify inbox
-        })
+        const domain = trimmed.split('@')[1]
 
-        // If all validators pass → valid (green tick)
-        if (result.valid) {
-            return NextResponse.json({ valid: true })
-        }
-
-        // Check which validator failed and build a user-friendly reason
-        const validators = result.validators
-
-        if (!validators.regex?.valid) {
-            return NextResponse.json({ valid: false, reason: 'Invalid email format' })
-        }
-
-        if (!validators.mx?.valid) {
-            return NextResponse.json({ valid: false, reason: 'Domain does not accept emails' })
-        }
-
-        if (!validators.disposable?.valid) {
+        // 2. Disposable domain check (instant, no network call)
+        if (DISPOSABLE_DOMAINS.has(domain)) {
             return NextResponse.json({ valid: false, reason: 'Disposable/temporary email' })
         }
 
-        // SMTP failed — could be inbox doesn't exist, or server blocks verification
-        if (!validators.smtp?.valid) {
-            // SMTP failures are often inconclusive (many mail servers block SMTP checks)
-            // Return as "unknown" → yellow tick instead of blocking
-            return NextResponse.json({
-                valid: true,
-                unknown: true,
-            })
+        // 3. MX record check via built-in Node.js DNS (no external library)
+        try {
+            const mxRecords = await dns.resolveMx(domain)
+            if (!mxRecords || mxRecords.length === 0) {
+                return NextResponse.json({ valid: false, reason: 'Domain does not accept emails' })
+            }
+        } catch {
+            // DNS failure — could be a real domain that DNS timed out on; mark as unknown
+            return NextResponse.json({ valid: true, unknown: true })
         }
 
-        // Fallback
-        return NextResponse.json({ valid: false, reason: 'Email could not be verified' })
+        return NextResponse.json({ valid: true })
 
     } catch (error) {
         console.error('Email validation error:', error)
