@@ -24,14 +24,23 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
             }
         })
 
+        // Find the matching statuses from SystemOption avoiding hardcoded strict matches
+        const statusOptions = await prisma.systemOption.findMany({ where: { category: 'LEAD_STATUS' } })
+        
+        const callStatusOpt = statusOptions.find(o => o.value.toLowerCase().includes('call'))
+        const callStatus = callStatusOpt ? callStatusOpt.value : 'Called'
+        
+        const lostStatusOpt = statusOptions.find(o => o.value.toLowerCase() === 'lost' || o.value.toLowerCase().includes('lost'))
+        const lostStatus = lostStatusOpt ? lostStatusOpt.value : 'Lost'
+        
         // Increment call count and update last outcome
         const lead = await prisma.lead.update({
             where: { id },
             data: {
                 callCount: { increment: 1 },
                 lastCallOutcome: outcome,
-                ...(outcome === 'connected_interested' ? { status: 'Called', callOutcome: 'Talked' } : {}),
-                ...(outcome === 'connected_not_interested' ? { status: 'Lost', callOutcome: 'Talked' } : {}),
+                ...(outcome === 'connected_interested' ? { status: callStatus, callOutcome: 'Talked' } : {}),
+                ...(outcome === 'connected_not_interested' ? { status: lostStatus, callOutcome: 'Talked' } : {}),
                 lastActivityAt: new Date(),
                 lastMeaningfulActivityAt: new Date(), // Real sales action — resets reclaim clock
             }

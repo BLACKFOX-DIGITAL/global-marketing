@@ -141,8 +141,13 @@ function Stepper({ lead, onRefresh, onConvert, availableStatuses }: { lead: Lead
     const effectiveIndex = isOutcome ? pipelineSteps.length - 1 : currentIndex
 
     const handleStepClick = (stepValue: string) => {
-        if (stepValue === 'Called' || stepValue === 'Mail Sent') {
-            setActivePopup(activePopup === stepValue ? null : stepValue)
+        const val = stepValue.toLowerCase()
+        if (val.includes('call')) {
+            setActivePopup(activePopup === 'Call' ? null : 'Call')
+            setNote('')
+            setDueDate('')
+        } else if (val.includes('mail') || val.includes('email')) {
+            setActivePopup(activePopup === 'Mail' ? null : 'Mail')
             setNote('')
             setDueDate('')
         }
@@ -191,17 +196,19 @@ function Stepper({ lead, onRefresh, onConvert, availableStatuses }: { lead: Lead
     }
 
     const getStepBadge = (stepValue: string) => {
-        if (stepValue === 'Called') return lead.callCount > 0 ? lead.callCount : null
-        if (stepValue === 'Mail Sent') return lead.mailCount > 0 ? lead.mailCount : null
+        const val = stepValue.toLowerCase()
+        if (val.includes('call')) return lead.callCount > 0 ? lead.callCount : null
+        if (val.includes('mail') || val.includes('email')) return lead.mailCount > 0 ? lead.mailCount : null
         return null
     }
 
     const getStepBadgeColor = (stepValue: string) => {
-        if (stepValue === 'Called') {
+        const val = stepValue.toLowerCase()
+        if (val.includes('call')) {
             if (lead.lastCallOutcome === 'connected_interested') return '#22c55e'
             if (lead.callCount > 0) return '#f59e0b'
         }
-        if (stepValue === 'Mail Sent') {
+        if (val.includes('mail') || val.includes('email')) {
             if (lead.lastMailOutcome === 'response_interested') return '#22c55e'
             if (lead.mailCount > 0) return '#6366f1'
         }
@@ -221,7 +228,7 @@ function Stepper({ lead, onRefresh, onConvert, availableStatuses }: { lead: Lead
                     const barColor = isOutcome && status === 'Lost' ? '#ef4444' : (step.color || 'var(--accent-primary)')
                     const badge = getStepBadge(step.value)
                     const badgeColor = getStepBadgeColor(step.value)
-                    const isClickable = step.value === 'Called' || step.value === 'Mail Sent'
+                    const isClickable = step.value.toLowerCase().includes('call') || step.value.toLowerCase().includes('mail') || step.value.toLowerCase().includes('email')
 
                     return (
                         <div key={step.value} className={isClickable ? 'action-trigger' : ''} style={{ position: 'relative', display: 'flex', flexDirection: 'column', alignItems: 'center', zIndex: 2, gap: 10, flex: 1 }}>
@@ -235,7 +242,7 @@ function Stepper({ lead, onRefresh, onConvert, availableStatuses }: { lead: Lead
                                     fontSize: 13, fontWeight: 700, cursor: 'pointer',
                                     transition: 'all 0.2s',
                                     zIndex: 3,
-                                    boxShadow: activePopup === step.value ? `0 0 0 3px ${barColor}40` : 'none',
+                                    boxShadow: (activePopup === 'Call' && step.value.toLowerCase().includes('call')) || (activePopup === 'Mail' && (step.value.toLowerCase().includes('mail') || step.value.toLowerCase().includes('email'))) ? `0 0 0 3px ${barColor}40` : 'none',
                                 }}>
                                 {isActive && !isCurrent ? <Check size={16} strokeWidth={3} /> : badge ? badge : (i + 1)}
                             </div>
@@ -329,7 +336,7 @@ function Stepper({ lead, onRefresh, onConvert, availableStatuses }: { lead: Lead
             )}
 
             {/* Call Outcome Popup */}
-            {activePopup === 'Called' && (
+            {activePopup === 'Call' && (
                 <div className="action-popup" style={{
                     marginTop: 12, padding: 16, background: 'var(--bg-input)', borderRadius: 12,
                     border: '1px solid var(--border)', animation: 'fadeIn 0.15s ease-out'
@@ -376,7 +383,7 @@ function Stepper({ lead, onRefresh, onConvert, availableStatuses }: { lead: Lead
             )}
 
             {/* Mail Outcome Popup */}
-            {activePopup === 'Mail Sent' && (
+            {activePopup === 'Mail' && (
                 <div className="action-popup" style={{
                     marginTop: 12, padding: 16, background: 'var(--bg-input)', borderRadius: 12,
                     border: '1px solid var(--border)', animation: 'fadeIn 0.15s ease-out'
@@ -923,27 +930,30 @@ export default function LeadDetailPage({ params }: { params: Promise<{ id: strin
                         </div>
                     </div>
 
-                    {/* Private Notes Card - Dedicated Space */}
-                    <div className="card" style={{ padding: 20 }}>
-                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                                <div style={{ width: 28, height: 28, borderRadius: 6, background: 'rgba(139,92,246,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                                    <MessageSquare size={14} color="#8b5cf6" />
+                    {/* Private Notes Section */}
+                    <div className="card" style={{ padding: 24 }}>
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                                <div style={{ width: 32, height: 32, borderRadius: 8, background: 'rgba(139,92,246,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                    <MessageSquare size={16} color="#8b5cf6" />
                                 </div>
-                                <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--text-primary)' }}>Private Notes</span>
-                                <span style={{ fontSize: 10, color: 'var(--text-muted)', fontStyle: 'italic' }}>Only visible to you</span>
+                                <div>
+                                    <span style={{ display: 'block', fontSize: 14, fontWeight: 700, color: 'var(--text-primary)' }}>Private Notes</span>
+                                    <span style={{ display: 'block', fontSize: 11, color: 'var(--text-muted)' }}>Only visible to you</span>
+                                </div>
                             </div>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 11, color: 'var(--text-muted)', fontWeight: 500 }}>
-                                {savingNotes === 'saving' && <><Loader2 size={12} className="animate-spin" /> Saving...</>}
-                                {savingNotes === 'saved' && <><Check size={12} color="#22c55e" /> Saved</>}
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, fontWeight: 500 }}>
+                                {savingNotes === 'saving' && <span style={{ color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: 6 }}><Loader2 size={14} className="animate-spin" /> Auto-saving...</span>}
+                                {savingNotes === 'saved' && <span style={{ color: '#22c55e', display: 'flex', alignItems: 'center', gap: 6 }}><Check size={14} strokeWidth={3} /> Saved to cloud</span>}
                             </div>
                         </div>
-                        <div style={{ flex: 1, minHeight: 200, padding: 24, borderRight: '1px solid var(--border)' }}>
-                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
-                                <h3 style={{ fontSize: 16, fontWeight: 700, display: 'flex', alignItems: 'center', gap: 8 }}><MessageSquare size={18} className="text-accent" /> Notes</h3>
-                                {savingNotes === 'saving' && <span style={{ fontSize: 11, color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: 4 }}><Loader2 size={10} className="spinner" /> Saving...</span>}
-                                {savingNotes === 'saved' && <span style={{ fontSize: 11, color: '#10b981', display: 'flex', alignItems: 'center', gap: 4 }}><Check size={10} /> Saved</span>}
-                            </div>
+                        
+                        <div style={{ 
+                            background: 'var(--bg-input)', 
+                            borderRadius: 12, 
+                            border: '1px solid var(--border)',
+                            overflow: 'hidden'
+                        }}>
                             <Editor 
                                 content={lead.notes || ''} 
                                 onUpdate={(html) => setLead(l => l ? { ...l, notes: html } : null)}

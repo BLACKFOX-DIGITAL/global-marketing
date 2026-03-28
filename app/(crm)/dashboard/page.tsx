@@ -1,6 +1,6 @@
 'use client'
 import { useEffect, useState } from 'react'
-import { Users, Calendar, CheckCircle, TrendingUp, Briefcase, Target, ChevronRight, Phone, Mail, Zap, Star, Activity, Check } from 'lucide-react'
+import { Users, Calendar, CheckCircle, TrendingUp, Briefcase, Target, ChevronRight, Phone, Mail, Zap, Star, Activity, Check, Waves } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { format } from 'date-fns'
@@ -27,6 +27,7 @@ interface DashboardData {
         tasksDueToday: number
         closedWon: number
         overdueTasks: number
+        poolCount: number
     }
     recentLeads: Array<{ id: string; name: string; company: string | null; status: string; createdAt: string; lastContactedAt?: string | null; phone?: string | null; email?: string | null; mailCount: number; callCount: number }>
     todaysTasks: Array<{ id: string; title: string; priority: string; completed: boolean; dueDate: string | null; leadId?: string | null }>
@@ -137,13 +138,29 @@ export default function DashboardPage() {
 
     const handleLogCallStep = async (leadId: string, outcome: string, phone: string) => {
         setActiveActionPopup(null)
+        
+        // Optimistic UI — update local state immediately
+        if (data) {
+            const leadIndex = data.recentLeads.findIndex(l => l.id === leadId)
+            if (leadIndex !== -1) {
+                const callStatus = settings?.leadStatuses?.find(s => s.value.toLowerCase().includes('call'))?.value || 'Called'
+                const lostStatus = settings?.leadStatuses?.find(s => s.value.toLowerCase() === 'lost' || s.value.toLowerCase().includes('lost'))?.value || 'Lost'
+                
+                data.recentLeads[leadIndex].callCount += 1
+                if (outcome === 'connected_not_interested') data.recentLeads[leadIndex].status = lostStatus
+                else if (outcome === 'connected_interested') data.recentLeads[leadIndex].status = callStatus
+            }
+        }
+
         try {
             await fetch(`/api/leads/${leadId}/call-attempt`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ outcome, note: `Dashboard log: ${outcome}` })
             })
+            // Mutate everything to ensure consistency
             mutate('/api/dashboard/stats')
+            mutate((key: any) => typeof key === 'string' && (key.includes('/api/leads') || key.includes('/api/dashboard')))
         } catch (err) {
             console.error('Failed to log call:', err)
         }
@@ -151,6 +168,20 @@ export default function DashboardPage() {
 
     const handleLogMailStep = async (leadId: string, outcome: string, email: string) => {
         setActiveActionPopup(null)
+
+        // Optimistic UI
+        if (data) {
+            const leadIndex = data.recentLeads.findIndex(l => l.id === leadId)
+            if (leadIndex !== -1) {
+                const mailStatus = settings?.leadStatuses?.find(s => s.value.toLowerCase().includes('mail') || s.value.toLowerCase().includes('email'))?.value || 'Mail Sent'
+                const lostStatus = settings?.leadStatuses?.find(s => s.value.toLowerCase() === 'lost' || s.value.toLowerCase().includes('lost'))?.value || 'Lost'
+
+                data.recentLeads[leadIndex].mailCount += 1
+                if (outcome === 'response_not_interested') data.recentLeads[leadIndex].status = lostStatus
+                else if (outcome === 'sent') data.recentLeads[leadIndex].status = mailStatus
+            }
+        }
+
         try {
             await fetch(`/api/leads/${leadId}/mail-attempt`, {
                 method: 'POST',
@@ -158,22 +189,29 @@ export default function DashboardPage() {
                 body: JSON.stringify({ outcome, note: `Dashboard log: ${outcome}` })
             })
             mutate('/api/dashboard/stats')
+            mutate((key: any) => typeof key === 'string' && (key.includes('/api/leads') || key.includes('/api/dashboard')))
         } catch (err) {
             console.error('Failed to log mail:', err)
         }
     }
 
     const handleUpdateStatus = async (leadId: string, status: string) => {
-        try {
-            const lead = data?.recentLeads.find(l => l.id === leadId)
-            if (!lead) return
+        // Optimistic UI
+        if (data) {
+            const leadIndex = data.recentLeads.findIndex(l => l.id === leadId)
+            if (leadIndex !== -1) {
+                data.recentLeads[leadIndex].status = status
+            }
+        }
 
+        try {
             await fetch(`/api/leads/${leadId}`, {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ ...lead, status })
+                body: JSON.stringify({ status })
             })
             mutate('/api/dashboard/stats')
+            mutate((key: any) => typeof key === 'string' && (key.includes('/api/leads') || key.includes('/api/dashboard')))
         } catch (err) {
             console.error('Failed to update status:', err)
         }
@@ -317,15 +355,17 @@ export default function DashboardPage() {
                             alert: !!data?.stats.overdueTasks
                         },
                         {
-                            label: 'Closed Won', value: data?.stats.closedWon || 0,
-                            sub: 'Last 30 days', icon: <CheckCircle size={18} />, color: '#10b981', bg: 'rgba(16,185,129,0.1)'
+                            label: 'Leads in Pool', value: data?.stats.poolCount || 0,
+                            sub: 'Available to claim', icon: <Waves size={18} />, color: '#06b6d4', bg: 'rgba(6,182,212,0.1)',
+                            href: '/pool'
                         },
-                    ].map((kpi, i) => (
+                    ].map((kpi: any, i) => (
                         <div key={i} className="dash-card" style={{
                             gridColumn: 'span 3', padding: '16px 20px',
                             borderLeft: `3px solid ${kpi.color}`,
-                            animation: `fadeSlideUp 0.4s ease both ${i * 0.06}s`
-                        }}>
+                            animation: `fadeSlideUp 0.4s ease both ${i * 0.06}s`,
+                            cursor: kpi.href ? 'pointer' : 'default'
+                        }} onClick={() => kpi.href && router.push(kpi.href)}>
                             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 16 }}>
                                 <div style={{ width: 40, height: 40, borderRadius: 12, background: kpi.bg, display: 'flex', alignItems: 'center', justifyContent: 'center', color: kpi.color }}>
                                     {kpi.icon}
@@ -345,13 +385,13 @@ export default function DashboardPage() {
                         </div>
                     ))}
 
-                    {/* Attendance Widget — always span 4 */}
+                    {/* Attendance Widget — span 4 */}
                     <div style={{ gridColumn: 'span 4', animation: 'fadeSlideUp 0.4s ease both 0.28s', display: 'flex' }}>
                         <AttendanceWidget />
                     </div>
 
-                    {/* Today's Tasks — span 4 or 5 depending on goals */}
-                    <div className="dash-card" style={{ gridColumn: goalsData?.goals?.filter(g => g.category !== 'TASKS').length ? 'span 4' : 'span 5', padding: 0, animation: 'fadeSlideUp 0.4s ease both 0.32s', display: 'flex', flexDirection: 'column' }}>
+                    {/* Today's Tasks — span 4 or 5 */}
+                    <div className="dash-card" style={{ gridColumn: goalsData?.goals?.filter(g => g.category !== 'TASKS').length ? 'span 4' : 'span 4', padding: 0, animation: 'fadeSlideUp 0.4s ease both 0.32s', display: 'flex', flexDirection: 'column' }}>
                         <div style={{ padding: '12px 18px', borderBottom: '1px solid var(--border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                             <div>
                                 <div className="section-label" style={{ marginBottom: 2 }}>Today</div>
@@ -403,8 +443,8 @@ export default function DashboardPage() {
                         </div>
                     </div>
 
-                    {/* Pipeline by Stage — span 3 or 4 */}
-                    <div className="dash-card" style={{ gridColumn: goalsData?.goals?.filter(g => g.category !== 'TASKS').length ? 'span 4' : 'span 3', padding: '16px 20px', animation: 'fadeSlideUp 0.4s ease both 0.36s' }}>
+                    {/* Pipeline by Stage — span 4 */}
+                    <div className="dash-card" style={{ gridColumn: 'span 4', padding: '16px 20px', animation: 'fadeSlideUp 0.4s ease both 0.36s' }}>
                         <div style={{ marginBottom: 14 }}>
                             <div className="section-label" style={{ marginBottom: 2 }}>Pipeline</div>
                             <h3 style={{ margin: 0, fontSize: 14, fontWeight: 700 }}>Deals by Stage</h3>
@@ -436,84 +476,10 @@ export default function DashboardPage() {
                         </div>
                     </div>
 
-                    {/* Analytics Charts — always full width */}
-                    <div style={{ gridColumn: 'span 12', animation: 'fadeSlideUp 0.4s ease both 0.4s' }}>
-                        <AnalyticsDashboard />
-                    </div>
-
-                    {/* Pacing Goals — full width row, only shown when data exists */}
-                    {goalsData?.goals && goalsData.goals.filter(g => g.category !== 'TASKS').length > 0 && (
-                        <div className="dash-card" style={{ gridColumn: 'span 12', padding: '16px 20px', animation: 'fadeSlideUp 0.4s ease both 0.44s' }}>
-                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-                                <div>
-                                    <div className="section-label" style={{ marginBottom: 2 }}>Monthly</div>
-                                    <h3 style={{ margin: 0, fontSize: 14, fontWeight: 700 }}>Goal Pacing</h3>
-                                </div>
-                                <TrendingUp size={18} color="var(--accent-primary)" />
-                            </div>
-                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: 32 }}>
-                                {goalsData.goals.filter(g => g.category !== 'TASKS').map(goal => {
-                                    const current = goalsData.progress[goal.category] || 0
-                                    const percent = Math.min(100, Math.round((current / goal.targetValue) * 100))
-                                    const label = goal.category === 'DEALS' ? 'Deals Closed' : 'New Leads'
-                                    const color = percent >= 100 ? '#10b981' : percent >= 60 ? 'var(--accent-primary)' : '#f59e0b'
-                                    return (
-                                        <div key={goal.id}>
-                                            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8, alignItems: 'flex-end' }}>
-                                                <div>
-                                                    <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-secondary)', marginBottom: 2 }}>{label}</div>
-                                                    <div style={{ fontSize: 22, fontWeight: 900, color }}>{percent}%</div>
-                                                </div>
-                                                <div style={{ fontSize: 12, color: 'var(--text-muted)', fontWeight: 500 }}>{current} / {goal.targetValue}</div>
-                                            </div>
-                                            <div style={{ height: 8, background: 'rgba(255,255,255,0.05)', borderRadius: 100, overflow: 'hidden' }}>
-                                                <div style={{
-                                                    height: '100%', width: `${percent}%`, borderRadius: 100,
-                                                    background: `linear-gradient(90deg, ${color}, ${color}99)`,
-                                                    transition: 'width 1.5s cubic-bezier(0.4, 0, 0.2, 1)',
-                                                    boxShadow: `0 0 12px ${color}40`
-                                                }} />
-                                            </div>
-                                        </div>
-                                    )
-                                })}
-                            </div>
-                        </div>
-                    )}
-                    {/* Upcoming Holidays */}
-                    <div className="dash-card" style={{ 
-                        gridColumn: 'span 12', 
-                        padding: '16px 20px', 
-                        animation: 'fadeSlideUp 0.4s ease both 0.42s',
-                        background: 'rgba(99,102,241,0.01)',
-                        borderStyle: 'dashed',
-                        marginBottom: 12
-                    }}>
-                        <div style={{ marginBottom: 12 }}>
-                            <div className="section-label">Upcoming Holidays</div>
-                        </div>
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-                            {holidays.length === 0 ? (
-                                <div style={{ fontSize: 11, color: 'var(--text-muted)', fontStyle: 'italic' }}>No upcoming holidays.</div>
-                            ) : (
-                                holidays.map((h, i) => (
-                                    <div key={i} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                                        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                                            <div style={{ color: 'var(--accent-primary)', opacity: 0.8 }}><Calendar size={14} /></div>
-                                            <span style={{ fontSize: 13, fontWeight: 600 }}>{h.name}</span>
-                                        </div>
-                                        <div style={{ fontSize: 11, color: 'var(--text-muted)', fontWeight: 500 }}>{format(new Date(h.date), 'MMM d, yyyy')}</div>
-                                    </div>
-                                ))
-                            )}
-                        </div>
-
-                    </div>
-
-                    {/* Recent Leads Table — always full width */}
+                    {/* Recent Leads Table — FULL WIDTH / TOP PRIORITY */}
                     <div className="dash-card" style={{
                         gridColumn: 'span 12',
-                        padding: 0, animation: 'fadeSlideUp 0.4s ease both 0.48s'
+                        padding: 0, animation: 'fadeSlideUp 0.4s ease both 0.38s'
                     }}>
                         <div style={{ padding: '14px 20px', borderBottom: '1px solid var(--border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                             <div>
@@ -563,19 +529,10 @@ export default function DashboardPage() {
                                                         <select 
                                                             value={lead.status}
                                                             onChange={(e) => handleUpdateStatus(lead.id, e.target.value)}
-                                                            style={{
-                                                                background: 'transparent',
-                                                                border: 'none',
-                                                                color: 'inherit',
-                                                                cursor: 'pointer',
-                                                                fontSize: 11,
-                                                                fontWeight: 700,
-                                                                padding: 0,
-                                                                width: '100%'
-                                                            }}
+                                                            style={{ background: 'transparent', border: 'none', color: 'inherit', cursor: 'pointer', fontSize: 11, fontWeight: 700, padding: 0 }}
                                                         >
                                                             {settings.leadStatuses.map(s => (
-                                                                <option key={s.value} value={s.value} style={{ background: 'var(--bg-card)', color: 'var(--text-primary)' }}>{s.value}</option>
+                                                                <option key={s.value} value={s.value}>{s.value}</option>
                                                             ))}
                                                         </select>
                                                     </td>
@@ -584,95 +541,42 @@ export default function DashboardPage() {
                                                     </td>
                                                     <td style={{ padding: '10px 20px' }}>
                                                         <div style={{ display: 'flex', gap: 10 }}>
-                                                            {/* Phone / Call Logic */}
-                                                                <div style={{ position: 'relative' }}>
-                                                                    <button 
-                                                                        className="action-trigger"
-                                                                        onClick={() => setActiveActionPopup(activeActionPopup?.leadId === lead.id && activeActionPopup.type === 'call' ? null : { leadId: lead.id, type: 'call' })}
-                                                                        title={lead.phone ? `Log Call for ${lead.name} (${lead.phone})` : `Log Call for ${lead.name}`} 
-                                                                        style={{ 
-                                                                            width: 32, height: 32, borderRadius: 10, border: '1px solid var(--border)', 
-                                                                            background: activeActionPopup?.leadId === lead.id && activeActionPopup.type === 'call' ? 'rgba(245,158,11,0.2)' : 'rgba(245,158,11,0.05)', 
-                                                                            color: '#f59e0b', cursor: 'pointer', 
-                                                                            display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'all 0.15s',
-                                                                            opacity: lead.phone ? 1 : 0.7
-                                                                        }}
-                                                                    >
-                                                                        <Phone size={14} fill={lead.callCount > 0 ? '#f59e0b' : 'none'} />
-                                                                    </button>
-                                                                    {lead.callCount > 0 && (
-                                                                        <div style={{ position: 'absolute', top: -6, right: -6, fontSize: 9, fontWeight: 900, background: '#f59e0b', color: 'white', minWidth: 16, height: 16, borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '0 4px', border: '2px solid var(--bg-card)', boxShadow: '0 2px 4px rgba(0,0,0,0.2)' }}>{lead.callCount}</div>
-                                                                    )}
-                                                                    
-                                                                    {activeActionPopup?.leadId === lead.id && activeActionPopup.type === 'call' && (
-                                                                        <div className="action-popup" style={{ 
-                                                                            position: 'absolute', 
-                                                                            [idx >= (data?.recentLeads.length || 0) - 2 ? 'bottom' : 'top']: '100%', 
-                                                                            right: 0, 
-                                                                            [idx >= (data?.recentLeads.length || 0) - 2 ? 'marginBottom' : 'marginTop']: 8, 
-                                                                            zIndex: 100, 
-                                                                            background: 'var(--bg-secondary)', 
-                                                                            border: '1px solid var(--border)', 
-                                                                            borderRadius: 12, 
-                                                                            padding: 8, 
-                                                                            minWidth: 190, 
-                                                                            boxShadow: '0 10px 25px rgba(0,0,0,0.4)', 
-                                                                            animation: idx >= (data?.recentLeads.length || 0) - 2 ? 'fadeSlideDown 0.15s ease-out' : 'fadeSlideUp 0.15s ease-out' 
-                                                                        }}>
-                                                                            <div style={{ fontSize: 10, fontWeight: 700, color: 'var(--text-muted)', marginBottom: 6, padding: '0 4px', textTransform: 'uppercase' }}>Log Call Outcome</div>
-                                                                            {CALL_OUTCOME_OPTIONS.map(opt => (
-                                                                                <button key={opt.value} onClick={() => handleLogCallStep(lead.id, opt.value, lead.phone || '')} style={{ display: 'flex', alignItems: 'center', gap: 8, width: '100%', padding: '8px 10px', borderRadius: 8, background: 'transparent', border: 'none', color: 'var(--text-primary)', fontSize: 11, fontWeight: 600, cursor: 'pointer', textAlign: 'left', transition: 'background 0.15s' }} onMouseOver={e => e.currentTarget.style.background = 'rgba(255,255,255,0.05)'} onMouseOut={e => e.currentTarget.style.background = 'transparent'}>
-                                                                                    <span>{opt.icon}</span> {opt.label}
-                                                                                </button>
-                                                                            ))}
-                                                                        </div>
-                                                                    )}
-                                                                </div>
-
-                                                            {/* Email / Mail Logic */}
-                                                                <div style={{ position: 'relative' }}>
-                                                                    <button 
-                                                                        className="action-trigger"
-                                                                        onClick={() => setActiveActionPopup(activeActionPopup?.leadId === lead.id && activeActionPopup.type === 'mail' ? null : { leadId: lead.id, type: 'mail' })}
-                                                                        title={lead.email ? `Log Email for ${lead.name} (${lead.email})` : `Log Email for ${lead.name}`} 
-                                                                        style={{ 
-                                                                            width: 32, height: 32, borderRadius: 10, border: '1px solid var(--border)', 
-                                                                            background: activeActionPopup?.leadId === lead.id && activeActionPopup.type === 'mail' ? 'rgba(99,102,241,0.2)' : 'rgba(99,102,241,0.05)', 
-                                                                            color: '#6366f1', cursor: 'pointer', 
-                                                                            display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'all 0.15s',
-                                                                            opacity: lead.email ? 1 : 0.7
-                                                                        }}
-                                                                    >
-                                                                        <Mail size={14} fill={lead.mailCount > 0 ? '#6366f1' : 'none'} />
-                                                                    </button>
-                                                                    {lead.mailCount > 0 && (
-                                                                        <div style={{ position: 'absolute', top: -6, right: -6, fontSize: 9, fontWeight: 900, background: '#6366f1', color: 'white', minWidth: 16, height: 16, borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '0 4px', border: '2px solid var(--bg-card)', boxShadow: '0 2px 4px rgba(0,0,0,0.2)' }}>{lead.mailCount}</div>
-                                                                    )}
-
-                                                                    {activeActionPopup?.leadId === lead.id && activeActionPopup.type === 'mail' && (
-                                                                        <div className="action-popup" style={{ 
-                                                                            position: 'absolute', 
-                                                                            [idx >= (data?.recentLeads.length || 0) - 2 ? 'bottom' : 'top']: '100%', 
-                                                                            right: 0, 
-                                                                            [idx >= (data?.recentLeads.length || 0) - 2 ? 'marginBottom' : 'marginTop']: 8, 
-                                                                            zIndex: 100, 
-                                                                            background: 'var(--bg-secondary)', 
-                                                                            border: '1px solid var(--border)', 
-                                                                            borderRadius: 12, 
-                                                                            padding: 8, 
-                                                                            minWidth: 190, 
-                                                                            boxShadow: '0 10px 25px rgba(0,0,0,0.4)', 
-                                                                            animation: idx >= (data?.recentLeads.length || 0) - 2 ? 'fadeSlideDown 0.15s ease-out' : 'fadeSlideUp 0.15s ease-out' 
-                                                                        }}>
-                                                                            <div style={{ fontSize: 10, fontWeight: 700, color: 'var(--text-muted)', marginBottom: 6, padding: '0 4px', textTransform: 'uppercase' }}>Log Mail Outcome</div>
-                                                                            {MAIL_OUTCOME_OPTIONS.map(opt => (
-                                                                                <button key={opt.value} onClick={() => handleLogMailStep(lead.id, opt.value, lead.email || '')} style={{ display: 'flex', alignItems: 'center', gap: 8, width: '100%', padding: '8px 10px', borderRadius: 8, background: 'transparent', border: 'none', color: 'var(--text-primary)', fontSize: 11, fontWeight: 600, cursor: 'pointer', textAlign: 'left', transition: 'background 0.15s' }} onMouseOver={e => e.currentTarget.style.background = 'rgba(255,255,255,0.05)'} onMouseOut={e => e.currentTarget.style.background = 'transparent'}>
-                                                                                    <span>{opt.icon}</span> {opt.label}
-                                                                                </button>
-                                                                            ))}
-                                                                        </div>
-                                                                    )} 
-                                                                </div>
+                                                            <div style={{ position: 'relative' }}>
+                                                                <button 
+                                                                    className="action-trigger"
+                                                                    onClick={() => setActiveActionPopup(activeActionPopup?.leadId === lead.id && activeActionPopup.type === 'call' ? null : { leadId: lead.id, type: 'call' })}
+                                                                    style={{ width: 32, height: 32, borderRadius: 10, border: '1px solid var(--border)', background: 'rgba(245,158,11,0.05)', color: '#f59e0b', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                                                                >
+                                                                    <Phone size={14} fill={lead.callCount > 0 ? '#f59e0b' : 'none'} />
+                                                                </button>
+                                                                {activeActionPopup?.leadId === lead.id && activeActionPopup.type === 'call' && (
+                                                                    <div className="action-popup" style={{ position: 'absolute', top: '100%', right: 0, marginTop: 8, zIndex: 100, background: 'var(--bg-secondary)', border: '1px solid var(--border)', borderRadius: 12, padding: 8, minWidth: 190, boxShadow: '0 10px 25px rgba(0,0,0,0.4)' }}>
+                                                                        {CALL_OUTCOME_OPTIONS.map(opt => (
+                                                                            <button key={opt.value} onClick={() => handleLogCallStep(lead.id, opt.value, lead.phone || '')} style={{ display: 'flex', alignItems: 'center', gap: 8, width: '100%', padding: '8px 10px', borderRadius: 8, background: 'transparent', border: 'none', color: 'var(--text-primary)', fontSize: 11, fontWeight: 600, cursor: 'pointer', textAlign: 'left' }}>
+                                                                                <span>{opt.icon}</span> {opt.label}
+                                                                            </button>
+                                                                        ))}
+                                                                    </div>
+                                                                )}
+                                                            </div>
+                                                            <div style={{ position: 'relative' }}>
+                                                                <button 
+                                                                    className="action-trigger"
+                                                                    onClick={() => setActiveActionPopup(activeActionPopup?.leadId === lead.id && activeActionPopup.type === 'mail' ? null : { leadId: lead.id, type: 'mail' })}
+                                                                    style={{ width: 32, height: 32, borderRadius: 10, border: '1px solid var(--border)', background: 'rgba(99,102,241,0.05)', color: '#6366f1', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                                                                >
+                                                                    <Mail size={14} fill={lead.mailCount > 0 ? '#6366f1' : 'none'} />
+                                                                </button>
+                                                                {activeActionPopup?.leadId === lead.id && activeActionPopup.type === 'mail' && (
+                                                                    <div className="action-popup" style={{ position: 'absolute', top: '100%', right: 0, marginTop: 8, zIndex: 100, background: 'var(--bg-secondary)', border: '1px solid var(--border)', borderRadius: 12, padding: 8, minWidth: 190, boxShadow: '0 10px 25px rgba(0,0,0,0.4)' }}>
+                                                                        {MAIL_OUTCOME_OPTIONS.map(opt => (
+                                                                            <button key={opt.value} onClick={() => handleLogMailStep(lead.id, opt.value, lead.email || '')} style={{ display: 'flex', alignItems: 'center', gap: 8, width: '100%', padding: '8px 10px', borderRadius: 8, background: 'transparent', border: 'none', color: 'var(--text-primary)', fontSize: 11, fontWeight: 600, cursor: 'pointer', textAlign: 'left' }}>
+                                                                                <span>{opt.icon}</span> {opt.label}
+                                                                            </button>
+                                                                        ))}
+                                                                    </div>
+                                                                )}
+                                                            </div>
                                                         </div>
                                                     </td>
                                                 </tr>
@@ -682,6 +586,68 @@ export default function DashboardPage() {
                                 </tbody>
                             </table>
                         </div>
+                    </div>
+
+                    {/* Goal Pacing */}
+                    {goalsData?.goals && goalsData.goals.filter(g => g.category !== 'TASKS').length > 0 && (
+                        <div className="dash-card" style={{ gridColumn: 'span 12', padding: '16px 20px', animation: 'fadeSlideUp 0.4s ease both 0.44s' }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+                                <div>
+                                    <div className="section-label" style={{ marginBottom: 2 }}>Monthly</div>
+                                    <h3 style={{ margin: 0, fontSize: 14, fontWeight: 700 }}>Goal Pacing</h3>
+                                </div>
+                                <TrendingUp size={18} color="var(--accent-primary)" />
+                            </div>
+                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: 32 }}>
+                                {goalsData.goals.filter(g => g.category !== 'TASKS').map(goal => {
+                                    const current = goalsData.progress[goal.category] || 0
+                                    const percent = Math.min(100, Math.round((current / goal.targetValue) * 100))
+                                    const label = goal.category === 'DEALS' ? 'Deals Closed' : 'New Leads'
+                                    const color = percent >= 100 ? '#10b981' : percent >= 60 ? 'var(--accent-primary)' : '#f59e0b'
+                                    return (
+                                        <div key={goal.id}>
+                                            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8, alignItems: 'flex-end' }}>
+                                                <div>
+                                                    <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-secondary)', marginBottom: 2 }}>{label}</div>
+                                                    <div style={{ fontSize: 22, fontWeight: 900, color }}>{percent}%</div>
+                                                </div>
+                                                <div style={{ fontSize: 12, color: 'var(--text-muted)', fontWeight: 500 }}>{current} / {goal.targetValue}</div>
+                                            </div>
+                                            <div style={{ height: 8, background: 'rgba(255,255,255,0.05)', borderRadius: 100, overflow: 'hidden' }}>
+                                                <div style={{
+                                                    height: '100%', width: `${percent}%`, borderRadius: 100,
+                                                    background: `linear-gradient(90deg, ${color}, ${color}99)`,
+                                                    transition: 'width 1.5s cubic-bezier(0.4, 0, 0.2, 1)',
+                                                }} />
+                                            </div>
+                                        </div>
+                                    )
+                                })}
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Upcoming Holidays */}
+                    <div className="dash-card" style={{ gridColumn: 'span 12', padding: '16px 20px', animation: 'fadeSlideUp 0.4s ease both 0.46s', marginBottom: 12 }}>
+                        <div className="section-label" style={{ marginBottom: 12 }}>Upcoming Holidays</div>
+                        <div style={{ display: 'flex', gap: 24 }}>
+                            {!holidays.length ? (
+                                <div style={{ fontSize: 11, color: 'var(--text-muted)', fontStyle: 'italic' }}>No upcoming holidays.</div>
+                            ) : (
+                                holidays.map((h, i) => (
+                                    <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                                        <Calendar size={14} color="var(--accent-primary)" />
+                                        <span style={{ fontSize: 13, fontWeight: 600 }}>{h.name}</span>
+                                        <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>({format(new Date(h.date), 'MMM d')})</span>
+                                    </div>
+                                ))
+                            )}
+                        </div>
+                    </div>
+
+                    {/* Analytics Charts — AT THE BOTTOM */}
+                    <div style={{ gridColumn: 'span 12', animation: 'fadeSlideUp 0.4s ease both 0.5s' }}>
+                        <AnalyticsDashboard />
                     </div>
 
                 </div>

@@ -6,7 +6,7 @@ import StatusBadge from '@/components/StatusBadge'
 import { formatDistanceToNow } from 'date-fns'
 import { List } from 'react-window'
 import { AutoSizer } from 'react-virtualized-auto-sizer'
-import useSWR from 'swr'
+import useSWR, { useSWRConfig } from 'swr'
 
 interface Lead {
     id: string
@@ -46,12 +46,16 @@ export default function PoolPage() {
     const totalPages: number = data?.totalPages || 1
     const loading = !data
 
+    const { mutate } = useSWRConfig()
+    
     async function handleClaim(id: string) {
         setClaiming(id)
         const res = await fetch(`/api/leads/${id}/claim`, { method: 'POST' })
 
         if (res.ok) {
             fetchPool()
+            mutate('/api/dashboard/stats')
+            mutate((key: any) => typeof key === 'string' && key.startsWith('/api/leads'))
         } else {
             const err = await res.json()
             alert(err.error || 'Failed to claim lead')

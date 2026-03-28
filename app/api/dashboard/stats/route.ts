@@ -29,6 +29,7 @@ export async function GET() {
         testJobsEntered,
         gamification,
         holidays,
+        poolCount,
     ] = await Promise.all([
         prisma.lead.count({ where: { ...filter, isDeleted: false } }),
         prisma.task.count({ where: { ...filter, dueDate: { gte: startOfDay, lt: endOfDay }, completed: false } }),
@@ -66,10 +67,11 @@ export async function GET() {
         prisma.stageHistory.count({ where: { stage: 'Test Job Received', createdAt: { gte: startOfMonth }, opportunity: { ownerId: user.userId } } }),
         getGamificationProfile(user.userId).catch(() => null),
         prisma.holiday.findMany({ where: { date: { gte: startOfDay } }, orderBy: { date: 'asc' }, take: 5 }),
+        prisma.lead.count({ where: { ownerId: null, isDeleted: false } }),
     ])
 
     const response = NextResponse.json({
-        stats: { totalLeads, tasksDueToday, closedWon, overdueTasks },
+        stats: { totalLeads, tasksDueToday, closedWon, overdueTasks, poolCount },
         recentLeads,
         todaysTasks,
         pipelineByStage,

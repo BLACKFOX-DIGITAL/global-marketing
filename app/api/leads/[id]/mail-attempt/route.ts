@@ -23,14 +23,22 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
             }
         })
 
+        const statusOptions = await prisma.systemOption.findMany({ where: { category: 'LEAD_STATUS' } })
+        
+        const mailStatusOpt = statusOptions.find(o => o.value.toLowerCase().includes('mail') || o.value.toLowerCase().includes('email'))
+        const mailStatus = mailStatusOpt ? mailStatusOpt.value : 'Mail Sent'
+        
+        const lostStatusOpt = statusOptions.find(o => o.value.toLowerCase() === 'lost' || o.value.toLowerCase().includes('lost'))
+        const lostStatus = lostStatusOpt ? lostStatusOpt.value : 'Lost'
+
         const lead = await prisma.lead.update({
             where: { id },
             data: {
                 mailCount: { increment: 1 },
                 lastMailOutcome: outcome,
-                ...(outcome === 'sent' || outcome === 'follow_up' ? { status: 'Mail Sent' } : {}),
-                ...(outcome === 'response_interested' ? { status: 'Mail Sent' } : {}),
-                ...(outcome === 'response_not_interested' ? { status: 'Lost' } : {}),
+                ...(outcome === 'sent' || outcome === 'follow_up' ? { status: mailStatus } : {}),
+                ...(outcome === 'response_interested' ? { status: mailStatus } : {}),
+                ...(outcome === 'response_not_interested' ? { status: lostStatus } : {}),
                 lastActivityAt: new Date(),
                 lastMeaningfulActivityAt: new Date(), // Real sales action — resets reclaim clock
             }

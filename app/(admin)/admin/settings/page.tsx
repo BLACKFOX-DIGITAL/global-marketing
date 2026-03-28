@@ -54,7 +54,10 @@ export default function AdminSettings() {
     const [processing, setProcessing] = useState<string | null>(null)
     const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null)
     const [configs, setConfigs] = useState<Record<string, string>>({
-        STALE_DAYS: '14', RECYCLE_DAYS: '60', CLAIM_LIMIT: '50', RESEND_API_KEY: '', RESEND_WEBHOOK_SECRET: '',
+        RECYCLE_DAYS: '60', CLAIM_LIMIT: '10', RESEND_API_KEY: '', RESEND_WEBHOOK_SECRET: '',
+        RECLAIM_HIGH: '7', WARN_HIGH: '5',
+        RECLAIM_MEDIUM: '14', WARN_MEDIUM: '12',
+        RECLAIM_LOW: '21', WARN_LOW: '19',
         XP_CALL_ATTEMPT: '15', XP_MAIL_ATTEMPT: '10', XP_TASK_COMPLETED: '10', XP_LEAD_CONVERTED: '50', XP_OPPORTUNITY_WON: '100', XP_POOL_CLAIM: '5',
         XP_LEAD_CREATED: '5', XP_TASK_CREATED: '3',
     })
@@ -284,15 +287,63 @@ export default function AdminSettings() {
                         ) : activeCategory === 'LEAD_POOL' ? (
                             <div style={{ maxWidth: 600, display: 'flex', flexDirection: 'column', gap: 32 }}>
                                 <div>
-                                    <h4 style={{ fontSize: 14, fontWeight: 700, marginBottom: 16 }}>Reassignment Rules</h4>
-                                    <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-                                        <div>
-                                            <label style={{ display: 'block', fontSize: 13, fontWeight: 600, marginBottom: 8 }}>Idle Lead Threshold (Days)</label>
-                                            <input type="number" value={configs.STALE_DAYS} onChange={e => handleUpdateConfig('STALE_DAYS', e.target.value)} style={{ width: '100%', padding: '10px 12px', borderRadius: 8, border: '1px solid var(--border)', background: 'var(--bg-main)', color: 'var(--text-primary)', outline: 'none' }} />
+                                    <h4 style={{ fontSize: 14, fontWeight: 700, marginBottom: 16 }}>Reassignment Rules (Priority-Based)</h4>
+                                    <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+                                        <div style={{ background: 'var(--bg-main)', borderRadius: 12, padding: 20, border: '1px solid var(--border)' }}>
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 16 }}>
+                                                <div style={{ width: 8, height: 8, borderRadius: '50%', background: '#ef4444' }} />
+                                                <h5 style={{ fontSize: 13, fontWeight: 700 }}>High Priority</h5>
+                                            </div>
+                                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+                                                <div>
+                                                    <label style={{ display: 'block', fontSize: 12, fontWeight: 600, marginBottom: 6, color: 'var(--text-muted)' }}>Warning at (Days)</label>
+                                                    <input type="number" value={configs.WARN_HIGH} onChange={e => handleUpdateConfig('WARN_HIGH', e.target.value)} style={{ width: '100%', padding: '8px 10px', borderRadius: 6, border: '1px solid var(--border)', background: 'var(--bg-card)', color: 'var(--text-primary)', outline: 'none' }} />
+                                                </div>
+                                                <div>
+                                                    <label style={{ display: 'block', fontSize: 12, fontWeight: 600, marginBottom: 6, color: 'var(--text-muted)' }}>Reclaim at (Days)</label>
+                                                    <input type="number" value={configs.RECLAIM_HIGH} onChange={e => handleUpdateConfig('RECLAIM_HIGH', e.target.value)} style={{ width: '100%', padding: '8px 10px', borderRadius: 6, border: '1px solid var(--border)', background: 'var(--bg-card)', color: 'var(--text-primary)', outline: 'none' }} />
+                                                </div>
+                                            </div>
                                         </div>
+
+                                        <div style={{ background: 'var(--bg-main)', borderRadius: 12, padding: 20, border: '1px solid var(--border)' }}>
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 16 }}>
+                                                <div style={{ width: 8, height: 8, borderRadius: '50%', background: '#f59e0b' }} />
+                                                <h5 style={{ fontSize: 13, fontWeight: 700 }}>Medium Priority</h5>
+                                            </div>
+                                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+                                                <div>
+                                                    <label style={{ display: 'block', fontSize: 12, fontWeight: 600, marginBottom: 6, color: 'var(--text-muted)' }}>Warning at (Days)</label>
+                                                    <input type="number" value={configs.WARN_MEDIUM} onChange={e => handleUpdateConfig('WARN_MEDIUM', e.target.value)} style={{ width: '100%', padding: '8px 10px', borderRadius: 6, border: '1px solid var(--border)', background: 'var(--bg-card)', color: 'var(--text-primary)', outline: 'none' }} />
+                                                </div>
+                                                <div>
+                                                    <label style={{ display: 'block', fontSize: 12, fontWeight: 600, marginBottom: 6, color: 'var(--text-muted)' }}>Reclaim at (Days)</label>
+                                                    <input type="number" value={configs.RECLAIM_MEDIUM} onChange={e => handleUpdateConfig('RECLAIM_MEDIUM', e.target.value)} style={{ width: '100%', padding: '8px 10px', borderRadius: 6, border: '1px solid var(--border)', background: 'var(--bg-card)', color: 'var(--text-primary)', outline: 'none' }} />
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div style={{ background: 'var(--bg-main)', borderRadius: 12, padding: 20, border: '1px solid var(--border)' }}>
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 16 }}>
+                                                <div style={{ width: 8, height: 8, borderRadius: '50%', background: '#10b981' }} />
+                                                <h5 style={{ fontSize: 13, fontWeight: 700 }}>Low Priority</h5>
+                                            </div>
+                                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+                                                <div>
+                                                    <label style={{ display: 'block', fontSize: 12, fontWeight: 600, marginBottom: 6, color: 'var(--text-muted)' }}>Warning at (Days)</label>
+                                                    <input type="number" value={configs.WARN_LOW} onChange={e => handleUpdateConfig('WARN_LOW', e.target.value)} style={{ width: '100%', padding: '8px 10px', borderRadius: 6, border: '1px solid var(--border)', background: 'var(--bg-card)', color: 'var(--text-primary)', outline: 'none' }} />
+                                                </div>
+                                                <div>
+                                                    <label style={{ display: 'block', fontSize: 12, fontWeight: 600, marginBottom: 6, color: 'var(--text-muted)' }}>Reclaim at (Days)</label>
+                                                    <input type="number" value={configs.RECLAIM_LOW} onChange={e => handleUpdateConfig('RECLAIM_LOW', e.target.value)} style={{ width: '100%', padding: '8px 10px', borderRadius: 6, border: '1px solid var(--border)', background: 'var(--bg-card)', color: 'var(--text-primary)', outline: 'none' }} />
+                                                </div>
+                                            </div>
+                                        </div>
+
                                         <div>
-                                            <label style={{ display: 'block', fontSize: 13, fontWeight: 600, marginBottom: 8 }}>Lost Lead Recycling (Days)</label>
-                                            <input type="number" value={configs.RECYCLE_DAYS} onChange={e => handleUpdateConfig('RECYCLE_DAYS', e.target.value)} style={{ width: '100%', padding: '10px 12px', borderRadius: 8, border: '1px solid var(--border)', background: 'var(--bg-main)', color: 'var(--text-primary)', outline: 'none' }} />
+                                            <label style={{ display: 'block', fontSize: 13, fontWeight: 600, marginBottom: 8 }}>Lost Lead Recovery (Days)</label>
+                                            <p style={{ fontSize: 11, color: 'var(--text-muted)', marginBottom: 8 }}>Time before a Lost lead returns to the open pool for another try.</p>
+                                            <input type="number" value={configs.RECYCLE_DAYS} onChange={e => handleUpdateConfig('RECYCLE_DAYS', e.target.value)} style={{ width: '100%', padding: '10px 12px', borderRadius: 8, border: '1px solid var(--border)', background: 'var(--bg-card)', color: 'var(--text-primary)', outline: 'none' }} />
                                         </div>
                                     </div>
                                 </div>

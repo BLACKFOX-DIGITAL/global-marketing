@@ -20,18 +20,35 @@ export async function GET(req: Request) {
         const now = new Date()
 
         // Fetch dynamic settings
-        const settings = await prisma.systemSetting.findMany({
-            where: { key: { in: ['RECYCLE_DAYS', 'CLAIM_LIMIT'] } }
+        const settingKeys = [
+            'RECYCLE_DAYS', 'CLAIM_LIMIT',
+            'RECLAIM_HIGH', 'WARN_HIGH',
+            'RECLAIM_MEDIUM', 'WARN_MEDIUM',
+            'RECLAIM_LOW', 'WARN_LOW'
+        ]
+        const dbSettings = await prisma.systemSetting.findMany({
+            where: { key: { in: settingKeys } }
         })
-        const recycleDays = parseInt(settings.find((s: any) => s.key === 'RECYCLE_DAYS')?.value || '60')
+        const config: Record<string, string> = {}
+        dbSettings.forEach(s => config[s.key] = s.value)
+
+        const recycleDays = parseInt(config['RECYCLE_DAYS'] || '60')
         const sixtyDaysAgo = subDays(now, recycleDays)
 
         // Priority-based reclaim windows (in days)
-        // High priority leads must be worked more urgently
         const priorityWindows: Record<string, { warn: number; reclaim: number }> = {
-            'High':   { warn: 5,  reclaim: 7  },
-            'Medium': { warn: 12, reclaim: 14 },
-            'Low':    { warn: 19, reclaim: 21 },
+            'High': { 
+                warn: parseInt(config['WARN_HIGH'] || '5'), 
+                reclaim: parseInt(config['RECLAIM_HIGH'] || '7') 
+            },
+            'Medium': { 
+                warn: parseInt(config['WARN_MEDIUM'] || '12'), 
+                reclaim: parseInt(config['RECLAIM_MEDIUM'] || '14') 
+            },
+            'Low': { 
+                warn: parseInt(config['WARN_LOW'] || '19'), 
+                reclaim: parseInt(config['RECLAIM_LOW'] || '21') 
+            },
         }
 
         // 1. Recirculate Lost Leads (60+ days of inactivity)
