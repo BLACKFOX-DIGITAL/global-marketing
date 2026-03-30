@@ -331,7 +331,7 @@ export default function LeadOperationsHub() {
                                                     <div style={{ width: 28, height: 28, borderRadius: 6, background: 'linear-gradient(135deg, #1e293b, #0f172a)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 10, fontWeight: 700, color: '#fff', flexShrink: 0 }}>
                                                         {(l.company || 'L')[0].toUpperCase()}
                                                     </div>
-                                                    <Link href={`/leads/${l.id}`} style={{ fontWeight: 600, color: 'var(--text-primary)', textDecoration: 'none', fontSize: 13 }}>{l.company || l.name}</Link>
+                                                    <Link href={`/admin/leads/${l.id}`} style={{ fontWeight: 600, color: 'var(--text-primary)', textDecoration: 'none', fontSize: 13 }}>{l.company || l.name}</Link>
                                                 </div>
                                             </td>
                                             <td style={{ padding: '12px 16px' }}>
