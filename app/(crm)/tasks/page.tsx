@@ -2,9 +2,10 @@
 import { useState, useEffect, useCallback } from 'react'
 import Header from '@/components/Header'
 import Link from 'next/link'
-import { Plus, CheckCircle, Calendar, LayoutList, Calendar as CalendarIcon, Building, Search } from 'lucide-react'
+import { Plus, CheckCircle, Calendar, LayoutList, Calendar as CalendarIcon, Building, Search, Pencil } from 'lucide-react'
 import { format, parseISO, isPast, isToday, isTomorrow, formatDistanceToNow } from 'date-fns'
 import TaskCalendar from '@/components/TaskCalendar'
+import EditTaskModal from '@/components/EditTaskModal'
 
 const TASK_TYPES = [
     { value: 'Call', icon: '📞', color: '#6366f1' },
@@ -215,7 +216,7 @@ function CreateTaskModal({ onClose, onCreated, leads, priorities, preSelectedLea
     )
 }
 
-function ViewTaskModal({ task, onClose, onToggle, priorities }: { task: Task, onClose: () => void, onToggle: (id: string) => void, priorities: any[] }) {
+function ViewTaskModal({ task, onClose, onToggle, onEdit, priorities }: { task: Task, onClose: () => void, onToggle: (id: string) => void, onEdit: (id: string) => void, priorities: any[] }) {
     const priorityColor = priorities.find(p => p.value === task.priority)?.color || 'var(--text-muted)'
 
     return (
@@ -266,6 +267,15 @@ function ViewTaskModal({ task, onClose, onToggle, priorities }: { task: Task, on
                     >
                         {task.completed ? 'Undo Completion' : 'Mark as Completed'}
                     </button>
+                    {!task.completed && (
+                        <button
+                            className="btn-secondary"
+                            style={{ flex: 0.5 }}
+                            onClick={() => { onEdit(task.id); onClose(); }}
+                        >
+                            <Pencil size={14} /> Edit
+                        </button>
+                    )}
                 </div>
             </div>
         </div>
@@ -283,6 +293,7 @@ export default function TasksPage() {
     const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null)
     const [selectedDate, setSelectedDate] = useState<string | null>(null)
     const [viewTask, setViewTask] = useState<Task | null>(null)
+    const [editTaskId, setEditTaskId] = useState<string | null>(null)
     const [mounted, setMounted] = useState(false)
 
     useEffect(() => {
@@ -501,7 +512,19 @@ export default function TasksPage() {
                                                 border: `1px solid ${priorities.find(p => p.value === task.priority)?.color || 'var(--text-muted)'}30`
                                             }}>{task.priority}</span>
                                         </div>
-                                        <div style={{ width: 32, display: 'flex', justifyContent: 'center', flexShrink: 0 }}>
+                                        <div style={{ width: 64, display: 'flex', justifyContent: 'center', gap: 4, flexShrink: 0 }}>
+                                            {!task.completed && (
+                                                <button className="btn-ghost" style={{
+                                                    padding: '6px', color: 'var(--accent-primary)', opacity: 0.4,
+                                                    fontSize: 16, transition: 'all 0.2s',
+                                                    borderRadius: '50%'
+                                                }}
+                                                    onMouseEnter={e => { e.currentTarget.style.opacity = '1'; e.currentTarget.style.background = 'rgba(99, 102, 241, 0.1)' }}
+                                                    onMouseLeave={e => { e.currentTarget.style.opacity = '0.4'; e.currentTarget.style.background = 'transparent' }}
+                                                    onClick={() => setEditTaskId(task.id)}>
+                                                    <Pencil size={14} />
+                                                </button>
+                                            )}
                                             <button className="btn-ghost" style={{
                                                 padding: '6px', color: '#ef4444', opacity: 0.4,
                                                 fontSize: 16, transition: 'all 0.2s',
@@ -533,6 +556,17 @@ export default function TasksPage() {
                     task={viewTask}
                     onClose={() => setViewTask(null)}
                     onToggle={toggleTask}
+                    onEdit={setEditTaskId}
+                    priorities={priorities}
+                />
+            )}
+
+            {editTaskId && (
+                <EditTaskModal
+                    taskId={editTaskId}
+                    onClose={() => setEditTaskId(null)}
+                    onSuccess={() => { setEditTaskId(null); fetchTasks(); }}
+                    leads={leads}
                     priorities={priorities}
                 />
             )}

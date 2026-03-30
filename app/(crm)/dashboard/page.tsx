@@ -1,11 +1,12 @@
 'use client'
 import { useEffect, useState } from 'react'
-import { Users, Calendar, CheckCircle, TrendingUp, Briefcase, Target, ChevronRight, Phone, Mail, Zap, Star, Activity, Check, Waves } from 'lucide-react'
+import { Users, Calendar, CheckCircle, TrendingUp, Briefcase, Target, ChevronRight, Phone, Mail, Zap, Star, Activity, Check, Waves, Pencil } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { format } from 'date-fns'
 import dynamic from 'next/dynamic'
 import { AttendanceWidget } from '@/components/AttendanceWidget'
+import EditTaskModal from '@/components/EditTaskModal'
 
 // Lazy-load heavy Recharts bundle — doesn't block initial render
 const AnalyticsDashboard = dynamic(
@@ -76,6 +77,7 @@ export default function DashboardPage() {
     const router = useRouter()
     const { mutate } = useSWRConfig()
     const [activeActionPopup, setActiveActionPopup] = useState<{ leadId: string, type: 'call' | 'mail' } | null>(null)
+    const [editTaskId, setEditTaskId] = useState<string | null>(null)
     
     // Lightweight bootstrap: auth + settings + gamification (cached 5 min)
     const { data: init, error: initError } = useSWR('/api/dashboard/init', fetcher, {
@@ -437,6 +439,20 @@ export default function DashboardPage() {
                                             }}>{task.title}</div>
                                             <PriorityBadge priority={task.priority} options={settings.priorities} />
                                         </div>
+                                        {!task.completed && (
+                                            <button 
+                                                onClick={() => setEditTaskId(task.id)}
+                                                style={{ 
+                                                    padding: '4px', borderRadius: 4, border: 'none', background: 'transparent', 
+                                                    color: 'var(--accent-primary)', cursor: 'pointer', opacity: 0.6,
+                                                    display: 'flex', alignItems: 'center'
+                                                }}
+                                                onMouseEnter={e => e.currentTarget.style.opacity = '1'}
+                                                onMouseLeave={e => e.currentTarget.style.opacity = '0.6'}
+                                            >
+                                                <Pencil size={12} />
+                                            </button>
+                                        )}
                                     </div>
                                 ))
                             )}
@@ -652,6 +668,19 @@ export default function DashboardPage() {
 
                 </div>
             </div>
+            
+            {editTaskId && (
+                <EditTaskModal
+                    taskId={editTaskId}
+                    onClose={() => setEditTaskId(null)}
+                    onSuccess={() => {
+                        setEditTaskId(null)
+                        mutate('/api/dashboard/stats')
+                    }}
+                    leads={[]} // Dashboard doesn't have leads list easily available, EditTaskModal handles fetching task details including leadId
+                    priorities={settings.priorities}
+                />
+            )}
         </div>
     )
 }

@@ -9,6 +9,7 @@ import ActivityTimeline from '@/components/ActivityTimeline'
 import AttachmentList from '@/components/AttachmentList'
 import Editor from '@/components/Editor'
 import EmailModal from '@/components/EmailModal'
+import EditTaskModal from '@/components/EditTaskModal'
 
 // Auto-validates email on mount, shows tick/cross
 const emailBadgeCache = new Map<string, { state: 'loading' | 'valid' | 'unknown' | 'invalid' }>()
@@ -440,6 +441,7 @@ export default function LeadDetailPage({ params }: { params: Promise<{ id: strin
     const [showEmailModal, setShowEmailModal] = useState(false)
 
     const [error, setError] = useState<number | null>(null)
+    const [editTaskId, setEditTaskId] = useState<string | null>(null)
     const [statuses, setStatuses] = useState<{ value: string, color: string | null }[]>([])
     const [users, setUsers] = useState<{ id: string, name: string }[]>([])
     const [notification, setNotification] = useState<{ message: string, type: 'success' | 'error' } | null>(null)
@@ -910,6 +912,11 @@ export default function LeadDetailPage({ params }: { params: Promise<{ id: strin
                                                                 </span>
                                                             )}
                                                             <span style={{ fontSize: 9, padding: '2px 6px', borderRadius: 4, fontWeight: 700, background: `${prioColor}15`, color: prioColor, border: `1px solid ${prioColor}30` }}>{task.priority}</span>
+                                                            {!task.completed && (
+                                                                <button onClick={() => setEditTaskId(task.id)} className="btn-ghost" style={{ padding: '4px', color: 'var(--accent-primary)', opacity: 0.6 }}>
+                                                                    <Pencil size={12} />
+                                                                </button>
+                                                            )}
                                                         </div>
                                                     </div>
                                                 )
@@ -1117,6 +1124,19 @@ export default function LeadDetailPage({ params }: { params: Promise<{ id: strin
                         </div>
                     </div>
                 </div>
+            )}
+
+            {editTaskId && (
+                <EditTaskModal
+                    taskId={editTaskId}
+                    onClose={() => setEditTaskId(null)}
+                    onSuccess={() => {
+                        setEditTaskId(null)
+                        fetchLeadAndOptions()
+                    }}
+                    leads={lead ? [{ id: lead.id, name: lead.name, company: lead.company }] : []}
+                    priorities={priorities}
+                />
             )}
 
             {/* In-app Notification (Toast) */}
