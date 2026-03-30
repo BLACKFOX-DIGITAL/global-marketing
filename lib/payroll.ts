@@ -81,6 +81,9 @@ export async function calculateMonthlySalary(userId: string, date: Date): Promis
     })
     const workingDaysCount = workingDays.length
 
+    // Count weekday holidays (which are paid vacations)
+    const weekdayHolidaysCount = holidays.filter(h => !isWeekend(new Date(h.date))).length
+
     let attendedDaysCount = 0
     let approvedLeaveDaysCount = 0
     let absentDaysCount = 0
@@ -90,6 +93,9 @@ export async function calculateMonthlySalary(userId: string, date: Date): Promis
     for (const record of user.attendance) {
         totalMinutesWorked += (record.duration || 0)
     }
+
+    // Add 8 hours for each weekday holiday (Office-announced vacation)
+    totalMinutesWorked += (weekdayHolidaysCount * 480)
 
     for (const day of workingDays) {
         // Check if user attended on this day
@@ -121,8 +127,9 @@ export async function calculateMonthlySalary(userId: string, date: Date): Promis
     }
 
     // Calculation based on Hourly Rate
-    // Formula: Hourly Rate = Base Salary / (Working Days * 8 Hours)
-    const targetHoursPerMonth = workingDaysCount * 8
+    // Target Days = Actual working days + Weekday Holidays
+    const totalTargetDays = workingDaysCount + weekdayHolidaysCount
+    const targetHoursPerMonth = totalTargetDays * 8
     const hourlyRate = (user.baseSalary > 0 && targetHoursPerMonth > 0) 
         ? user.baseSalary / targetHoursPerMonth 
         : 0

@@ -215,7 +215,7 @@ export default function PayrollDashboard() {
             <div style={{ marginTop: 24, padding: 16, borderRadius: 12, background: '#f8fafc', border: '1px solid #e2e8f0', display: 'flex', gap: 12, alignItems: 'center' }}>
                 <AlertTriangle size={18} color="#64748b" />
                 <p style={{ fontSize: 13, color: '#475569', margin: 0 }}>
-                    <strong>Hourly Calculation Policy:</strong> Hourly Rate = Target Salary / (Working Days in Month × 8 Hours). Final Salary = (Actual Minutes Worked + Approved Leave Minutes) / 60 × Hourly Rate.
+                    <strong>Hourly Calculation Policy:</strong> Hourly Rate = Target Salary / (All Open Days + Weekday Holidays × 8 Hours). Final Salary = (Actual Minutes Worked + Approved Leave Minutes + Weekday Holiday Minutes) / 60 × Hourly Rate. Office-announced vacations are fully paid.
                 </p>
             </div>
 
