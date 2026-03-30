@@ -8,16 +8,7 @@ const COUNTRY_CODES: Record<string, string> = {
 };
 const COUNTRIES = Object.keys(COUNTRY_CODES);
 
-const POSITIONS = [
-    "Retoucher", "Senior Retoucher", "Image Editor", "Photo Editor",
-    "E-commerce Retoucher", "High-End Retoucher", "Colorist",
-    "Art Director", "Creative Director", "Studio Manager",
-    "Production Manager", "Photography Assistant",
-    "Quality Control Specialist", "Visual Merchandiser",
-    "CEO", "Founder", "Co-Founder", "Owner", "President",
-    "Managing Director", "Operations Manager", "General Manager",
-    "Project Manager", "Account Manager", "Marketing Manager"
-];
+// Hardcoded positions removed - now fetched dynamically from SystemOption
 
 function SectionHeader({ icon, title, count, action }: { icon: React.ReactNode, title: string, count?: number, action?: React.ReactNode }) {
     return (
@@ -36,12 +27,13 @@ function SectionHeader({ icon, title, count, action }: { icon: React.ReactNode, 
 export default function EditLeadModal({ id, onSuccess, onClose }: { id: string, onSuccess: () => void, onClose: () => void }) {
     const [form, setForm] = useState({ company: '', website: '', country: '', emails: [''], phones: [''], status: 'New', priority: 'Medium', industry: '', socials: [] as { platform: string, url: string }[], notes: '', ownerId: '' })
     const [contacts, setContacts] = useState([{ id: 1 as any, name: '', emails: [''], phones: [''], position: '', socials: [] as { platform: string, url: string }[] }])
+    const [industryOptions, setIndustryOptions] = useState<{ value: string }[]>([])
+    const [positionOptions, setPositionOptions] = useState<{ value: string }[]>([])
     const [originalWebsite, setOriginalWebsite] = useState('')
     const [loading, setLoading] = useState(true)
     const [saving, setSaving] = useState(false)
     const [error, setError] = useState('')
     const [websiteError, setWebsiteError] = useState('')
-    const [industryOptions, setIndustryOptions] = useState<{ value: string }[]>([])
     const [showNotes, setShowNotes] = useState(false)
     const [recentCountries, setRecentCountries] = useState<string[]>([])
     const [showCountryDropdown, setShowCountryDropdown] = useState(false)
@@ -90,6 +82,10 @@ export default function EditLeadModal({ id, onSuccess, onClose }: { id: string, 
             fetch('/api/admin/settings?category=LEAD_INDUSTRY')
                 .then(r => r.json())
                 .then(d => { if (d.options) setIndustryOptions(d.options) })
+                .catch(console.error)
+            fetch('/api/admin/settings?category=LEAD_POSITION')
+                .then(r => r.json())
+                .then(d => { if (d.options) setPositionOptions(d.options) })
                 .catch(console.error)
         }, 300)
 
@@ -154,7 +150,7 @@ export default function EditLeadModal({ id, onSuccess, onClose }: { id: string, 
 
         for (const contact of contacts) {
             if (contact.position) {
-                const match = POSITIONS.find(p => p.toLowerCase() === contact.position.trim().toLowerCase());
+                const match = positionOptions.find(o => o.value.toLowerCase() === contact.position.trim().toLowerCase());
                 if (!match) { setError('Please select a valid Position/Title from the suggestions.'); return; }
             }
         }
@@ -172,7 +168,7 @@ export default function EditLeadModal({ id, onSuccess, onClose }: { id: string, 
                 ...c,
                 email: c.emails.map(e => e.trim()).filter(Boolean).join(', '),
                 phone: c.phones.map(p => p.trim()).filter(Boolean).join(', '),
-                position: c.position ? POSITIONS.find(p => p.toLowerCase() === c.position.trim().toLowerCase()) || c.position : '',
+                position: c.position ? positionOptions.find(o => o.value.toLowerCase() === c.position.trim().toLowerCase())?.value || c.position : '',
                 socials: JSON.stringify(c.socials.filter((s: { url: string, platform: string }) => s.url.trim() && s.platform.trim()))
             }))
         }
@@ -444,7 +440,7 @@ export default function EditLeadModal({ id, onSuccess, onClose }: { id: string, 
                                                     <div style={{ position: 'relative' }}>
                                                         <input
                                                             style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, color: 'var(--text-muted)', background: 'transparent', borderColor: 'transparent', zIndex: 1, pointerEvents: 'none' }}
-                                                            value={contact.position ? (POSITIONS.find(p => p.toLowerCase().startsWith(contact.position.toLowerCase())) ? contact.position + POSITIONS.find(p => p.toLowerCase().startsWith(contact.position.toLowerCase()))!.slice(contact.position.length) : '') : ''}
+                                                            value={contact.position ? (positionOptions.find(o => o.value.toLowerCase().startsWith(contact.position.toLowerCase())) ? contact.position + positionOptions.find(o => o.value.toLowerCase().startsWith(contact.position.toLowerCase()))!.value.slice(contact.position.length) : '') : ''}
                                                             readOnly tabIndex={-1}
                                                         />
                                                         <input
@@ -456,10 +452,10 @@ export default function EditLeadModal({ id, onSuccess, onClose }: { id: string, 
                                                             }}
                                                             onKeyDown={e => {
                                                                 if ((e.key === 'Tab' || e.key === 'ArrowRight') && contact.position) {
-                                                                    const match = POSITIONS.find(p => p.toLowerCase().startsWith(contact.position.toLowerCase()))
-                                                                    if (match && match !== contact.position) {
+                                                                    const match = positionOptions.find(o => o.value.toLowerCase().startsWith(contact.position.toLowerCase()))
+                                                                    if (match && match.value !== contact.position) {
                                                                         if (e.key === 'ArrowRight') e.preventDefault()
-                                                                        const n = [...contacts]; n[i].position = contact.position + match.slice(contact.position.length); setContacts(n)
+                                                                        const n = [...contacts]; n[i].position = contact.position + match.value.slice(contact.position.length); setContacts(n)
                                                                     }
                                                                 }
                                                             }}

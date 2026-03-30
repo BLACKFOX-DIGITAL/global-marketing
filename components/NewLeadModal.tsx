@@ -8,16 +8,7 @@ const COUNTRY_CODES: Record<string, string> = {
 };
 const COUNTRIES = Object.keys(COUNTRY_CODES);
 
-const POSITIONS = [
-    "Retoucher", "Senior Retoucher", "Image Editor", "Photo Editor",
-    "E-commerce Retoucher", "High-End Retoucher", "Colorist",
-    "Art Director", "Creative Director", "Studio Manager",
-    "Production Manager", "Photography Assistant",
-    "Quality Control Specialist", "Visual Merchandiser",
-    "CEO", "Founder", "Co-Founder", "Owner", "President",
-    "Managing Director", "Operations Manager", "General Manager",
-    "Project Manager", "Account Manager", "Marketing Manager"
-];
+// Hardcoded positions removed - now fetched dynamically from SystemOption
 
 // Section header with icon
 function SectionHeader({ icon, title, count, action }: { icon: React.ReactNode, title: string, count?: number, action?: React.ReactNode }) {
@@ -41,6 +32,7 @@ export default function NewLeadModal({ onSuccess, onClose }: { onSuccess: () => 
     const [error, setError] = useState('')
     const [websiteError, setWebsiteError] = useState('')
     const [industryOptions, setIndustryOptions] = useState<{ value: string }[]>([])
+    const [positionOptions, setPositionOptions] = useState<{ value: string }[]>([])
     const [showNotes, setShowNotes] = useState(false)
     const [recentCountries, setRecentCountries] = useState<string[]>([])
     const [recentIndustries, setRecentIndustries] = useState<string[]>([])
@@ -56,6 +48,10 @@ export default function NewLeadModal({ onSuccess, onClose }: { onSuccess: () => 
             fetch('/api/admin/settings?category=LEAD_INDUSTRY')
                 .then(r => r.json())
                 .then(d => { if (d.options) setIndustryOptions(d.options) })
+                .catch(console.error)
+            fetch('/api/admin/settings?category=LEAD_POSITION')
+                .then(r => r.json())
+                .then(d => { if (d.options) setPositionOptions(d.options) })
                 .catch(console.error)
         }, 300)
 
@@ -134,16 +130,17 @@ export default function NewLeadModal({ onSuccess, onClose }: { onSuccess: () => 
         const newRecentPositions = [...recentPositions]
         for (const contact of contacts) {
             if (contact.position) {
-                const match = POSITIONS.find(p => p.toLowerCase() === contact.position.trim().toLowerCase());
+                const match = positionOptions.find(o => o.value.toLowerCase() === contact.position.trim().toLowerCase());
                 if (!match) { setError('Please select a valid Position/Title from the suggestions.'); return; }
+                const matchValue = match.value;
                 
                 // Track recent positions
-                if (!newRecentPositions.includes(match)) {
-                    newRecentPositions.unshift(match)
+                if (!newRecentPositions.includes(matchValue)) {
+                    newRecentPositions.unshift(matchValue)
                 } else {
-                    const idx = newRecentPositions.indexOf(match)
+                    const idx = newRecentPositions.indexOf(matchValue)
                     newRecentPositions.splice(idx, 1)
-                    newRecentPositions.unshift(match)
+                    newRecentPositions.unshift(matchValue)
                 }
             }
         }
@@ -164,7 +161,7 @@ export default function NewLeadModal({ onSuccess, onClose }: { onSuccess: () => 
             contacts: contacts.filter(c => c.name || c.emails.some(e => e.trim()) || c.phones.some(p => p.trim())).map(c => ({
                 id: c.id,
                 name: c.name,
-                position: c.position ? POSITIONS.find(p => p.toLowerCase() === c.position.trim().toLowerCase()) || c.position : '',
+                position: c.position ? positionOptions.find(o => o.value.toLowerCase() === c.position.trim().toLowerCase())?.value || c.position : '',
                 email: c.emails.map(e => e.trim()).filter(Boolean).join(', '),
                 phone: c.phones.map(p => p.trim()).filter(Boolean).join(', '),
                 socials: JSON.stringify(c.socials.filter(s => s.url.trim() && s.platform.trim())),
@@ -468,7 +465,7 @@ export default function NewLeadModal({ onSuccess, onClose }: { onSuccess: () => 
                                             <div style={{ position: 'relative' }}>
                                                 <input
                                                     style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, color: 'var(--text-muted)', background: 'transparent', borderColor: 'transparent', zIndex: 1, pointerEvents: 'none' }}
-                                                    value={contact.position ? (POSITIONS.find(p => p.toLowerCase().startsWith(contact.position.toLowerCase())) ? contact.position + POSITIONS.find(p => p.toLowerCase().startsWith(contact.position.toLowerCase()))!.slice(contact.position.length) : '') : ''}
+                                                    value={contact.position ? (positionOptions.find(o => o.value.toLowerCase().startsWith(contact.position.toLowerCase())) ? contact.position + positionOptions.find(o => o.value.toLowerCase().startsWith(contact.position.toLowerCase()))!.value.slice(contact.position.length) : '') : ''}
                                                     readOnly tabIndex={-1}
                                                 />
                                                 <input
@@ -482,10 +479,10 @@ export default function NewLeadModal({ onSuccess, onClose }: { onSuccess: () => 
                                                     }}
                                                     onKeyDown={e => {
                                                         if ((e.key === 'Tab' || e.key === 'ArrowRight') && contact.position) {
-                                                            const match = POSITIONS.find(p => p.toLowerCase().startsWith(contact.position.toLowerCase()))
-                                                            if (match && match !== contact.position) {
+                                                            const match = positionOptions.find(o => o.value.toLowerCase().startsWith(contact.position.toLowerCase()))
+                                                            if (match && match.value !== contact.position) {
                                                                 if (e.key === 'ArrowRight') e.preventDefault()
-                                                                const n = [...contacts]; n[i].position = contact.position + match.slice(contact.position.length); setContacts(n)
+                                                                const n = [...contacts]; n[i].position = contact.position + match.value.slice(contact.position.length); setContacts(n)
                                                             }
                                                         }
                                                         if (e.key === 'Escape') setActivePositionIdx(null)

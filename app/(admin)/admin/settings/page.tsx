@@ -14,6 +14,7 @@ const SETTINGS_GROUPS = [
         categories: [
             { id: 'LEAD_STATUS', label: 'Lead Statuses', icon: Activity },
             { id: 'LEAD_INDUSTRY', label: 'Lead Industries', icon: Database },
+            { id: 'LEAD_POSITION', label: 'Lead Positions', icon: Users },
             { id: 'OPPORTUNITY_STAGE', label: 'Opportunity Stages', icon: Zap },
             { id: 'TASK_PRIORITY', label: 'Task Priorities', icon: Briefcase },
             { id: 'LEAVE_TYPE', label: 'Leave Types', icon: Clock },
