@@ -18,7 +18,8 @@ export interface SalaryReport {
     attendedDays: number
     approvedLeaveDays: number
     absentDays: number
-    deduction: number
+    totalMinutesWorked: number
+    hourlyRate: number
     finalSalary: number
 }
 
@@ -83,6 +84,12 @@ export async function calculateMonthlySalary(userId: string, date: Date): Promis
     let attendedDaysCount = 0
     let approvedLeaveDaysCount = 0
     let absentDaysCount = 0
+    let totalMinutesWorked = 0
+
+    // Sum up actual minutes worked from attendance records
+    for (const record of user.attendance) {
+        totalMinutesWorked += (record.duration || 0)
+    }
 
     for (const day of workingDays) {
         // Check if user attended on this day
@@ -104,6 +111,8 @@ export async function calculateMonthlySalary(userId: string, date: Date): Promis
 
         if (hasApprovedLeave) {
             approvedLeaveDaysCount++
+            // Add 8 hours (480 mins) for every approved leave day on a working day
+            totalMinutesWorked += 480
             continue
         }
 
@@ -111,9 +120,14 @@ export async function calculateMonthlySalary(userId: string, date: Date): Promis
         absentDaysCount++
     }
 
-    const dailyRate = user.baseSalary > 0 ? user.baseSalary / workingDaysCount : 0
-    const deduction = dailyRate * absentDaysCount
-    const finalSalary = Math.max(0, user.baseSalary - deduction)
+    // Calculation based on Hourly Rate
+    // Formula: Hourly Rate = Base Salary / (Working Days * 8 Hours)
+    const targetHoursPerMonth = workingDaysCount * 8
+    const hourlyRate = (user.baseSalary > 0 && targetHoursPerMonth > 0) 
+        ? user.baseSalary / targetHoursPerMonth 
+        : 0
+    
+    const finalSalary = (totalMinutesWorked / 60) * hourlyRate
 
     return {
         userId: user.id,
@@ -123,7 +137,8 @@ export async function calculateMonthlySalary(userId: string, date: Date): Promis
         attendedDays: attendedDaysCount,
         approvedLeaveDays: approvedLeaveDaysCount,
         absentDays: absentDaysCount,
-        deduction: Math.round(deduction * 100) / 100,
+        totalMinutesWorked,
+        hourlyRate: Math.round(hourlyRate * 100) / 100,
         finalSalary: Math.round(finalSalary * 100) / 100
     }
 }

@@ -21,7 +21,8 @@ interface SalaryReport {
     attendedDays: number
     approvedLeaveDays: number
     absentDays: number
-    deduction: number
+    totalMinutesWorked: number
+    hourlyRate: number
     finalSalary: number
 }
 
@@ -61,8 +62,8 @@ export default function PayrollDashboard() {
 
     const totals = {
         base: reports.reduce((acc, r) => acc + r.baseSalary, 0),
-        deductions: reports.reduce((acc, r) => acc + r.deduction, 0),
         net: reports.reduce((acc, r) => acc + r.finalSalary, 0),
+        hours: reports.reduce((acc, r) => acc + (r.totalMinutesWorked / 60), 0),
         absences: reports.reduce((acc, r) => acc + r.absentDays, 0)
     }
 
@@ -95,12 +96,12 @@ export default function PayrollDashboard() {
 
                 <div style={{ padding: 24, borderRadius: 16, background: 'var(--bg-card)', border: '1px solid var(--border)' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 16 }}>
-                        <div style={{ width: 40, height: 40, borderRadius: 10, background: 'rgba(239, 68, 68, 0.1)', color: '#ef4444', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                        <div style={{ width: 40, height: 40, borderRadius: 10, background: 'rgba(99, 102, 241, 0.1)', color: 'var(--accent-primary)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                             <TrendingDown size={20} />
                         </div>
                         <div style={{ textAlign: 'right' }}>
-                            <div style={{ fontSize: 12, color: 'var(--text-muted)', fontWeight: 600, textTransform: 'uppercase' }}>Deductions</div>
-                            <div style={{ fontSize: 28, fontWeight: 800, color: '#ef4444', letterSpacing: '-0.5px' }}>-৳{totals.deductions.toLocaleString()}</div>
+                            <div style={{ fontSize: 12, color: 'var(--text-muted)', fontWeight: 600, textTransform: 'uppercase' }}>Total Hours</div>
+                            <div style={{ fontSize: 28, fontWeight: 800, color: 'var(--text-primary)', letterSpacing: '-0.5px' }}>{Math.round(totals.hours)}h</div>
                         </div>
                     </div>
                 </div>
@@ -123,8 +124,8 @@ export default function PayrollDashboard() {
                             <AlertTriangle size={20} />
                         </div>
                         <div style={{ textAlign: 'right' }}>
-                            <div style={{ fontSize: 12, color: '#b45309', fontWeight: 600, textTransform: 'uppercase' }}>Absence Impact</div>
-                            <div style={{ fontSize: 28, fontWeight: 800, color: '#d97706', letterSpacing: '-0.5px' }}>{((totals.deductions / (totals.base || 1)) * 100).toFixed(1)}%</div>
+                            <div style={{ fontSize: 12, color: '#b45309', fontWeight: 600, textTransform: 'uppercase' }}>Pay Efficiency</div>
+                            <div style={{ fontSize: 28, fontWeight: 800, color: '#d97706', letterSpacing: '-0.5px' }}>{((totals.net / (totals.base || 1)) * 100).toFixed(1)}%</div>
                         </div>
                     </div>
                 </div>
@@ -163,11 +164,11 @@ export default function PayrollDashboard() {
                     <thead style={{ background: '#fafafa', borderBottom: '1px solid var(--border)' }}>
                         <tr style={{ color: 'var(--text-muted)', fontSize: 12, textTransform: 'uppercase', letterSpacing: '0.5px' }}>
                             <th style={{ padding: '16px 24px', fontWeight: 600 }}>Employee</th>
-                            <th style={{ padding: '16px 24px', fontWeight: 600 }}>Base Salary</th>
-                            <th style={{ padding: '16px 24px', fontWeight: 600 }}>Attendance</th>
-                            <th style={{ padding: '16px 24px', fontWeight: 600 }}>Absences</th>
-                            <th style={{ padding: '16px 24px', fontWeight: 600 }}>Deductions</th>
-                            <th style={{ padding: '16px 24px', fontWeight: 600, textAlign: 'right' }}>Net Salary</th>
+                            <th style={{ padding: '16px 24px', fontWeight: 600 }}>Target Salary</th>
+                            <th style={{ padding: '16px 24px', fontWeight: 600 }}>Hourly Rate</th>
+                            <th style={{ padding: '16px 24px', fontWeight: 600 }}>Hours Logged</th>
+                            <th style={{ padding: '16px 24px', fontWeight: 600 }}>Working Days</th>
+                            <th style={{ padding: '16px 24px', fontWeight: 600, textAlign: 'right' }}>Final Salary</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -187,23 +188,18 @@ export default function PayrollDashboard() {
                                         </div>
                                     </td>
                                     <td style={{ padding: '16px 24px', fontSize: 14, color: 'var(--text-secondary)' }}>৳{report.baseSalary.toLocaleString()}</td>
+                                    <td style={{ padding: '16px 24px', fontSize: 14, color: 'var(--accent-primary)', fontWeight: 600 }}>৳{report.hourlyRate.toLocaleString()}</td>
+                                    <td style={{ padding: '16px 24px' }}>
+                                        <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--text-primary)' }}>
+                                            {Math.floor(report.totalMinutesWorked / 60)}h {report.totalMinutesWorked % 60}m
+                                        </div>
+                                        <div style={{ fontSize: 11, color: 'var(--text-muted)' }}>Incl. Approved Leaves</div>
+                                    </td>
                                     <td style={{ padding: '16px 24px' }}>
                                         <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
                                             <div style={{ fontSize: 14, fontWeight: 600, color: 'var(--text-primary)' }}>{report.attendedDays} / {report.workingDaysInMonth}</div>
-                                            <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>Approved Leaves: {report.approvedLeaveDays}</div>
+                                            <div style={{ fontSize: 11, color: 'var(--text-muted)' }}>Absences: <span style={{ color: report.absentDays > 0 ? '#ef4444' : 'inherit' }}>{report.absentDays}</span></div>
                                         </div>
-                                    </td>
-                                    <td style={{ padding: '16px 24px' }}>
-                                        {report.absentDays > 0 ? (
-                                            <span style={{ color: '#ef4444', fontWeight: 600, fontSize: 14, display: 'flex', alignItems: 'center', gap: 6 }}>
-                                                <AlertTriangle size={14} /> {report.absentDays} Days
-                                            </span>
-                                        ) : (
-                                            <span style={{ color: '#10b981', fontWeight: 500, fontSize: 14 }}>None</span>
-                                        )}
-                                    </td>
-                                    <td style={{ padding: '16px 24px', color: report.deduction > 0 ? '#ef4444' : 'var(--text-muted)', fontWeight: 600, fontSize: 14 }}>
-                                        {report.deduction > 0 ? `-৳${report.deduction.toLocaleString()}` : '৳0.00'}
                                     </td>
                                     <td style={{ padding: '16px 24px', textAlign: 'right', fontWeight: 800, fontSize: 16, color: 'var(--text-primary)' }}>
                                         ৳{report.finalSalary.toLocaleString()}
@@ -219,7 +215,7 @@ export default function PayrollDashboard() {
             <div style={{ marginTop: 24, padding: 16, borderRadius: 12, background: '#f8fafc', border: '1px solid #e2e8f0', display: 'flex', gap: 12, alignItems: 'center' }}>
                 <AlertTriangle size={18} color="#64748b" />
                 <p style={{ fontSize: 13, color: '#475569', margin: 0 }}>
-                    <strong>Compliance Note:</strong> Deduction logic excludes Saturdays and Sundays. Absences are calculated as days where no punch-in record exists and no approved leave request is pending or active. Base salary adjustments should be made in user profiles.
+                    <strong>Hourly Calculation Policy:</strong> Hourly Rate = Target Salary / (Working Days in Month × 8 Hours). Final Salary = (Actual Minutes Worked + Approved Leave Minutes) / 60 × Hourly Rate.
                 </p>
             </div>
 
