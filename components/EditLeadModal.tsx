@@ -34,8 +34,8 @@ function SectionHeader({ icon, title, count, action }: { icon: React.ReactNode, 
 }
 
 export default function EditLeadModal({ id, onSuccess, onClose }: { id: string, onSuccess: () => void, onClose: () => void }) {
-    const [form, setForm] = useState({ company: '', website: '', country: '', email: '', phone: '', status: 'New', priority: 'Medium', industry: '', socials: [] as { platform: string, url: string }[], notes: '', ownerId: '' })
-    const [contacts, setContacts] = useState([{ id: 1, name: '', email: '', phone: '', position: '', socials: [] as { platform: string, url: string }[] }])
+    const [form, setForm] = useState({ company: '', website: '', country: '', emails: [''], phones: [''], status: 'New', priority: 'Medium', industry: '', socials: [] as { platform: string, url: string }[], notes: '', ownerId: '' })
+    const [contacts, setContacts] = useState([{ id: 1 as any, name: '', emails: [''], phones: [''], position: '', socials: [] as { platform: string, url: string }[] }])
     const [originalWebsite, setOriginalWebsite] = useState('')
     const [loading, setLoading] = useState(true)
     const [saving, setSaving] = useState(false)
@@ -59,7 +59,9 @@ export default function EditLeadModal({ id, onSuccess, onClose }: { id: string, 
 
             setForm({
                 company: lead.company || '', website: lead.website || '', country: lead.country || '',
-                email: lead.email || '', phone: lead.phone || '', status: lead.status || 'New',
+                emails: lead.email ? lead.email.split(',').map(e => e.trim()) : [''],
+                phones: lead.phone ? lead.phone.split(',').map(p => p.trim()) : [''],
+                status: lead.status || 'New',
                 priority: lead.priority || 'Medium', industry: lead.industry || '',
                 socials: Array.isArray(parsedSocials) ? parsedSocials : [],
                 notes: lead.notes || '', ownerId: lead.ownerId || ''
@@ -71,7 +73,10 @@ export default function EditLeadModal({ id, onSuccess, onClose }: { id: string, 
                     let cSocials: { platform: string, url: string }[] = []
                     try { if (c.socials) cSocials = JSON.parse(c.socials) } catch { }
                     return {
-                        id: i + 1, name: c.name || '', email: c.email || '', phone: c.phone || '', position: c.position || '',
+                        id: c.id || i + 1, name: c.name || '',
+                        emails: c.email ? c.email.split(',').map(e => e.trim()) : [''],
+                        phones: c.phone ? c.phone.split(',').map(p => p.trim()) : [''],
+                        position: c.position || '',
                         socials: Array.isArray(cSocials) ? cSocials : []
                     }
                 }))
@@ -160,11 +165,13 @@ export default function EditLeadModal({ id, onSuccess, onClose }: { id: string, 
             country: finalCountry,
             industry: finalIndustry,
             name: primary.name || form.company,
-            email: form.email || primary.email,
-            phone: form.phone || primary.phone,
+            email: form.emails.map(e => e.trim()).filter(Boolean).join(', ') || primary.emails?.map(e => e.trim()).filter(Boolean).join(', '),
+            phone: form.phones.map(p => p.trim()).filter(Boolean).join(', ') || primary.phones?.map(p => p.trim()).filter(Boolean).join(', '),
             socials: JSON.stringify(form.socials.filter(s => s.url.trim() && s.platform.trim())),
-            contacts: contacts.filter(c => c.name || c.email || c.phone).map(c => ({
+            contacts: contacts.filter(c => c.name || c.emails?.some(e => e.trim()) || c.phones?.some(p => p.trim())).map(c => ({
                 ...c,
+                email: c.emails.map(e => e.trim()).filter(Boolean).join(', '),
+                phone: c.phones.map(p => p.trim()).filter(Boolean).join(', '),
                 position: c.position ? POSITIONS.find(p => p.toLowerCase() === c.position.trim().toLowerCase()) || c.position : '',
                 socials: JSON.stringify(c.socials.filter((s: { url: string, platform: string }) => s.url.trim() && s.platform.trim()))
             }))
@@ -302,12 +309,40 @@ export default function EditLeadModal({ id, onSuccess, onClose }: { id: string, 
 
                                     <div style={{ display: 'flex', gap: 10 }}>
                                         <div className="form-group" style={{ marginBottom: 0, flex: 1 }}>
-                                            <label className="form-label">Email</label>
-                                            <ValidatedEmailInput placeholder="info@acme.com" value={form.email} onChange={val => set('email', val)} />
+                                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
+                                                <label className="form-label" style={{ marginBottom: 0 }}>Emails</label>
+                                                <button type="button" onClick={() => setForm(f => ({ ...f, emails: [...f.emails, ''] }))} style={{ color: 'var(--accent-primary)', fontSize: 10, background: 'none', border: 'none', cursor: 'pointer', fontWeight: 700 }}>+</button>
+                                            </div>
+                                            <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                                                {form.emails.map((email, idx) => (
+                                                    <div key={idx} style={{ display: 'flex', alignItems: 'center', gap: 3 }}>
+                                                        <ValidatedEmailInput placeholder="info@acme.com" value={email} onChange={val => {
+                                                            const n = [...form.emails]; n[idx] = val; setForm(f => ({ ...f, emails: n }))
+                                                        }} />
+                                                        {form.emails.length > 1 && (
+                                                            <button type="button" onClick={() => setForm(f => ({ ...f, emails: f.emails.filter((_, i) => i !== idx) }))} style={{ color: 'var(--text-muted)', background: 'none', border: 'none', cursor: 'pointer', padding: 2 }}><X size={12} /></button>
+                                                        )}
+                                                    </div>
+                                                ))}
+                                            </div>
                                         </div>
                                         <div className="form-group" style={{ marginBottom: 0, flex: 1 }}>
-                                            <label className="form-label">Phone</label>
-                                            <input type="tel" placeholder="+1 (555) 000-0000" value={form.phone} onChange={e => set('phone', e.target.value)} />
+                                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
+                                                <label className="form-label" style={{ marginBottom: 0 }}>Phones</label>
+                                                <button type="button" onClick={() => setForm(f => ({ ...f, phones: [...f.phones, ''] }))} style={{ color: 'var(--accent-primary)', fontSize: 10, background: 'none', border: 'none', cursor: 'pointer', fontWeight: 700 }}>+</button>
+                                            </div>
+                                            <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                                                {form.phones.map((phone, idx) => (
+                                                    <div key={idx} style={{ display: 'flex', alignItems: 'center', gap: 3 }}>
+                                                        <input type="tel" placeholder="+1 (555) ... " value={phone} onChange={e => {
+                                                            const n = [...form.phones]; n[idx] = e.target.value; setForm(f => ({ ...f, phones: n }))
+                                                        }} style={{ flex: 1 }} />
+                                                        {form.phones.length > 1 && (
+                                                            <button type="button" onClick={() => setForm(f => ({ ...f, phones: f.phones.filter((_, i) => i !== idx) }))} style={{ color: 'var(--text-muted)', background: 'none', border: 'none', cursor: 'pointer', padding: 2 }}><X size={12} /></button>
+                                                        )}
+                                                    </div>
+                                                ))}
+                                            </div>
                                         </div>
                                     </div>
 
@@ -377,7 +412,7 @@ export default function EditLeadModal({ id, onSuccess, onClose }: { id: string, 
                                         title="Contact Persons"
                                         count={contacts.length}
                                         action={
-                                            <button type="button" onClick={() => setContacts([...contacts, { id: Date.now(), name: '', email: '', phone: '', position: '', socials: [] }])} style={{
+                                            <button type="button" onClick={() => setContacts([...contacts, { id: Date.now(), name: '', emails: [''], phones: [''], position: '', socials: [] }])} style={{
                                                 color: '#10b981', fontSize: 10, background: 'rgba(16,185,129,0.08)',
                                                 border: '1px solid rgba(16,185,129,0.15)', cursor: 'pointer',
                                                 fontWeight: 700, padding: '3px 8px', borderRadius: 6
@@ -435,16 +470,40 @@ export default function EditLeadModal({ id, onSuccess, onClose }: { id: string, 
 
                                             <div style={{ display: 'flex', gap: 8 }}>
                                                 <div className="form-group" style={{ marginBottom: 0, flex: 1 }}>
-                                                    <label className="form-label">Email</label>
-                                                    <ValidatedEmailInput placeholder="contact@acme.com" value={contact.email} onChange={val => {
-                                                        const n = [...contacts]; n[i].email = val; setContacts(n)
-                                                    }} />
+                                                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
+                                                        <label className="form-label" style={{ marginBottom: 0 }}>Emails</label>
+                                                        <button type="button" onClick={() => { const n = [...contacts]; n[i].emails.push(''); setContacts(n) }} style={{ color: 'var(--accent-primary)', fontSize: 10, background: 'none', border: 'none', cursor: 'pointer', fontWeight: 700 }}>+</button>
+                                                    </div>
+                                                    <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                                                        {contact.emails?.map((email, eIdx) => (
+                                                            <div key={eIdx} style={{ display: 'flex', alignItems: 'center', gap: 3 }}>
+                                                                <ValidatedEmailInput placeholder="contact@acme.com" value={email} onChange={val => {
+                                                                    const n = [...contacts]; n[i].emails[eIdx] = val; setContacts(n)
+                                                                }} />
+                                                                {contact.emails.length > 1 && (
+                                                                    <button type="button" onClick={() => { const n = [...contacts]; n[i].emails = n[i].emails.filter((_, idx) => idx !== eIdx); setContacts(n) }} style={{ color: 'var(--text-muted)', background: 'none', border: 'none', cursor: 'pointer', padding: 2 }}><X size={12} /></button>
+                                                                )}
+                                                            </div>
+                                                        ))}
+                                                    </div>
                                                 </div>
                                                 <div className="form-group" style={{ marginBottom: 0, flex: 1 }}>
-                                                    <label className="form-label">Phone</label>
-                                                    <input type="tel" placeholder="+1 (555) 000-0000" value={contact.phone} onChange={e => {
-                                                        const n = [...contacts]; n[i].phone = e.target.value; setContacts(n)
-                                                    }} />
+                                                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
+                                                        <label className="form-label" style={{ marginBottom: 0 }}>Phones</label>
+                                                        <button type="button" onClick={() => { const n = [...contacts]; n[i].phones.push(''); setContacts(n) }} style={{ color: 'var(--accent-primary)', fontSize: 10, background: 'none', border: 'none', cursor: 'pointer', fontWeight: 700 }}>+</button>
+                                                    </div>
+                                                    <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                                                        {contact.phones?.map((phone, pIdx) => (
+                                                            <div key={pIdx} style={{ display: 'flex', alignItems: 'center', gap: 3 }}>
+                                                                <input type="tel" placeholder="+1 (555) ... " value={phone} onChange={e => {
+                                                                    const n = [...contacts]; n[i].phones[pIdx] = e.target.value; setContacts(n)
+                                                                }} style={{ flex: 1 }} />
+                                                                {contact.phones.length > 1 && (
+                                                                    <button type="button" onClick={() => { const n = [...contacts]; n[i].phones = n[i].phones.filter((_, idx) => idx !== pIdx); setContacts(n) }} style={{ color: 'var(--text-muted)', background: 'none', border: 'none', cursor: 'pointer', padding: 2 }}><X size={12} /></button>
+                                                                )}
+                                                            </div>
+                                                        ))}
+                                                    </div>
                                                 </div>
                                             </div>
 
