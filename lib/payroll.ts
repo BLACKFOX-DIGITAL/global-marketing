@@ -21,6 +21,7 @@ export interface SalaryReport {
     totalMinutesWorked: number
     hourlyRate: number
     finalSalary: number
+    projectedSalary: number
 }
 
 export async function calculateMonthlySalary(userId: string, date: Date): Promise<SalaryReport> {
@@ -141,7 +142,30 @@ export async function calculateMonthlySalary(userId: string, date: Date): Promis
         ? user.baseSalary / targetHoursPerMonth 
         : 0
     
+    // So the final salary CANNOT exceed Base Salary
     const finalSalary = (totalMinutesWorked / 60) * hourlyRate
+
+    // Calculate Projected Salary based on current pace if it's the current month
+    let projectedSalary = finalSalary
+    const now = new Date()
+    const isCurrentMonth = date.getFullYear() === now.getFullYear() && date.getMonth() === now.getMonth()
+
+    if (isCurrentMonth) {
+        const passedWorkingDays = workingDays.filter(d => d <= now).length
+        const passedHolidays = holidays.filter(h => !isWeekend(new Date(h.date)) && new Date(h.date) <= now).length
+        const passedTargetDays = passedWorkingDays + passedHolidays
+        
+        if (passedTargetDays > 0) {
+            const passedTargetMinutes = passedTargetDays * 480 // 8 hours per day
+            const paceMultiplier = totalMinutesWorked / passedTargetMinutes
+            let projectedMinutes = paceMultiplier * targetMinutesPerMonth
+            
+            if (projectedMinutes > targetMinutesPerMonth) {
+                projectedMinutes = targetMinutesPerMonth
+            }
+            projectedSalary = (projectedMinutes / 60) * hourlyRate
+        }
+    }
 
     return {
         userId: user.id,
@@ -153,6 +177,7 @@ export async function calculateMonthlySalary(userId: string, date: Date): Promis
         absentDays: absentDaysCount,
         totalMinutesWorked,
         hourlyRate: Math.round(hourlyRate * 100) / 100,
-        finalSalary: Math.round(finalSalary * 100) / 100
+        finalSalary: Math.round(finalSalary * 100) / 100,
+        projectedSalary: Math.round(projectedSalary * 100) / 100
     }
 }

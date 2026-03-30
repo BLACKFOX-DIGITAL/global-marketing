@@ -24,6 +24,7 @@ interface SalaryReport {
     totalMinutesWorked: number
     hourlyRate: number
     finalSalary: number
+    projectedSalary: number
 }
 
 export default function PayrollDashboard() {
@@ -168,7 +169,7 @@ export default function PayrollDashboard() {
                             <th style={{ padding: '16px 24px', fontWeight: 600 }}>Hourly Rate</th>
                             <th style={{ padding: '16px 24px', fontWeight: 600 }}>Hours Logged</th>
                             <th style={{ padding: '16px 24px', fontWeight: 600 }}>Working Days</th>
-                            <th style={{ padding: '16px 24px', fontWeight: 600, textAlign: 'right' }}>Final Salary</th>
+                            <th style={{ padding: '16px 24px', fontWeight: 600, textAlign: 'right' }}>Payout & Projection</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -201,8 +202,18 @@ export default function PayrollDashboard() {
                                             <div style={{ fontSize: 11, color: 'var(--text-muted)' }}>Absences: <span style={{ color: report.absentDays > 0 ? '#ef4444' : 'inherit' }}>{report.absentDays}</span></div>
                                         </div>
                                     </td>
-                                    <td style={{ padding: '16px 24px', textAlign: 'right', fontWeight: 800, fontSize: 16, color: 'var(--text-primary)' }}>
-                                        ৳{report.finalSalary.toLocaleString()}
+                                    <td style={{ padding: '16px 24px', textAlign: 'right' }}>
+                                        <div style={{ fontWeight: 800, fontSize: 16, color: 'var(--text-primary)' }}>
+                                            ৳{report.finalSalary.toLocaleString()}
+                                        </div>
+                                        {selectedMonth === format(new Date(), 'yyyy-MM') && (
+                                            <div style={{ fontSize: 11, color: report.projectedSalary < report.baseSalary ? '#f59e0b' : '#10b981', fontWeight: 600, marginTop: 2 }}>
+                                                Est: ৳{report.projectedSalary.toLocaleString()}
+                                            </div>
+                                        )}
+                                        {selectedMonth !== format(new Date(), 'yyyy-MM') && (
+                                            <div style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 2 }}>Finalized</div>
+                                        )}
                                     </td>
                                 </tr>
                             ))
