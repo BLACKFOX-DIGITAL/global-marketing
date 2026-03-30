@@ -1,10 +1,10 @@
 'use client'
 import { useState, useEffect } from 'react'
-import { Plus, Edit2, Trash2, Check, X, GripVertical, Settings, Activity, Database, Clock, Waves, Briefcase, Zap, Users, Mail, Palmtree } from 'lucide-react'
+import { Plus, Edit2, Trash2, Check, X, GripVertical, Settings, Activity, Database, Clock, Waves, Briefcase, Zap, Users, Mail, Palmtree, Ban, ShieldAlert } from 'lucide-react'
 import { format, parseISO } from 'date-fns'
 
 interface SystemOption { id: string; category: string; value: string; color: string | null; order: number }
-interface TeamMember { id: string; name: string; email: string; role: string; createdAt: string; baseSalary: number; resendSenderEmail?: string | null }
+interface TeamMember { id: string; name: string; email: string; role: string; createdAt: string; baseSalary: number; resendSenderEmail?: string | null; isSuspended: boolean }
 interface EmailTemplate { id: string; name: string; subject: string; body: string; createdAt: string }
 interface Holiday { id: string; name: string; description: string | null; date: string }
 
@@ -196,6 +196,34 @@ export default function AdminSettings() {
             setNewUserSalary(0)
         } else {
             alert((await res.json()).error || 'Failed to create user')
+        }
+        setProcessing(null)
+    }
+
+    async function handleUserDelete(id: string) {
+        if (!confirm('Are you sure you want to delete this team member? This action cannot be undone.')) return
+        setProcessing(id)
+        const res = await fetch(`/api/admin/users?id=${id}`, { method: 'DELETE' })
+        if (res.ok) {
+            setTeamMembers(teamMembers.filter(u => u.id !== id))
+        } else {
+            const data = await res.json()
+            alert(data.error || 'Failed to delete user')
+        }
+        setProcessing(null)
+    }
+
+    async function handleUserSuspend(id: string, currentlySuspended: boolean) {
+        if (!confirm(`Are you sure you want to ${currentlySuspended ? 'unsuspend' : 'suspend'} this team member?`)) return
+        setProcessing(id)
+        const res = await fetch(`/api/admin/users`, { 
+            method: 'PUT', 
+            headers: { 'Content-Type': 'application/json' }, 
+            body: JSON.stringify({ id, isSuspended: !currentlySuspended }) 
+        })
+        if (res.ok) {
+            const updated = await res.json()
+            setTeamMembers(teamMembers.map(u => u.id === updated.id ? { ...u, isSuspended: updated.isSuspended } : u))
         }
         setProcessing(null)
     }
@@ -415,11 +443,54 @@ export default function AdminSettings() {
                                                 <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
                                                     <span style={{ fontWeight: 600, fontSize: 14 }}>{member.name}</span>
                                                     <span style={{ fontSize: 10, padding: '2px 8px', borderRadius: 12, background: 'rgba(99, 102, 241, 0.1)', color: 'var(--accent-primary)', fontWeight: 600 }}>{member.role}</span>
+                                                    {member.isSuspended && <span style={{ fontSize: 10, padding: '2px 8px', borderRadius: 12, background: 'rgba(239, 68, 68, 0.1)', color: '#ef4444', fontWeight: 600, display: 'flex', alignItems: 'center', gap: 4 }}><Ban size={10} /> Suspended</span>}
                                                 </div>
                                                 <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>{member.email}</div>
                                             </div>
                                         </div>
-                                        <button onClick={() => { setEditingUser(member); setEditUserName(member.name); setEditUserEmail(member.email); setEditUserRole(member.role); setEditUserSalary(member.baseSalary || 0); setEditUserSenderEmail(member.resendSenderEmail || ''); setEditUserPassword('') }} style={{ padding: '6px 12px', border: '1px solid var(--border)', borderRadius: 6, background: 'transparent', color: 'var(--text-primary)', fontSize: 12, fontWeight: 600, cursor: 'pointer' }}>Edit</button>
+                                        <div style={{ display: 'flex', gap: 8 }}>
+                                            <button onClick={() => { setEditingUser(member); setEditUserName(member.name); setEditUserEmail(member.email); setEditUserRole(member.role); setEditUserSalary(member.baseSalary || 0); setEditUserSenderEmail(member.resendSenderEmail || ''); setEditUserPassword('') }} style={{ padding: '6px 12px', border: '1px solid var(--border)', borderRadius: 6, background: 'transparent', color: 'var(--text-primary)', fontSize: 12, fontWeight: 600, cursor: 'pointer' }}>Edit</button>
+                                            <button 
+                                                onClick={() => handleUserSuspend(member.id, member.isSuspended)} 
+                                                disabled={processing === member.id}
+                                                style={{ 
+                                                    padding: '6px 12px', 
+                                                    border: `1px solid ${member.isSuspended ? '#10b98133' : '#f59e0b33'}`, 
+                                                    borderRadius: 6, 
+                                                    background: 'transparent', 
+                                                    color: member.isSuspended ? '#10b981' : '#f59e0b', 
+                                                    fontSize: 12, 
+                                                    fontWeight: 600, 
+                                                    cursor: 'pointer',
+                                                    display: 'flex',
+                                                    alignItems: 'center',
+                                                    gap: 4
+                                                }}
+                                            >
+                                                {member.isSuspended ? <Check size={14} /> : <Ban size={14} />}
+                                                {member.isSuspended ? 'Unsuspend' : 'Suspend'}
+                                            </button>
+                                            <button 
+                                                onClick={() => handleUserDelete(member.id)} 
+                                                disabled={processing === member.id}
+                                                style={{ 
+                                                    padding: '6px 12px', 
+                                                    border: '1px solid #ef444433', 
+                                                    borderRadius: 6, 
+                                                    background: 'transparent', 
+                                                    color: '#ef4444', 
+                                                    fontSize: 12, 
+                                                    fontWeight: 600, 
+                                                    cursor: 'pointer',
+                                                    display: 'flex',
+                                                    alignItems: 'center',
+                                                    gap: 4
+                                                }}
+                                            >
+                                                <Trash2 size={14} />
+                                                Delete
+                                            </button>
+                                        </div>
                                     </div>
                                 ))}
                             </div>

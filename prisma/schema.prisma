@@ -33,6 +33,7 @@ model User {
   achievements      UserAchievement[]
   xpHistory         XPHistory[]
   resendSenderEmail String?
+  isSuspended       Boolean            @default(false)
   createdHolidays   Holiday[]          @relation("HolidayCreator")
 }
 
