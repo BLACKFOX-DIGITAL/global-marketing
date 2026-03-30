@@ -1,6 +1,6 @@
 'use client'
 import React, { useState, useEffect, use, useCallback, useRef } from 'react'
-import { Pencil, Mail, Phone, MapPin, Globe, Rocket, CheckSquare, Check, Calendar, User, Plus, History, Paperclip, MessageSquare, CheckCircle, AlertCircle, Loader2, Search } from 'lucide-react'
+import { Pencil, Mail, Phone, MapPin, Globe, Rocket, CheckSquare, Check, Calendar, User, Plus, History, Paperclip, MessageSquare, CheckCircle, AlertCircle, Loader2, Search, Copy } from 'lucide-react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { format, parseISO, formatDistanceToNow } from 'date-fns'
@@ -446,6 +446,11 @@ export default function LeadDetailPage({ params }: { params: Promise<{ id: strin
     const [users, setUsers] = useState<{ id: string, name: string }[]>([])
     const [notification, setNotification] = useState<{ message: string, type: 'success' | 'error' } | null>(null)
 
+    const copyToClipboard = (text: string, label: string) => {
+        navigator.clipboard.writeText(text);
+        setNotification({ message: `${label} copied to clipboard`, type: 'success' });
+    };
+
     useEffect(() => {
         if (notification) {
             const timer = setTimeout(() => setNotification(null), 3000)
@@ -668,10 +673,10 @@ export default function LeadDetailPage({ params }: { params: Promise<{ id: strin
     const ownerInitials = lead.owner?.name.split(' ').map((n: string) => n[0]).join('').toUpperCase().slice(0, 2) || '?'
 
     return (
-        <div style={{ display: 'flex', flexDirection: 'column', height: '100%', overflow: 'hidden' }}>
-            <div className="crm-content" style={{ padding: '24px 32px' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100%', background: 'var(--bg-main)' }}>
+            <div className="crm-content" style={{ padding: '16px 24px' }}>
                 {/* Breadcrumb */}
-                <div style={{ color: 'var(--text-muted)', fontSize: 13, marginBottom: 24, display: 'flex', alignItems: 'center', gap: 8 }}>
+                <div style={{ color: 'var(--text-muted)', fontSize: 11, marginBottom: 16, display: 'flex', alignItems: 'center', gap: 6 }}>
                 <Link href="/leads" style={{ color: 'var(--text-muted)', textDecoration: 'none' }}>Leads</Link>
                 <span>›</span>
                 <span style={{ color: 'var(--text-primary)', fontWeight: 600 }}>{lead.name}</span>
@@ -686,113 +691,75 @@ export default function LeadDetailPage({ params }: { params: Promise<{ id: strin
                         {/* Top row: Identity & Buttons */}
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                             <div style={{ display: 'flex', gap: 16 }}>
-                                <div style={{ width: 56, height: 56, borderRadius: 12, background: 'var(--accent-primary)', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 22, fontWeight: 700, boxShadow: '0 8px 16px -4px rgba(99, 102, 241, 0.4)' }}>
+                                <div style={{ width: 42, height: 42, borderRadius: 10, background: 'var(--accent-primary)', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16, fontWeight: 700, boxShadow: '0 4px 12px -2px rgba(99, 102, 241, 0.3)' }}>
                                     {initials}
                                 </div>
-                                <div>
-                                    <h1 style={{ fontSize: 22, fontWeight: 700, margin: '0 0 4px 0', color: 'var(--text-primary)' }}>{displayTitle}</h1>
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, color: 'var(--text-secondary)', fontSize: 13 }}>
-                                        <User size={14} /> {lead.name && lead.name !== lead.company ? `${lead.name} • ${position}` : 'Lead Company'}
+                                <div style={{ minWidth: 0 }}>
+                                    <h1 style={{ fontSize: 18, fontWeight: 700, margin: 0, color: 'var(--text-primary)', lineHeight: 1.1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{displayTitle}</h1>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: 6, color: 'var(--text-secondary)', fontSize: 11, marginTop: 4 }}>
+                                        <User size={12} /> {lead.name} • {lead.industry || 'Lead'}
                                     </div>
                                 </div>
                             </div>
-                            <div style={{ display: 'flex', gap: 10 }}>
-                                <button onClick={() => setShowEmailModal(true)} className="btn-primary" style={{ background: 'linear-gradient(135deg, #6366f1, #4f46e5)' }}>
-                                    <Mail size={14} /> Email
-                                </button>
-                                <button onClick={() => setIsEditing(true)} className="btn-secondary"><Pencil size={14} /> Edit</button>
+                            <div style={{ display: 'flex', gap: 8, flexShrink: 0 }}>
+                                <button onClick={() => setShowEmailModal(true)} className="btn-primary" style={{ height: 32, padding: '0 12px', fontSize: 13 }}><Mail size={14} /> Email</button>
+                                <button onClick={() => setIsEditing(true)} className="btn-secondary" style={{ height: 32, padding: '0 12px', fontSize: 13 }}><Pencil size={14} /></button>
                             </div>
                         </div>
 
-                        {/* Pipeline Status */}
-                        <div style={{ marginTop: 24, borderTop: '1px solid var(--border)', paddingTop: 20 }}>
-                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--text-muted)', letterSpacing: '1px' }}>PIPELINE STATUS</div>
-                                <div style={{ background: 'rgba(99, 102, 241, 0.15)', color: 'var(--accent-secondary)', padding: '4px 14px', borderRadius: 100, fontSize: 13, fontWeight: 600 }}>
-                                    {lead.status}
-                                </div>
+                        <div style={{ marginTop: 16, padding: '12px 0 0 0', borderTop: '1px solid var(--border)' }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
+                                <div style={{ fontSize: 10, fontWeight: 800, color: 'var(--text-muted)', letterSpacing: '0.8px', textTransform: 'uppercase' }}>Pipeline Progress</div>
+                                <div style={{ background: 'rgba(99, 102, 241, 0.1)', color: 'var(--accent-secondary)', padding: '2px 10px', borderRadius: 6, fontSize: 11, fontWeight: 700 }}>{lead.status}</div>
                             </div>
                             <Stepper lead={lead} onRefresh={fetchLeadAndOptions} onConvert={handleConvert} availableStatuses={statuses} />
                         </div>
 
-                        <div style={{ marginTop: 24, borderTop: '1px solid var(--border)', paddingTop: 20, display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
-                            <div style={{
-                                display: 'flex', alignItems: 'center', gap: 12, padding: '10px 14px',
-                                background: 'var(--bg-input)', borderRadius: 10, border: '1px solid transparent',
-                                transition: 'border-color 0.2s',
-                            }} onMouseOver={e => e.currentTarget.style.borderColor = 'var(--border)'} onMouseOut={e => e.currentTarget.style.borderColor = 'transparent'}>
-                                <div style={{ width: 32, height: 32, borderRadius: 8, background: 'rgba(99,102,241,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                                    <Mail size={14} color="var(--accent-primary)" />
-                                </div>
-                                <div style={{ display: 'flex', flexDirection: 'column', gap: 2, minWidth: 0 }}>
-                                    <span style={{ fontSize: 10, color: 'var(--text-muted)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px' }}>Email</span>
-                                    {lead.email ? lead.email.split(',').map((e: string, i: number) => (
-                                        <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                                            <Link href={`mailto:${e.trim()}`} style={{ color: 'var(--text-primary)', textDecoration: 'none', fontSize: 13, fontWeight: 500, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{e.trim()}</Link>
-                                            <EmailBadge email={e.trim()} />
-                                        </div>
-                                    )) : <span style={{ fontSize: 13, color: 'var(--text-muted)' }}>—</span>}
+                        <div style={{ marginTop: 16, borderTop: '1px solid var(--border)', paddingTop: 16, display: 'flex', gap: 20, flexWrap: 'wrap' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 10, minWidth: 150 }}>
+                                <div style={{ width: 28, height: 28, borderRadius: 6, background: 'rgba(99,102,241,0.08)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Mail size={13} color="var(--accent-primary)" /></div>
+                                <div style={{ minWidth: 0 }}>
+                                    <div style={{ fontSize: 9, color: 'var(--text-muted)', fontWeight: 700, textTransform: 'uppercase', display: 'flex', alignItems: 'center', gap: 6 }}>Email <EmailBadge email={lead.email || ''} /></div>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                                        <Link href={`mailto:${lead.email?.split(',')[0].trim()}`} 
+                                            onClick={(e) => { if (e.altKey) { e.preventDefault(); copyToClipboard(lead.email?.split(',')[0].trim() || '', 'Email'); } }}
+                                            style={{ color: 'var(--text-primary)', textDecoration: 'none', fontSize: 12, fontWeight: 500, display: 'block', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                                            {lead.email?.split(',')[0].trim() || '—'}
+                                        </Link>
+                                        {lead.email && <button onClick={() => copyToClipboard(lead.email?.split(',')[0].trim() || '', 'Email')} style={{ background: 'none', border: 'none', padding: 0, color: 'var(--text-muted)', cursor: 'pointer', opacity: 0.4 }} className="hover-copy"><Copy size={10} /></button>}
+                                    </div>
                                 </div>
                             </div>
-
-                            <div style={{
-                                display: 'flex', alignItems: 'center', gap: 12, padding: '10px 14px',
-                                background: 'var(--bg-input)', borderRadius: 10, border: '1px solid transparent',
-                                transition: 'border-color 0.2s',
-                            }} onMouseOver={e => e.currentTarget.style.borderColor = 'var(--border)'} onMouseOut={e => e.currentTarget.style.borderColor = 'transparent'}>
-                                <div style={{ width: 32, height: 32, borderRadius: 8, background: 'rgba(6,182,212,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                                    <MapPin size={14} color="#06b6d4" />
-                                </div>
-                                <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-                                    <span style={{ fontSize: 10, color: 'var(--text-muted)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px' }}>Location</span>
-                                    <span style={{ color: 'var(--text-primary)', fontSize: 13, fontWeight: 500 }}>{lead.country || 'Unknown'}</span>
-                                </div>
-                            </div>
-
-                            <div style={{
-                                display: 'flex', alignItems: 'center', gap: 12, padding: '10px 14px',
-                                background: 'var(--bg-input)', borderRadius: 10, border: '1px solid transparent',
-                                transition: 'border-color 0.2s',
-                            }} onMouseOver={e => e.currentTarget.style.borderColor = 'var(--border)'} onMouseOut={e => e.currentTarget.style.borderColor = 'transparent'}>
-                                <div style={{ width: 32, height: 32, borderRadius: 8, background: 'rgba(34,197,94,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                                    <Phone size={14} color="#22c55e" />
-                                </div>
-                                <div style={{ display: 'flex', flexDirection: 'column', gap: 2, minWidth: 0 }}>
-                                    <span style={{ fontSize: 10, color: 'var(--text-muted)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px' }}>Phone</span>
-                                    {lead.phone ? lead.phone.split(',').map((p: string, i: number) => (
-                                        <Link key={i} href={`tel:${p.trim()}`} style={{ color: 'var(--text-primary)', textDecoration: 'none', fontSize: 13, fontWeight: 500 }}>{p.trim()}</Link>
-                                    )) : <span style={{ fontSize: 13, color: 'var(--text-muted)' }}>—</span>}
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 10, minWidth: 120 }}>
+                                <div style={{ width: 28, height: 28, borderRadius: 6, background: 'rgba(34,197,94,0.08)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Phone size={13} color="#22c55e" /></div>
+                                <div>
+                                    <div style={{ fontSize: 9, color: 'var(--text-muted)', fontWeight: 700, textTransform: 'uppercase' }}>Phone</div>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                                        {lead.phone ? (
+                                            <Link href={`tel:${lead.phone.split(',')[0].trim()}`} 
+                                                onClick={(e) => { if (e.altKey) { e.preventDefault(); copyToClipboard(lead.phone!.split(',')[0].trim(), 'Phone'); } }}
+                                                style={{ color: 'var(--text-primary)', textDecoration: 'none', fontSize: 12, fontWeight: 500 }}>
+                                                {lead.phone.split(',')[0].trim()}
+                                            </Link>
+                                        ) : <span style={{ color: 'var(--text-muted)', fontSize: 12 }}>—</span>}
+                                        {lead.phone && <button onClick={() => copyToClipboard(lead.phone!.split(',')[0].trim(), 'Phone')} style={{ background: 'none', border: 'none', padding: 0, color: 'var(--text-muted)', cursor: 'pointer', opacity: 0.4 }} className="hover-copy"><Copy size={10} /></button>}
+                                    </div>
                                 </div>
                             </div>
-
-                            <div style={{
-                                display: 'flex', alignItems: 'center', gap: 12, padding: '10px 14px',
-                                background: 'var(--bg-input)', borderRadius: 10, border: '1px solid transparent',
-                                transition: 'border-color 0.2s',
-                            }} onMouseOver={e => e.currentTarget.style.borderColor = 'var(--border)'} onMouseOut={e => e.currentTarget.style.borderColor = 'transparent'}>
-                                <div style={{ width: 32, height: 32, borderRadius: 8, background: 'rgba(245,158,11,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                                    <Globe size={14} color="#f59e0b" />
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 10, minWidth: 120 }}>
+                                <div style={{ width: 28, height: 28, borderRadius: 6, background: 'rgba(6,182,212,0.08)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><MapPin size={13} color="#06b6d4" /></div>
+                                <div>
+                                    <div style={{ fontSize: 9, color: 'var(--text-muted)', fontWeight: 700, textTransform: 'uppercase' }}>Country</div>
+                                    <div style={{ color: 'var(--text-primary)', fontSize: 12, fontWeight: 500 }}>{lead.country || '—'}</div>
                                 </div>
-                                <div style={{ display: 'flex', flexDirection: 'column', gap: 2, minWidth: 0 }}>
-                                    <span style={{ fontSize: 10, color: 'var(--text-muted)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px' }}>Web & Social</span>
+                            </div>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 10, minWidth: 120 }}>
+                                <div style={{ width: 28, height: 28, borderRadius: 6, background: 'rgba(245,158,11,0.08)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Globe size={13} color="#f59e0b" /></div>
+                                <div style={{ minWidth: 0 }}>
+                                    <div style={{ fontSize: 9, color: 'var(--text-muted)', fontWeight: 700, textTransform: 'uppercase' }}>Website</div>
                                     {lead.website ? (
-                                        <Link href={lead.website.startsWith('http') ? lead.website : `https://${lead.website}`} target="_blank" style={{ color: 'var(--accent-primary)', textDecoration: 'none', fontSize: 13, fontWeight: 500, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{lead.website}</Link>
-                                    ) : <span style={{ fontSize: 13, color: 'var(--text-muted)' }}>—</span>}
-                                    {lead.socials && (() => {
-                                        try {
-                                            const socials = JSON.parse(lead.socials);
-                                            return (
-                                                <div style={{ display: 'flex', gap: 6, marginTop: 2, flexWrap: 'wrap' }}>
-                                                    {socials.map((s: { platform: string, url: string }, i: number) => (
-                                                        <Link key={`lead-social-${i}`} href={s.url.startsWith('http') ? s.url : `https://${s.url}`} target="_blank"
-                                                            style={{ color: 'var(--accent-secondary)', textDecoration: 'none', fontSize: 11, fontWeight: 600, background: 'rgba(139,92,246,0.08)', padding: '2px 6px', borderRadius: 4 }}>
-                                                            {s.platform}
-                                                        </Link>
-                                                    ))}
-                                                </div>
-                                            );
-                                        } catch { return null; }
-                                    })()}
+                                        <Link href={lead.website.startsWith('http') ? lead.website : `https://${lead.website}`} target="_blank" style={{ color: 'var(--accent-primary)', textDecoration: 'none', fontSize: 12, fontWeight: 500, display: 'block', overflow: 'hidden', textOverflow: 'ellipsis' }}>{lead.website}</Link>
+                                    ) : <span style={{ color: 'var(--text-muted)', fontSize: 12 }}>—</span>}
                                 </div>
                             </div>
                         </div>
@@ -800,22 +767,21 @@ export default function LeadDetailPage({ params }: { params: Promise<{ id: strin
 
                     {/* Tabs Section */}
                     <div className="card" style={{ padding: 0, minHeight: 0, display: 'flex', flexDirection: 'column' }}>
-                        <div style={{ borderBottom: '1px solid var(--border)', display: 'flex', gap: 0, padding: '0 24px' }}>
+                        <div style={{ borderBottom: '1px solid var(--border)', display: 'flex', gap: 0, padding: '0 20px' }}>
                             {[
-                                { key: 'tasks' as const, icon: <CheckSquare size={15} />, label: 'Tasks', count: lead.tasks?.filter(t => !t.completed).length },
-                                { key: 'attachments' as const, icon: <Paperclip size={15} />, label: 'Files', count: lead.attachments?.length },
+                                { key: 'tasks' as const, icon: <CheckSquare size={14} />, label: 'Tasks' },
+                                { key: 'attachments' as const, icon: <Paperclip size={14} />, label: 'Files' },
                             ].map(t => (
                                 <button key={t.key}
                                     onClick={() => setActiveTab(t.key)}
                                     style={{
-                                        padding: '14px 16px', borderBottom: `2.5px solid ${activeTab === t.key ? 'var(--accent-primary)' : 'transparent'}`,
+                                        padding: '12px 16px', borderBottom: `2.5px solid ${activeTab === t.key ? 'var(--accent-primary)' : 'transparent'}`,
                                         background: 'none', color: activeTab === t.key ? 'var(--text-primary)' : 'var(--text-muted)',
                                         fontSize: 13, fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 8,
                                         transition: 'all 0.2s', borderTop: 'none', borderLeft: 'none', borderRight: 'none'
                                     }}
                                 >
                                     {t.icon} {t.label}
-                                    {(t.count ?? 0) > 0 && <span style={{ fontSize: 10, background: activeTab === t.key ? 'rgba(99,102,241,0.15)' : 'var(--bg-input)', color: activeTab === t.key ? 'var(--accent-primary)' : 'var(--text-muted)', padding: '1px 6px', borderRadius: 10, fontWeight: 700 }}>{t.count}</span>}
                                 </button>
                             ))}
                         </div>
@@ -978,103 +944,64 @@ export default function LeadDetailPage({ params }: { params: Promise<{ id: strin
                             onClick={handleConvert}
                             disabled={converting}
                             style={{
-                                width: '100%', padding: '16px', background: 'var(--bg-card)',
-                                border: '1px dashed rgba(99,102,241,0.5)', borderRadius: 12,
-                                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10,
-                                color: 'var(--accent-primary)', fontSize: 16, fontWeight: 600,
-                                cursor: converting ? 'not-allowed' : 'pointer', transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
-                                opacity: converting ? 0.7 : 1
-                            }} onMouseOver={e => !converting && (e.currentTarget.style.background = 'rgba(99,102,241,0.05)', e.currentTarget.style.transform = 'translateY(-2px)')} onMouseOut={e => !converting && (e.currentTarget.style.background = 'var(--bg-card)', e.currentTarget.style.transform = 'translateY(0)')}>
-                            <Rocket size={20} className={converting ? 'animate-pulse' : ''} /> {converting ? 'Converting...' : 'Convert to Opportunity'}
+                                width: '100%', padding: '12px', background: 'var(--bg-card)',
+                                border: '1px dashed rgba(99,102,241,0.5)', borderRadius: 10,
+                                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+                                color: 'var(--accent-primary)', fontSize: 14, fontWeight: 600,
+                                cursor: converting ? 'not-allowed' : 'pointer', transition: 'all 0.15s ease'
+                            }}>
+                            <Rocket size={16} className={converting ? 'animate-pulse' : ''} /> {converting ? 'Converting...' : 'Convert to Opportunity'}
                         </button>
                     )}
 
                     {/* Contacts */}
-                    <div className="card" style={{ padding: 24 }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontWeight: 600, marginBottom: 16 }}>
-                            <User size={16} color="var(--accent-primary)" /> Contact Persons
+                    <div className="card" style={{ padding: 16 }}>
+                        <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-muted)', letterSpacing: '0.5px', marginBottom: 12, display: 'flex', alignItems: 'center', gap: 6 }}>
+                            <User size={13} color="var(--accent-primary)" /> CONTACT PERSONS
                         </div>
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-                            {lead.contacts?.length ? lead.contacts.map(c => (
-                                <div key={c.id} style={{ paddingBottom: 16, borderBottom: '1px solid var(--border)', display: 'flex', flexDirection: 'column', gap: 6 }}>
-                                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 2 }}>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                            {lead.contacts && lead.contacts.length > 0 ? lead.contacts.map(c => (
+                                <div key={c.id} style={{ paddingBottom: 10, borderBottom: '1px solid var(--border)' }}>
+                                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                                         <div style={{ fontWeight: 600, fontSize: 13, color: 'var(--text-primary)' }}>{c.name}</div>
-                                        {c.isPrimary && <div style={{ fontSize: 10, background: 'rgba(99,102,241,0.1)', color: 'var(--accent-primary)', padding: '2px 6px', borderRadius: 4, fontWeight: 700 }}>PRIMARY</div>}
+                                        {c.isPrimary && <div style={{ fontSize: 8, background: 'rgba(99,102,241,0.1)', color: 'var(--accent-primary)', padding: '1px 4px', borderRadius: 4, fontWeight: 800 }}>PRIMARY</div>}
                                     </div>
-                                    <div style={{ fontSize: 12, color: 'var(--text-secondary)' }}>{c.position || 'No Title'}</div>
-                                    {c.email && c.email.split(',').map((e: string, i: number) => (
-                                        <Link key={`email-${i}`} href={`mailto:${e.trim()}`} style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, color: 'var(--accent-primary)', marginTop: i === 0 ? 4 : 0, textDecoration: 'none' }}><Mail size={12} /> {e.trim()}</Link>
-                                    ))}
-                                    {c.phone && c.phone.split(',').map((p: string, i: number) => (
-                                        <Link key={`phone-${i}`} href={`tel:${p.trim()}`} style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, color: 'var(--text-muted)', textDecoration: 'none' }}><Phone size={12} /> {p.trim()}</Link>
-                                    ))}
-                                    {c.socials && (() => {
-                                        try {
-                                            const socials = JSON.parse(c.socials);
-                                            return socials.map((s: { platform: string, url: string }, i: number) => (
-                                                <Link key={`contact-social-${i}`} href={s.url.startsWith('http') ? s.url : `https://${s.url}`} target="_blank" style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, color: 'var(--accent-secondary)', textDecoration: 'none' }}><Globe size={12} /> {s.platform}</Link>
-                                            ));
-                                        } catch {
-                                            return null;
-                                        }
-                                    })()}
+                                    <div style={{ fontSize: 11, color: 'var(--text-secondary)', marginTop: 2 }}>{c.position || 'No Title'}</div>
+                                    {c.email && (
+                                        <div style={{ fontSize: 11, color: 'var(--accent-primary)', marginTop: 4, display: 'flex', alignItems: 'center', gap: 4 }}>
+                                            <Mail size={10} /> 
+                                            <span onClick={() => copyToClipboard(c.email || '', 'Email')} style={{ cursor: 'pointer' }}>{c.email.split(',')[0]}</span>
+                                            <span className="hover-copy" style={{ cursor: 'pointer', marginLeft: 4 }} onClick={() => copyToClipboard(c.email || '', 'Email')}><Copy size={10} /></span>
+                                        </div>
+                                    )}
+                                    {c.phone && (
+                                        <div style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 2, display: 'flex', alignItems: 'center', gap: 4 }}>
+                                            <Phone size={10} /> 
+                                            <span onClick={() => copyToClipboard(c.phone || '', 'Phone')} style={{ cursor: 'pointer' }}>{c.phone.split(',')[0]}</span>
+                                            <span className="hover-copy" style={{ cursor: 'pointer', marginLeft: 4 }} onClick={() => copyToClipboard(c.phone || '', 'Phone')}><Copy size={10} /></span>
+                                        </div>
+                                    )}
                                 </div>
                             )) : (
-                                <div style={{ fontSize: 13, color: 'var(--text-muted)', fontStyle: 'italic' }}>No contacts found.</div>
+                                <div style={{ fontSize: 12, color: 'var(--text-muted)', fontStyle: 'italic' }}>No contacts found.</div>
                             )}
                         </div>
                     </div>
 
                     {/* Overview */}
                     <div className="card" style={{ padding: 16 }}>
-                        <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-muted)', letterSpacing: '0.5px', marginBottom: 16 }}>LEAD OVERVIEW</div>
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: 12 }}>
-                                <span style={{ color: 'var(--text-secondary)' }}>Created</span>
-                                <span style={{ color: 'var(--text-primary)', fontWeight: 500 }}>{format(parseISO(lead.createdAt), 'MMM d, yyyy')}</span>
-                            </div>
-                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: 12 }}>
-                                <span style={{ color: 'var(--text-secondary)' }}>Last Active</span>
-                                <span style={{ color: 'var(--text-primary)', fontWeight: 500 }}>{formatDistanceToNow(parseISO(lead.updatedAt))} ago</span>
-                            </div>
-                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: 12 }}>
-                                <span style={{ color: 'var(--text-secondary)' }}>Country</span>
-                                <span style={{ background: 'var(--bg-input)', padding: '2px 8px', borderRadius: 4, fontSize: 11 }}>{lead.country || 'Unknown'}</span>
-                            </div>
-                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: 12 }}>
-                                <span style={{ color: 'var(--text-secondary)' }}>Industry</span>
-                                <span style={{ background: 'var(--bg-input)', padding: '2px 8px', borderRadius: 4, fontSize: 11 }}>{lead.industry || '—'}</span>
-                            </div>
-                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: 12 }}>
-                                <span style={{ color: 'var(--text-secondary)' }}>Priority</span>
-                                {lead.priority ? (
-                                    <span style={{
-                                        fontSize: 9, padding: '2px 6px', borderRadius: 4, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.5px',
-                                        background: lead.priority === 'High' ? 'rgba(239, 68, 68, 0.1)' : lead.priority === 'Medium' ? 'rgba(245, 158, 11, 0.1)' : 'rgba(16, 185, 129, 0.1)',
-                                        color: lead.priority === 'High' ? '#ef4444' : lead.priority === 'Medium' ? '#f59e0b' : '#10b981',
-                                        border: `1px solid ${lead.priority === 'High' ? 'rgba(239, 68, 68, 0.2)' : lead.priority === 'Medium' ? 'rgba(245, 158, 11, 0.2)' : 'rgba(16, 185, 129, 0.2)'}`
-                                    }}>{lead.priority}</span>
-                                ) : <span style={{ color: 'var(--text-muted)' }}>—</span>}
-                            </div>
-                        </div>
-
-                        <div style={{ height: 1, borderBottom: '1px solid var(--border)', margin: '16px 0' }} />
-
-                        <div style={{ fontSize: 11, color: 'var(--text-muted)', marginBottom: 10, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                            <span>Lead Owner</span>
+                        <div style={{ fontSize: 11, color: 'var(--text-muted)', marginBottom: 10, display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontWeight: 700 }}>
+                            <span>LEAD OWNER</span>
                             <select
                                 value={lead.owner?.id || ''}
                                 onChange={e => reassignLead(e.target.value)}
-                                style={{ background: 'none', border: 'none', color: 'var(--accent-primary)', fontSize: 10, fontWeight: 600, cursor: 'pointer', padding: 0 }}
-                            >
+                                style={{ background: 'none', border: 'none', color: 'var(--accent-primary)', fontSize: 10, fontWeight: 600, cursor: 'pointer', padding: 0 }}>
                                 <option value="">Reassign</option>
                                 {users.map(u => <option key={u.id} value={u.id}>{u.name}</option>)}
                             </select>
                         </div>
                         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                            <div style={{ width: 32, height: 32, borderRadius: '50%', background: 'rgba(99,102,241,0.1)', color: 'var(--accent-primary)', fontSize: 12, display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px solid rgba(99,102,241,0.2)', fontWeight: 600 }}>
-                                {ownerInitials}
-                            </div>
+                            <div style={{ width: 32, height: 32, borderRadius: '50%', background: 'rgba(99,102,241,0.1)', color: 'var(--accent-primary)', fontSize: 12, display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px solid rgba(99,102,241,0.2)', fontWeight: 600 }}>{ownerInitials}</div>
                             <div>
                                 <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-primary)' }}>{lead.owner?.name || 'Unassigned'}</div>
                                 <div style={{ fontSize: 11, color: 'var(--text-muted)' }}>Account Executive</div>
@@ -1084,12 +1011,10 @@ export default function LeadDetailPage({ params }: { params: Promise<{ id: strin
 
                     {/* Activity */}
                     <div className="card" style={{ padding: 20 }}>
-                        <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--text-muted)', letterSpacing: '0.5px', marginBottom: 20, display: 'flex', alignItems: 'center', gap: 6 }}>
+                        <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--text-muted)', letterSpacing: '0.5px', marginBottom: 15, display: 'flex', alignItems: 'center', gap: 6 }}>
                             <History size={14} /> ACTIVITY TIMELINE
                         </div>
-                        <div style={{ padding: '0 24px' }}>
-                            <ActivityTimeline leadId={lead.id} />
-                        </div>
+                        <ActivityTimeline leadId={lead.id} />
                     </div>
                 </div>
             </div >
@@ -1140,31 +1065,22 @@ export default function LeadDetailPage({ params }: { params: Promise<{ id: strin
             )}
 
             {/* In-app Notification (Toast) */}
-            {
-                notification && (
-                    <div style={{
-                        position: 'fixed', bottom: 32, left: '50%', transform: 'translateX(-50%)',
-                        background: 'var(--bg-card)', border: '1px solid var(--border)', boxShadow: '0 8px 32px rgba(0,0,0,0.4)',
-                        padding: '12px 24px', borderRadius: 12, display: 'flex', alignItems: 'center', gap: 12,
-                        zIndex: 1000, animation: 'slideUp 0.3s ease-out', color: 'var(--text-primary)'
-                    }}>
-                        <div style={{ width: 24, height: 24, borderRadius: '50%', background: 'rgba(34,197,94,0.1)', color: '#22c55e', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                            <CheckCircle size={14} />
-                        </div>
-                        <span style={{ fontSize: 14, fontWeight: 500 }}>{notification.message}</span>
-                    </div>
-                )
-            }
+            {notification && (
+                <div style={{ position: 'fixed', bottom: 32, left: '50%', transform: 'translateX(-50%)', background: 'var(--bg-card)', border: '1px solid var(--border)', padding: '12px 24px', borderRadius: 12, display: 'flex', alignItems: 'center', gap: 12, zIndex: 1000, boxShadow: '0 8px 32px rgba(0,0,0,0.15)', animation: 'slideUp 0.3s ease-out' }}>
+                    <div style={{ width: 24, height: 24, borderRadius: '50%', background: 'rgba(34,197,94,0.1)', color: '#22c55e', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><CheckCircle size={14} /></div>
+                    <span style={{ fontSize: 14, fontWeight: 500, color: 'var(--text-primary)' }}>{notification.message}</span>
+                </div>
+            )}
 
             <style>{`
                 @keyframes slideUp {
                     from { transform: translate(-50%, 20px); opacity: 0; }
                     to { transform: translate(-50%, 0); opacity: 1; }
                 }
-                @keyframes spin {
-                    from { transform: rotate(0deg); }
-                    to { transform: rotate(360deg); }
-                }
+                @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+                .hover-copy { opacity: 0; transition: opacity 0.2s; }
+                .hover-copy:hover { opacity: 1 !important; }
+                div:hover > .hover-copy { opacity: 0.4; }
             `}</style>
             {showEmailModal && lead && (
                 <EmailModal

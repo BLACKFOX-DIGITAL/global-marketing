@@ -69,28 +69,29 @@ export default function PoolPage() {
         <div style={{ display: 'flex', flexDirection: 'column', height: '100%', overflow: 'hidden' }}>
             <Header title="Open Pool" user={null} />
             <div className="crm-content" style={{ display: 'flex', flexDirection: 'column', flex: 1, minHeight: 0, overflow: 'hidden' }}>
-                <div className="page-header">
-                    <div>
-                        <h2 style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                            <Waves size={24} color="var(--accent-primary)" /> Open Lead Pool
+                <div className="page-header" style={{ marginBottom: 12 }}>
+                    <div style={{ display: 'flex', alignItems: 'baseline', gap: 12 }}>
+                        <h2 style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 0 }}>
+                            <Waves size={20} color="var(--accent-primary)" /> Open Lead Pool
                         </h2>
-                        <p>Browse unassigned, newly imported, scaled, and recirculated leads ready for claiming.</p>
+                        <span style={{ fontSize: 13, color: 'var(--text-muted)' }}>{total} leads available</span>
                     </div>
                 </div>
 
-                <div style={{ display: 'flex', gap: 10, marginBottom: 24, alignItems: 'center' }}>
-                    <div className="search-bar" style={{ flex: 1, maxWidth: 480 }}>
-                        <Search size={15} color="var(--text-muted)" />
+                <div style={{ display: 'flex', gap: 8, marginBottom: 12, alignItems: 'center' }}>
+                    <div className="search-bar" style={{ flex: 1, maxWidth: 400, height: 32 }}>
+                        <Search size={14} color="var(--text-muted)" />
                         <input
-                            placeholder="Find leads in the pool..."
+                            placeholder="Find leads in pool..."
                             value={search}
                             onChange={e => { setSearch(e.target.value); setPage(1) }}
+                            style={{ fontSize: 13 }}
                         />
                     </div>
                     <select
                         value={statusFilter}
                         onChange={e => { setStatusFilter(e.target.value); setPage(1) }}
-                        style={{ width: 160 }}
+                        style={{ width: 140, height: 32, fontSize: 12, padding: '0 8px' }}
                     >
                         <option value="">All Statuses</option>
                         <option value="New">New</option>
@@ -101,18 +102,18 @@ export default function PoolPage() {
                     </select>
                 </div>
 
-                <div className="card" style={{ padding: 0, height: 'calc(100vh - 350px)', minHeight: 400, display: 'flex', flexDirection: 'column', flex: 1, overflow: 'hidden' }}>
+                <div className="card" style={{ padding: 0, height: 'calc(100vh - 220px)', minHeight: 400, display: 'flex', flexDirection: 'column', flex: 1, overflow: 'hidden' }}>
                     <div style={{ 
                         display: 'flex', background: 'var(--bg-card)', 
                         borderBottom: '1px solid var(--border)', 
-                        padding: '12px 18px', fontWeight: 600, fontSize: 13, color: 'var(--text-muted)',
-                        textTransform: 'uppercase', letterSpacing: '0.05em', height: 44, alignItems: 'center'
+                        padding: '10px 18px', fontWeight: 600, fontSize: 12, color: 'var(--text-muted)',
+                        textTransform: 'uppercase', letterSpacing: '0.05em', height: 40, alignItems: 'center'
                     }}>
                         <div style={{ width: '25%' }}>Name & Company</div>
                         <div style={{ width: '25%' }}>Website & Email</div>
                         <div style={{ width: '15%' }}>Industry</div>
                         <div style={{ width: '15%' }}>Idle Time</div>
-                        <div style={{ width: '10%' }}>Last Status</div>
+                        <div style={{ width: '10%' }}>Status</div>
                         <div style={{ width: '10%', textAlign: 'right' }}>Actions</div>
                     </div>
 
@@ -129,7 +130,7 @@ export default function PoolPage() {
                             <AutoSizer renderProp={({ height, width }: any) => (
                                 <List
                                     rowCount={leads.length}
-                                    rowHeight={80} 
+                                    rowHeight={56} 
                                     style={{ height: height as any, width: width as any, overflowY: 'auto' as any }}
                                     rowProps={{}}
                                     rowComponent={({ index, style }: any) => {
@@ -142,33 +143,35 @@ export default function PoolPage() {
                                                 background: index % 2 === 0 ? 'transparent' : 'rgba(0,0,0,0.01)'
                                             }} className="lead-row-container">
                                                 <div style={{ width: '25%', display: 'flex', alignItems: 'center', gap: 10 }}>
-                                                    <Avatar name={lead.company || lead.name} />
+                                                    <div style={{ flexShrink: 0, scale: '0.85', transformOrigin: 'left center' }}>
+                                                        <Avatar name={lead.company || lead.name} />
+                                                    </div>
                                                     <div style={{ overflow: 'hidden' }}>
-                                                        <div style={{ fontWeight: 600, color: 'var(--text-primary)', fontSize: 13, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{lead.company || lead.name}</div>
-                                                        {lead.name && lead.name !== lead.company && <div style={{ fontSize: 11, color: 'var(--text-muted)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{lead.name}</div>}
+                                                        <div style={{ fontWeight: 600, color: 'var(--text-primary)', fontSize: 12, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{lead.company || lead.name}</div>
+                                                        {lead.name && lead.name !== lead.company && <div style={{ fontSize: 10, color: 'var(--text-muted)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{lead.name}</div>}
                                                     </div>
                                                 </div>
                                                 <div style={{ width: '25%', paddingRight: 10 }}>
-                                                    <div style={{ color: 'var(--text-secondary)', fontSize: 12, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{lead.website || '—'}</div>
-                                                    {lead.email && <div style={{ fontSize: 11, color: 'var(--text-muted)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{lead.email}</div>}
+                                                    <div style={{ color: 'var(--text-secondary)', fontSize: 11, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{lead.website || '—'}</div>
+                                                    {lead.email && <div style={{ fontSize: 10, color: 'var(--text-muted)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{lead.email}</div>}
                                                 </div>
-                                                <div style={{ width: '15%', color: 'var(--text-secondary)', fontSize: 12, fontWeight: 500 }}>
+                                                <div style={{ width: '15%', color: 'var(--text-secondary)', fontSize: 11, fontWeight: 500 }}>
                                                     {lead.industry || '—'}
                                                 </div>
-                                                <div style={{ width: '15%', fontSize: 12, color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', gap: 6 }}>
-                                                    <Clock size={12} color="var(--text-muted)" /> {formatDistanceToNow(new Date(lead.lastActivityAt))} ago
+                                                <div style={{ width: '15%', fontSize: 11, color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', gap: 6 }}>
+                                                    <Clock size={11} color="var(--text-muted)" /> {formatDistanceToNow(new Date(lead.lastActivityAt))}
                                                 </div>
-                                                <div style={{ width: '10%' }}>
+                                                <div style={{ width: '10%', scale: '0.9', transformOrigin: 'left center' }}>
                                                     <StatusBadge status={lead.status} />
                                                 </div>
                                                 <div style={{ width: '10%', textAlign: 'right' }}>
                                                     <button
                                                         className="btn-primary"
-                                                        style={{ padding: '6px 16px', fontSize: 12, display: 'inline-flex', alignItems: 'center', gap: 6, borderRadius: 10 }}
+                                                        style={{ padding: '4px 12px', fontSize: 11, display: 'inline-flex', alignItems: 'center', gap: 6, borderRadius: 8 }}
                                                         onClick={() => handleClaim(lead.id)}
                                                         disabled={claiming === lead.id}
                                                     >
-                                                        {claiming === lead.id ? <div className="spinner" style={{ width: 14, height: 14, borderColor: '#fff', borderTopColor: 'transparent' }} /> : <Hand size={14} />}
+                                                        {claiming === lead.id ? <div className="spinner" style={{ width: 12, height: 12, borderColor: '#fff', borderTopColor: 'transparent' }} /> : <Hand size={12} />}
                                                         Claim
                                                     </button>
                                                 </div>

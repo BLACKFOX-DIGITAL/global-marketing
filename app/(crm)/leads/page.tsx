@@ -1,5 +1,5 @@
 'use client'
-import { useState, useDeferredValue } from 'react'
+import React, { useState, useDeferredValue } from 'react'
 import Header from '@/components/Header'
 import Link from 'next/link'
 import dynamic from 'next/dynamic'
@@ -43,16 +43,17 @@ function StatCard({ icon, label, value, color, periodLabel, onClick }: {
         <div
             onClick={onClick}
             style={{
-                flex: 1, background: 'var(--bg-card)', border: '1px solid var(--border)',
-                borderRadius: 12, padding: '14px 18px', cursor: 'pointer',
+                background: 'var(--bg-card)', border: '1px solid var(--border)',
+                borderRadius: 10, padding: '10px 14px', cursor: 'pointer',
                 transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
                 display: 'flex', justifyContent: 'space-between', alignItems: 'center',
                 userSelect: 'none', position: 'relative', overflow: 'hidden',
+                minWidth: 160, flex: 1
             }}
             onMouseOver={e => {
-                e.currentTarget.style.transform = 'translateY(-2px)'
-                e.currentTarget.style.boxShadow = `0 6px 20px ${color}20`
-                e.currentTarget.style.borderColor = `${color}40`
+                e.currentTarget.style.transform = 'translateY(-1px)'
+                e.currentTarget.style.boxShadow = `0 4px 12px ${color}15`
+                e.currentTarget.style.borderColor = `${color}30`
             }}
             onMouseOut={e => {
                 e.currentTarget.style.transform = 'translateY(0)'
@@ -60,19 +61,19 @@ function StatCard({ icon, label, value, color, periodLabel, onClick }: {
                 e.currentTarget.style.borderColor = 'var(--border)'
             }}
         >
-            <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                 <div style={{
-                    width: 38, height: 38, borderRadius: 10,
-                    background: `${color}15`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
+                    width: 32, height: 32, borderRadius: 8,
+                    background: `${color}12`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
                 }}>
-                    {icon}
+                    {React.cloneElement(icon as React.ReactElement<any>, { size: 18 })}
                 </div>
                 <div>
-                    <div style={{ fontSize: 11, color: 'var(--text-muted)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px' }}>{label}</div>
-                    <div style={{ fontSize: 22, fontWeight: 700, color: 'var(--text-primary)', lineHeight: 1.2 }}>{value}</div>
+                    <div style={{ fontSize: 10, color: 'var(--text-muted)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.4px' }}>{label}</div>
+                    <div style={{ fontSize: 18, fontWeight: 700, color: 'var(--text-primary)', lineHeight: 1 }}>{value}</div>
                 </div>
             </div>
-            <div style={{ fontSize: 10, color, fontWeight: 600, background: `${color}15`, padding: '3px 8px', borderRadius: 6 }}>
+            <div style={{ fontSize: 9, color, fontWeight: 700, background: `${color}12`, padding: '2px 6px', borderRadius: 4 }}>
                 {periodLabel}
             </div>
         </div>
@@ -149,42 +150,43 @@ export default function LeadsPage() {
         <div style={{ display: 'flex', flexDirection: 'column', height: '100%', overflow: 'hidden' }}>
             <Header title="Leads Management" user={null} />
             <div className="crm-content" style={{ display: 'flex', flexDirection: 'column', flex: 1, minHeight: 0, overflow: 'hidden' }}>
-                <div className="page-header">
-                    <div>
-                        <h2>Leads</h2>
-                        <p>Manage and track your incoming prospects and pipeline conversion.</p>
+                <div className="page-header" style={{ marginBottom: 16 }}>
+                    <div style={{ display: 'flex', alignItems: 'baseline', gap: 12 }}>
+                        <h2 style={{ marginBottom: 0 }}>Leads</h2>
+                        <span style={{ fontSize: 13, color: 'var(--text-muted)' }}>{total} total prospects</span>
                     </div>
+
                     <div style={{ display: 'flex', gap: 10 }}>
-                        <Link href="/leads/guide" className="btn-secondary" style={{ textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 8 }}>
-                            <BookOpen size={16} /> Guide
+                        <Link href="/leads/guide" className="btn-secondary" style={{ textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 8, padding: '4px 12px', fontSize: 13 }}>
+                            <BookOpen size={14} /> Guide
                         </Link>
-                        <button onClick={() => setShowAddModal(true)} className="btn-primary">
-                            <Plus size={16} /> New Lead
+                        <button onClick={() => setShowAddModal(true)} className="btn-primary" style={{ padding: '4px 14px', fontSize: 13 }}>
+                            <Plus size={14} /> New Lead
                         </button>
                     </div>
                 </div>
 
                 {/* Stats Dashboard */}
-                <div style={{ display: 'flex', gap: 16, marginBottom: 24 }}>
+                <div style={{ display: 'flex', gap: 12, marginBottom: 16 }}>
                     <StatCard
-                        icon={<UserPlus size={22} color="#6366f1" />}
-                        label="New Leads"
+                        icon={<UserPlus size={18} color="#6366f1" />}
+                        label="New"
                         value={stats.newLeads}
                         color="#6366f1"
                         periodLabel={currentPeriod.label}
                         onClick={cyclePeriod}
                     />
                     <StatCard
-                        icon={<PhoneCall size={22} color="#f59e0b" />}
-                        label="Call"
+                        icon={<PhoneCall size={18} color="#f59e0b" />}
+                        label="Called"
                         value={stats.calledLeads}
                         color="#f59e0b"
                         periodLabel={currentPeriod.label}
                         onClick={cyclePeriod}
                     />
                     <StatCard
-                        icon={<Mail size={22} color="#10b981" />}
-                        label="Mail"
+                        icon={<Mail size={18} color="#10b981" />}
+                        label="Mailed"
                         value={stats.mailSentLeads}
                         color="#10b981"
                         periodLabel={currentPeriod.label}
@@ -193,22 +195,23 @@ export default function LeadsPage() {
                 </div>
 
                 {/* Toolbar */}
-                <div style={{ display: 'flex', gap: 10, marginBottom: 20, alignItems: 'center' }}>
-                    <div className="search-bar" style={{ flex: 1, maxWidth: 480 }}>
-                        <Search size={15} color="var(--text-muted)" />
+                <div style={{ display: 'flex', gap: 8, marginBottom: 12, alignItems: 'center' }}>
+                    <div className="search-bar" style={{ flex: 1, maxWidth: 400, height: 32 }}>
+                        <Search size={14} color="var(--text-muted)" />
                         <input
-                            placeholder="Search leads by name, email or company..."
+                            placeholder="Find leads..."
                             value={searchInput}
                             onChange={e => { setSearchInput(e.target.value); setPage(1) }}
+                            style={{ fontSize: 13 }}
                         />
                     </div>
-                    <select value={status} onChange={e => { setStatus(e.target.value); setPage(1) }} style={{ width: 140 }}>
+                    <select value={status} onChange={e => { setStatus(e.target.value); setPage(1) }} style={{ width: 120, height: 32, fontSize: 12, padding: '0 8px' }}>
                         {statusOptions.map(s => <option key={s} value={s}>{s || 'All Status'}</option>)}
                     </select>
-                    <button className="btn-ghost"><Filter size={15} /></button>
+                    <button className="btn-ghost" style={{ width: 32, height: 32, padding: 0 }}><Filter size={14} /></button>
                 </div>
 
-                <div className="card" style={{ padding: 0, height: 'calc(100vh - 425px)', minHeight: 400, display: 'flex', flexDirection: 'column', flex: 1, overflow: 'hidden' }}>
+                <div className="card" style={{ padding: 0, height: 'calc(100vh - 280px)', minHeight: 400, display: 'flex', flexDirection: 'column', flex: 1, overflow: 'hidden' }}>
                     <div style={{ 
                         display: 'flex', background: 'var(--bg-card)', 
                         borderBottom: '1px solid var(--border)', 
@@ -238,7 +241,7 @@ export default function LeadsPage() {
                             <AutoSizer renderProp={({ height, width }: any) => (
                                 <List
                                     rowCount={leads.length}
-                                    rowHeight={80} 
+                                    rowHeight={56} 
                                     style={{ height: height as any, width: width as any, overflowY: 'auto' as any }}
                                     rowProps={{}}
                                     rowComponent={({ index, style }: any) => {
@@ -251,10 +254,12 @@ export default function LeadsPage() {
                                                 background: index % 2 === 0 ? 'transparent' : 'rgba(0,0,0,0.01)'
                                             }} className="lead-row-container">
                                                 <div style={{ width: '20%', display: 'flex', alignItems: 'center', gap: 10 }}>
-                                                    <Avatar name={lead.company || lead.name} />
+                                                    <div style={{ flexShrink: 0, scale: '0.85', transformOrigin: 'left center' }}>
+                                                        <Avatar name={lead.company || lead.name} />
+                                                    </div>
                                                     <div style={{ overflow: 'hidden' }}>
-                                                        <Link href={`/leads/${lead.id}`} style={{ fontWeight: 600, color: 'var(--text-primary)', textDecoration: 'none', fontSize: 13, display: 'block', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{lead.company || lead.name}</Link>
-                                                        {lead.name && lead.name !== lead.company && <div style={{ fontSize: 11, color: 'var(--text-muted)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{lead.name}</div>}
+                                                        <Link href={`/leads/${lead.id}`} style={{ fontWeight: 600, color: 'var(--text-primary)', textDecoration: 'none', fontSize: 12, display: 'block', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{lead.company || lead.name}</Link>
+                                                        {lead.name && lead.name !== lead.company && <div style={{ fontSize: 10, color: 'var(--text-muted)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{lead.name}</div>}
                                                     </div>
                                                 </div>
                                                 <div style={{ width: '18%', paddingRight: 10 }}>
