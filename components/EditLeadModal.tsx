@@ -36,7 +36,9 @@ export default function EditLeadModal({ id, onSuccess, onClose }: { id: string, 
     const [websiteError, setWebsiteError] = useState('')
     const [showNotes, setShowNotes] = useState(false)
     const [recentCountries, setRecentCountries] = useState<string[]>([])
+    const [recentPositions, setRecentPositions] = useState<string[]>([])
     const [showCountryDropdown, setShowCountryDropdown] = useState(false)
+    const [activePositionIdx, setActivePositionIdx] = useState<number | null>(null)
 
     const cleanWebsite = (url: string) => url.toLowerCase().replace(/^https?:\/\//, '').replace(/^www\./, '').replace(/\/$/, '')
 
@@ -99,6 +101,15 @@ export default function EditLeadModal({ id, onSuccess, onClose }: { id: string, 
             }
         }
 
+        const savedPos = localStorage.getItem('recent_positions')
+        if (savedPos) {
+            try {
+                setRecentPositions(JSON.parse(savedPos))
+            } catch (e) {
+                console.error('Failed to parse recent positions', e)
+            }
+        }
+
         return () => clearTimeout(timeout)
     }, [])
 
@@ -122,6 +133,20 @@ export default function EditLeadModal({ id, onSuccess, onClose }: { id: string, 
 
     function set(field: string, value: string) {
         setForm(f => ({ ...f, [field]: value }))
+    }
+
+    async function handleAddPosition(typed: string, idx: number) {
+        if (!typed.trim()) return
+        const res = await fetch('/api/admin/settings', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ category: 'LEAD_POSITION', value: typed.trim(), color: '#3b82f6' })
+        })
+        if (res.ok) {
+            const newOpt = await res.json()
+            setPositionOptions(prev => [...prev, newOpt])
+            const n = [...contacts]; n[idx].position = newOpt.value; setContacts(n)
+        }
     }
 
     async function handleSubmit(e: React.FormEvent) {
@@ -148,11 +173,27 @@ export default function EditLeadModal({ id, onSuccess, onClose }: { id: string, 
             finalIndustry = match.value;
         }
 
+        const newRecentPositions = [...recentPositions]
         for (const contact of contacts) {
             if (contact.position) {
                 const match = positionOptions.find(o => o.value.toLowerCase() === contact.position.trim().toLowerCase());
                 if (!match) { setError('Please select a valid Position/Title from the suggestions.'); return; }
+                const matchValue = match.value;
+                
+                // Track recent positions
+                if (!newRecentPositions.includes(matchValue)) {
+                    newRecentPositions.unshift(matchValue)
+                } else {
+                    const idx = newRecentPositions.indexOf(matchValue)
+                    newRecentPositions.splice(idx, 1)
+                    newRecentPositions.unshift(matchValue)
+                }
             }
+        }
+        const finalRecentPositions = newRecentPositions.slice(0, 5)
+        if (finalRecentPositions.length > 0) {
+            localStorage.setItem('recent_positions', JSON.stringify(finalRecentPositions))
+            setRecentPositions(finalRecentPositions)
         }
 
         const primary = contacts[0] || {}
@@ -447,6 +488,8 @@ export default function EditLeadModal({ id, onSuccess, onClose }: { id: string, 
                                                             style={{ position: 'relative', zIndex: 2, background: 'transparent' }}
                                                             placeholder="e.g. Senior Retoucher"
                                                             value={contact.position}
+                                                            onFocus={() => setActivePositionIdx(i)}
+                                                            onBlur={() => setTimeout(() => setActivePositionIdx(null), 200)}
                                                             onChange={e => {
                                                                 const n = [...contacts]; n[i].position = e.target.value; setContacts(n)
                                                             }}
@@ -458,8 +501,58 @@ export default function EditLeadModal({ id, onSuccess, onClose }: { id: string, 
                                                                         const n = [...contacts]; n[i].position = contact.position + match.value.slice(contact.position.length); setContacts(n)
                                                                     }
                                                                 }
+                                                                if (e.key === 'Escape') setActivePositionIdx(null)
                                                             }}
                                                         />
+                                                        {activePositionIdx === i && (
+                                                            <div style={{
+                                                                position: 'absolute', top: '100%', left: 0, right: 0,
+                                                                background: 'var(--bg-card)', border: '1px solid var(--border)',
+                                                                borderRadius: 8, marginTop: 4, zIndex: 100,
+                                                                boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.3)',
+                                                                overflow: 'hidden', animation: 'fadeIn 0.15s ease-out'
+                                                            }}>
+                                                                {contact.position && !positionOptions.some(o => o.value.toLowerCase() === contact.position.toLowerCase()) && (
+                                                                    <div
+                                                                        onClick={() => {
+                                                                            handleAddPosition(contact.position, i)
+                                                                            setActivePositionIdx(null)
+                                                                        }}
+                                                                        style={{
+                                                                            padding: '10px 12px', fontSize: 12, cursor: 'pointer',
+                                                                            color: 'var(--accent-primary)', fontWeight: 700,
+                                                                            background: 'rgba(99,102,241,0.05)',
+                                                                            borderBottom: recentPositions.length > 0 ? '1px solid var(--border)' : 'none'
+                                                                        }}
+                                                                        onMouseOver={e => e.currentTarget.style.background = 'rgba(99,102,241,0.1)'}
+                                                                        onMouseOut={e => e.currentTarget.style.background = 'rgba(99,102,241,0.05)'}
+                                                                    >
+                                                                        + Add "{contact.position}" as new official position
+                                                                    </div>
+                                                                )}
+                                                                {recentPositions.length > 0 && (
+                                                                    <>
+                                                                        <div style={{ padding: '6px 10px', fontSize: 10, fontWeight: 700, color: 'var(--text-muted)', borderBottom: '1px solid var(--border)', background: 'rgba(255,255,255,0.02)' }}>RECENT POSITIONS</div>
+                                                                        {recentPositions.map(p => (
+                                                                            <div
+                                                                                key={p}
+                                                                                onClick={() => {
+                                                                                    const n = [...contacts]; n[i].position = p; setContacts(n); setActivePositionIdx(null)
+                                                                                }}
+                                                                                style={{
+                                                                                    padding: '8px 12px', fontSize: 12, cursor: 'pointer',
+                                                                                    transition: 'background 0.15s', borderBottom: '1px solid rgba(255,255,255,0.03)'
+                                                                                }}
+                                                                                onMouseOver={e => e.currentTarget.style.background = 'rgba(99,102,241,0.1)'}
+                                                                                onMouseOut={e => e.currentTarget.style.background = 'transparent'}
+                                                                            >
+                                                                                {p}
+                                                                            </div>
+                                                                        ))}
+                                                                    </>
+                                                                )}
+                                                            </div>
+                                                        )}
                                                     </div>
                                                 </div>
                                             </div>

@@ -16,15 +16,17 @@ export async function GET(req: NextRequest) {
 
     return NextResponse.json({ options })
 }
-
 export async function POST(req: NextRequest) {
     const user = await getCurrentUser()
-    if (!user || user.role !== 'Administrator') {
-        return NextResponse.json({ error: 'Forbidden. Administrator access required.' }, { status: 403 })
-    }
+    if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
     try {
         const { category, value, color, order } = await req.json()
+        
+        // Allow non-admins to ONLY add to LEAD_POSITION (to facilitate quick lead entry)
+        if (user.role !== 'Administrator' && category !== 'LEAD_POSITION') {
+            return NextResponse.json({ error: 'Forbidden. Administrator access required for this category.' }, { status: 403 })
+        }
 
         if (!category || !value) {
             return NextResponse.json({ error: 'Category and value are required' }, { status: 400 })

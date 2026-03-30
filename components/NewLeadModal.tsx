@@ -97,6 +97,20 @@ export default function NewLeadModal({ onSuccess, onClose }: { onSuccess: () => 
         setForm(f => ({ ...f, [field]: value }))
     }
 
+    async function handleAddPosition(typed: string, idx: number) {
+        if (!typed.trim()) return
+        const res = await fetch('/api/admin/settings', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ category: 'LEAD_POSITION', value: typed.trim(), color: '#3b82f6' })
+        })
+        if (res.ok) {
+            const newOpt = await res.json()
+            setPositionOptions(prev => [...prev, newOpt])
+            const n = [...contacts]; n[idx].position = newOpt.value; setContacts(n)
+        }
+    }
+
     async function handleSubmit(e: React.FormEvent) {
         e.preventDefault()
         if (websiteError) return
@@ -488,7 +502,7 @@ export default function NewLeadModal({ onSuccess, onClose }: { onSuccess: () => 
                                                         if (e.key === 'Escape') setActivePositionIdx(null)
                                                     }}
                                                 />
-                                                {activePositionIdx === i && recentPositions.length > 0 && (
+                                                {activePositionIdx === i && (
                                                     <div style={{
                                                         position: 'absolute', top: '100%', left: 0, right: 0,
                                                         background: 'var(--bg-card)', border: '1px solid var(--border)',
@@ -496,23 +510,45 @@ export default function NewLeadModal({ onSuccess, onClose }: { onSuccess: () => 
                                                         boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.3)',
                                                         overflow: 'hidden', animation: 'fadeIn 0.15s ease-out'
                                                     }}>
-                                                        <div style={{ padding: '6px 10px', fontSize: 10, fontWeight: 700, color: 'var(--text-muted)', borderBottom: '1px solid var(--border)', background: 'rgba(255,255,255,0.02)' }}>RECENT POSITIONS</div>
-                                                        {recentPositions.map(p => (
+                                                        {contact.position && !positionOptions.some(o => o.value.toLowerCase() === contact.position.toLowerCase()) && (
                                                             <div
-                                                                key={p}
                                                                 onClick={() => {
-                                                                    const n = [...contacts]; n[i].position = p; setContacts(n); setActivePositionIdx(null)
+                                                                    handleAddPosition(contact.position, i)
+                                                                    setActivePositionIdx(null)
                                                                 }}
                                                                 style={{
-                                                                    padding: '8px 12px', fontSize: 12, cursor: 'pointer',
-                                                                    transition: 'background 0.15s', borderBottom: '1px solid rgba(255,255,255,0.03)'
+                                                                    padding: '10px 12px', fontSize: 12, cursor: 'pointer',
+                                                                    color: 'var(--accent-primary)', fontWeight: 700,
+                                                                    background: 'rgba(99,102,241,0.05)',
+                                                                    borderBottom: recentPositions.length > 0 ? '1px solid var(--border)' : 'none'
                                                                 }}
                                                                 onMouseOver={e => e.currentTarget.style.background = 'rgba(99,102,241,0.1)'}
-                                                                onMouseOut={e => e.currentTarget.style.background = 'transparent'}
+                                                                onMouseOut={e => e.currentTarget.style.background = 'rgba(99,102,241,0.05)'}
                                                             >
-                                                                {p}
+                                                                + Add "{contact.position}" as new official position
                                                             </div>
-                                                        ))}
+                                                        )}
+                                                        {recentPositions.length > 0 && (
+                                                            <>
+                                                                <div style={{ padding: '6px 10px', fontSize: 10, fontWeight: 700, color: 'var(--text-muted)', borderBottom: '1px solid var(--border)', background: 'rgba(255,255,255,0.02)' }}>RECENT POSITIONS</div>
+                                                                {recentPositions.map(p => (
+                                                                    <div
+                                                                        key={p}
+                                                                        onClick={() => {
+                                                                            const n = [...contacts]; n[i].position = p; setContacts(n); setActivePositionIdx(null)
+                                                                        }}
+                                                                        style={{
+                                                                            padding: '8px 12px', fontSize: 12, cursor: 'pointer',
+                                                                            transition: 'background 0.15s', borderBottom: '1px solid rgba(255,255,255,0.03)'
+                                                                        }}
+                                                                        onMouseOver={e => e.currentTarget.style.background = 'rgba(99,102,241,0.1)'}
+                                                                        onMouseOut={e => e.currentTarget.style.background = 'transparent'}
+                                                                    >
+                                                                        {p}
+                                                                    </div>
+                                                                ))}
+                                                            </>
+                                                        )}
                                                     </div>
                                                 )}
                                             </div>
