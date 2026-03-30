@@ -130,6 +130,13 @@ export async function calculateMonthlySalary(userId: string, date: Date): Promis
     // Target Days = Actual working days + Weekday Holidays
     const totalTargetDays = workingDaysCount + weekdayHolidaysCount
     const targetHoursPerMonth = totalTargetDays * 8
+    const targetMinutesPerMonth = targetHoursPerMonth * 60
+
+    // Strict Monthly Cap: No Overtime Paid Over the Base Salary Target
+    if (totalMinutesWorked > targetMinutesPerMonth) {
+        totalMinutesWorked = targetMinutesPerMonth
+    }
+
     const hourlyRate = (user.baseSalary > 0 && targetHoursPerMonth > 0) 
         ? user.baseSalary / targetHoursPerMonth 
         : 0
