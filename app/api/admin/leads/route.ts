@@ -120,7 +120,10 @@ export async function GET(req: NextRequest) {
         }),
         prisma.lead.count({ where }),
         prisma.user.findMany({
-            where: { isSuspended: false },
+            where: { 
+                isSuspended: false,
+                role: { not: 'Administrator' }
+            },
             select: { id: true, name: true }
         }),
         prisma.lead.findMany({

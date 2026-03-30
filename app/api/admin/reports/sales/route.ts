@@ -65,7 +65,10 @@ export async function GET(req: NextRequest) {
 
     const [salesReps, allLeads, periodLeads, opportunities, allTasks, periodTasks, callAttempts, mailAttempts, attendanceRecords, trendLeads, trendCalls, trendMails, trendTasks, trendOpps] = await Promise.all([
         prisma.user.findMany({
-            where: { role: 'SalesRep', ...userFilter },
+            where: { 
+                role: { not: 'Administrator' },
+                ...userFilter 
+            },
             select: { id: true, name: true }
         }),
         prisma.lead.findMany({

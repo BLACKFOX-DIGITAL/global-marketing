@@ -304,7 +304,7 @@ export default function LeadOperationsHub() {
                                 <th onClick={() => handleSort('status')} style={{ padding: '10px 16px', fontWeight: 700, cursor: 'pointer', width: 130 }}>
                                     <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>Status <SortIcon field="status" /></div>
                                 </th>
-                                <th onClick={() => handleSort('owner')} style={{ padding: '10px 16px', fontWeight: 700, cursor: 'pointer', width: 160 }}>
+                                <th onClick={() => handleSort('owner')} style={{ padding: '10px 16px', fontWeight: 700, cursor: 'pointer', width: 180 }}>
                                     <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>Owner <SortIcon field="owner" /></div>
                                 </th>
                                 <th onClick={() => handleSort('updatedAt')} style={{ padding: '10px 16px', fontWeight: 700, cursor: 'pointer', width: 130 }}>
@@ -339,11 +339,11 @@ export default function LeadOperationsHub() {
                                                     {l.status}
                                                 </span>
                                             </td>
-                                            <td style={{ padding: '12px 16px' }}>
+                                            <td style={{ padding: '12px 16px', width: 180 }}>
                                                 {l.owner ? (
-                                                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                                                        <div style={{ width: 20, height: 20, borderRadius: 4, background: 'rgba(255,255,255,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 9, fontWeight: 700 }}>{l.owner.name[0]}</div>
-                                                        <span style={{ fontWeight: 500, fontSize: 13, color: 'var(--text-primary)' }}>{l.owner.name}</span>
+                                                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, whiteSpace: 'nowrap' }}>
+                                                        <div style={{ width: 22, height: 22, borderRadius: 4, background: 'rgba(255,255,255,0.05)', border: '1px solid var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 10, fontWeight: 800, color: 'var(--accent-primary)', flexShrink: 0 }}>{l.owner.name[0]}</div>
+                                                        <span style={{ fontWeight: 600, fontSize: 12, color: 'var(--text-primary)', letterSpacing: '-0.2px' }}>{l.owner.name}</span>
                                                     </div>
                                                 ) : <span style={{ color: 'var(--text-muted)', fontSize: 12, fontStyle: 'italic' }}>Unassigned</span>}
                                             </td>

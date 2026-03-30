@@ -73,9 +73,11 @@ export function isAdmin(user: JWTPayload | null): boolean {
 }
 
 export function isManager(user: JWTPayload | null): boolean {
-    return user?.role === 'Manager' || user?.role === 'Administrator'
+    const r = user?.role || ''
+    return r === 'Manager' || r === 'Administrator' || r === 'Sales Manager'
 }
 
 export function isSalesRep(user: JWTPayload | null): boolean {
-    return user?.role === 'Sales Rep'
+    const r = user?.role || ''
+    return r === 'Sales Rep' || r === 'SalesRep' || r === 'Representative' || r === 'Telemarketer'
 }

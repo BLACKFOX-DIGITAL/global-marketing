@@ -11,10 +11,12 @@ export async function GET(req: NextRequest) {
     const { searchParams } = new URL(req.url)
     const period = searchParams.get('period') || `${new Date().getFullYear()}-${String(new Date().getMonth() + 1).padStart(2, '0')}`
 
-    // Get all sales users
+    // Get all non-admin users who might have goals
     const users = await prisma.user.findMany({
         where: {
-            role: 'SalesRep'
+            role: {
+                not: 'Administrator'
+            }
         },
         select: { id: true, name: true, role: true }
     })
