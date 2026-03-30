@@ -251,6 +251,42 @@ export default function AdminSettings() {
         if(confirm('Delete template?')) { setProcessing(id); if((await fetch(`/api/admin/email-templates/${id}`, { method: 'DELETE' })).ok) setTemplates(templates.filter(t => t.id !== id)); setProcessing(null) }
     }
 
+    async function handleImportDefaults() {
+        if (!confirm('This will add all original standard job positions to your list. Continue?')) return
+        setProcessing('import-defaults')
+        
+        const POSITIONS = [
+            "Retoucher", "Senior Retoucher", "Image Editor", "Photo Editor", "E-commerce Retoucher", 
+            "High-End Retoucher", "Colorist", "Art Director", "Creative Director", "Studio Manager", 
+            "Production Manager", "Photography Assistant", "Quality Control Specialist", "Visual Merchandiser", 
+            "CEO", "Founder", "Co-Founder", "Owner", "President", "Managing Director", 
+            "Operations Manager", "General Manager", "Project Manager", "Account Manager", "Marketing Manager"
+        ]
+
+        const existingValues = filteredOptions.map(o => o.value.toLowerCase())
+        const toAdd = POSITIONS.filter(p => !existingValues.includes(p.toLowerCase()))
+
+        if (toAdd.length === 0) {
+            alert('All standard positions are already present.')
+            setProcessing(null)
+            return
+        }
+
+        let addedCount = 0
+        for (const val of toAdd) {
+            const order = filteredOptions.length + addedCount
+            const res = await fetch('/api/admin/settings', {
+                method: 'POST', headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ category: 'LEAD_POSITION', value: val, color: '#6366f1', order })
+            })
+            if (res.ok) addedCount++
+        }
+
+        await fetchData()
+        alert(`Successfully imported ${addedCount} standard positions.`)
+        setProcessing(null)
+    }
+
     if (error) return <div style={{ padding: 40, textAlign: 'center' }}>{error}</div>
 
     return (
@@ -299,15 +335,27 @@ export default function AdminSettings() {
                 <div style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 16, minHeight: 600 }}>
                     <div style={{ padding: '24px 32px', borderBottom: '1px solid var(--border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                         <h2 style={{ fontSize: 18, fontWeight: 700, margin: 0 }}>{CATEGORIES.find(c => c.id === activeCategory)?.label}</h2>
-                        {activeCategory === 'TEAM_MEMBERS' ? (
-                            !adding && <button onClick={() => setAdding(true)} className="btn-primary" style={{ padding: '8px 16px', borderRadius: 8, fontSize: 13, fontWeight: 600 }}><Plus size={14} style={{ marginRight: 6 }} /> New Member</button>
-                        ) : activeCategory === 'EMAIL_INTEGRATION' ? (
-                            !adding && <button onClick={() => { setAdding(true); setTemplateId(null); setTemplateName(''); setTemplateSubject(''); setTemplateBody('') }} className="btn-primary" style={{ padding: '8px 16px', borderRadius: 8, fontSize: 13, fontWeight: 600 }}><Plus size={14} style={{ marginRight: 6 }} /> New Template</button>
-                        ) : activeCategory === 'HOLIDAYS' ? (
-                            !adding && <button onClick={() => setAdding(true)} className="btn-primary" style={{ padding: '8px 16px', borderRadius: 8, fontSize: 13, fontWeight: 600 }}><Plus size={14} style={{ marginRight: 6 }} /> Add Holiday</button>
-                        ) : (
-                            !adding && <button onClick={() => setAdding(true)} className="btn-primary" style={{ padding: '8px 16px', borderRadius: 8, fontSize: 13, fontWeight: 600 }}><Plus size={14} style={{ marginRight: 6 }} /> Add Option</button>
-                        )}
+                        <div style={{ display: 'flex', gap: 12 }}>
+                            {activeCategory === 'LEAD_POSITION' && !adding && (
+                                <button 
+                                    onClick={handleImportDefaults} 
+                                    disabled={processing === 'import-defaults'}
+                                    style={{ padding: '8px 16px', borderRadius: 8, fontSize: 13, fontWeight: 600, border: '1px solid var(--border)', background: 'transparent', color: 'var(--text-secondary)', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 8 }}
+                                >
+                                    {processing === 'import-defaults' ? <div className="spinner" style={{ width: 14, height: 14 }} /> : <Database size={14} />}
+                                    Restore Original Defaults
+                                </button>
+                            )}
+                            {activeCategory === 'TEAM_MEMBERS' ? (
+                                !adding && <button onClick={() => setAdding(true)} className="btn-primary" style={{ padding: '8px 16px', borderRadius: 8, fontSize: 13, fontWeight: 600 }}><Plus size={14} style={{ marginRight: 6 }} /> New Member</button>
+                            ) : activeCategory === 'EMAIL_INTEGRATION' ? (
+                                !adding && <button onClick={() => { setAdding(true); setTemplateId(null); setTemplateName(''); setTemplateSubject(''); setTemplateBody('') }} className="btn-primary" style={{ padding: '8px 16px', borderRadius: 8, fontSize: 13, fontWeight: 600 }}><Plus size={14} style={{ marginRight: 6 }} /> New Template</button>
+                            ) : activeCategory === 'HOLIDAYS' ? (
+                                !adding && <button onClick={() => setAdding(true)} className="btn-primary" style={{ padding: '8px 16px', borderRadius: 8, fontSize: 13, fontWeight: 600 }}><Plus size={14} style={{ marginRight: 6 }} /> Add Holiday</button>
+                            ) : (
+                                !adding && <button onClick={() => setAdding(true)} className="btn-primary" style={{ padding: '8px 16px', borderRadius: 8, fontSize: 13, fontWeight: 600 }}><Plus size={14} style={{ marginRight: 6 }} /> Add Option</button>
+                            )}
+                        </div>
                     </div>
 
                     <div style={{ padding: 32 }}>
