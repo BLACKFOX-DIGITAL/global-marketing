@@ -21,14 +21,14 @@ const PERIODS = [
 
 function StatCard({ label, value, icon: Icon, color }: { label: string, value: string | number, icon: React.ElementType, color: string }) {
     return (
-        <div style={{ padding: '24px', borderRadius: '16px', background: 'var(--bg-card)', border: '1px solid var(--border)', display: 'flex', flexDirection: 'column', gap: 16 }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                <div style={{ fontSize: 13, color: 'var(--text-secondary)', fontWeight: 600 }}>{label}</div>
-                <div style={{ width: 32, height: 32, borderRadius: 10, background: `${color}15`, color, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                    <Icon size={16} />
+        <div style={{ padding: '16px 20px', borderRadius: '12px', background: 'var(--bg-card)', border: '1px solid var(--border)', display: 'flex', flexDirection: 'column', gap: 12, boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <div style={{ fontSize: 12, color: 'var(--text-secondary)', fontWeight: 700, letterSpacing: '0.4px', textTransform: 'uppercase' }}>{label}</div>
+                <div style={{ width: 28, height: 28, borderRadius: 8, background: `${color}12`, color, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <Icon size={14} />
                 </div>
             </div>
-            <div style={{ fontSize: 32, fontWeight: 800, color: 'var(--text-primary)', letterSpacing: '-1px' }}>{value}</div>
+            <div style={{ fontSize: 28, fontWeight: 800, color: 'var(--text-primary)', letterSpacing: '-0.8px' }}>{value}</div>
         </div>
     )
 }
@@ -48,14 +48,14 @@ export default function ReportsPage() {
     }, [reportPeriod, selectedRep])
 
     return (
-        <div style={{ padding: '40px', maxWidth: 1200, margin: '0 auto', width: '100%' }}>
+        <div style={{ padding: '20px 32px', maxWidth: 1200, margin: '0 auto', width: '100%' }}>
             {/* Header Section */}
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 32 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
                 <div>
-                    <h1 style={{ fontSize: 28, fontWeight: 800, letterSpacing: '-0.5px', margin: 0, color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: 12 }}>
-                        <BarChart3 size={28} color="var(--accent-primary)" /> Team Analytics
+                    <h1 style={{ fontSize: 22, fontWeight: 800, letterSpacing: '-0.4px', margin: 0, color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: 10 }}>
+                        <BarChart3 size={24} color="var(--accent-primary)" /> Sales Reports
                     </h1>
-                    <p style={{ margin: '8px 0 0 0', color: 'var(--text-secondary)', fontSize: 14 }}>Deep dive into individual and team-wide performance metrics.</p>
+                    <p style={{ margin: '4px 0 0 0', color: 'var(--text-secondary)', fontSize: 13 }}>Strategic performance analytics and tactical summaries.</p>
                 </div>
 
                 <div style={{ display: 'flex', gap: 16 }}>
@@ -63,23 +63,23 @@ export default function ReportsPage() {
                         <select
                             value={reportPeriod}
                             onChange={e => setReportPeriod(e.target.value)}
-                            style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 10, color: 'var(--text-primary)', padding: '10px 16px', paddingLeft: 40, fontSize: 13, fontWeight: 600, appearance: 'none', cursor: 'pointer', outline: 'none' }}
+                            style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 8, color: 'var(--text-primary)', padding: '8px 12px', paddingLeft: 34, fontSize: 13, fontWeight: 700, appearance: 'none', cursor: 'pointer', outline: 'none' }}
                         >
                             {PERIODS.map(p => <option key={p.key} value={p.key}>{p.label}</option>)}
                         </select>
-                        <Calendar size={16} color="var(--text-muted)" style={{ position: 'absolute', left: 14, top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none' }} />
+                        <Calendar size={14} color="var(--text-muted)" style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none' }} />
                     </div>
                     {reportData && (
                         <div style={{ position: 'relative' }}>
                             <select
                                 value={selectedRep || ''}
                                 onChange={e => setSelectedRep(e.target.value || null)}
-                                style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 10, color: 'var(--text-primary)', padding: '10px 16px', paddingLeft: 40, fontSize: 13, fontWeight: 600, appearance: 'none', cursor: 'pointer', minWidth: 200, outline: 'none' }}
+                                style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 8, color: 'var(--text-primary)', padding: '8px 12px', paddingLeft: 34, fontSize: 13, fontWeight: 700, appearance: 'none', cursor: 'pointer', minWidth: 180, outline: 'none' }}
                             >
-                                <option value="">All Representatives</option>
+                                <option value="">Global Performance</option>
                                 {reportData.salesReps.map((r: any) => <option key={r.id} value={r.id}>{r.name}</option>)}
                             </select>
-                            <Users size={16} color="var(--text-muted)" style={{ position: 'absolute', left: 14, top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none' }} />
+                            <Users size={14} color="var(--text-muted)" style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none' }} />
                         </div>
                     )}
                 </div>
@@ -99,44 +99,44 @@ export default function ReportsPage() {
 
                     {/* Detailed Master Table */}
                     <div style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 16, overflow: 'hidden' }}>
-                        <div style={{ padding: '20px 24px', borderBottom: '1px solid var(--border)' }}>
-                            <h3 style={{ fontSize: 16, fontWeight: 700, margin: 0 }}>Representative Matrix</h3>
+                        <div style={{ padding: '12px 24px', borderBottom: '1px solid var(--border)', background: 'rgba(255,255,255,0.01)' }}>
+                            <h3 style={{ fontSize: 14, fontWeight: 800, margin: 0, textTransform: 'uppercase', letterSpacing: '0.6px', color: 'var(--text-muted)' }}>Performance Matrix</h3>
                         </div>
                         <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
                             <thead>
-                                <tr style={{ background: '#fafafa', borderBottom: '1px solid var(--border)', color: 'var(--text-muted)', fontSize: 12, textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-                                    <th style={{ padding: '16px 24px', fontWeight: 600 }}>Sales Representative</th>
-                                    <th style={{ padding: '16px 24px', fontWeight: 600 }}>Total Assigned Leads</th>
-                                    <th style={{ padding: '16px 24px', fontWeight: 600 }}>Deals Closed (Won)</th>
-                                    <th style={{ padding: '16px 24px', fontWeight: 600 }}>Task Velocity</th>
-                                    <th style={{ padding: '16px 24px', fontWeight: 600 }}>Hours Logged</th>
+                                <tr style={{ background: 'rgba(255,255,255,0.02)', borderBottom: '1px solid var(--border)', color: 'var(--text-muted)', fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.8px' }}>
+                                    <th style={{ padding: '12px 24px', fontWeight: 700 }}>Representative</th>
+                                    <th style={{ padding: '12px 24px', fontWeight: 700 }}>Assigned Leads</th>
+                                    <th style={{ padding: '12px 24px', fontWeight: 700 }}>Deals Won</th>
+                                    <th style={{ padding: '12px 24px', fontWeight: 700 }}>Task velocity</th>
+                                    <th style={{ padding: '12px 24px', fontWeight: 700 }}>Hours Logged</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 {reportData.salesReps.sort((a: any, b: any) => b.closedWon - a.closedWon).map((rep: any) => (
-                                    <tr key={rep.id} style={{ borderBottom: '1px solid var(--border)' }}>
-                                        <td style={{ padding: '16px 24px' }}>
-                                            <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                                                <div style={{ width: 32, height: 32, borderRadius: '50%', background: 'linear-gradient(135deg, #1e293b, #0f172a)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontSize: 11, fontWeight: 700 }}>
+                                    <tr key={rep.id} style={{ borderBottom: '1px solid var(--border)', transition: 'background 0.2s' }}>
+                                        <td style={{ padding: '10px 24px' }}>
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                                                <div style={{ width: 28, height: 28, borderRadius: '50%', background: 'linear-gradient(135deg, #1e293b, #0f172a)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontSize: 10, fontWeight: 700 }}>
                                                     {rep.name.substring(0,2).toUpperCase()}
                                                 </div>
                                                 <div>
-                                                    <div style={{ fontWeight: 600, fontSize: 14, color: 'var(--text-primary)' }}>{rep.name}</div>
-                                                    <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>Scorecard Details</div>
+                                                    <div style={{ fontWeight: 700, fontSize: 13, color: 'var(--text-primary)' }}>{rep.name}</div>
+                                                    <div style={{ fontSize: 11, color: 'var(--text-muted)', fontWeight: 500 }}>Scorecard Details</div>
                                                 </div>
                                             </div>
                                         </td>
-                                        <td style={{ padding: '16px 24px' }}>
-                                            <div style={{ fontSize: 15, fontWeight: 700, color: 'var(--text-primary)' }}>{rep.totalLeads}</div>
+                                        <td style={{ padding: '10px 24px' }}>
+                                            <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--text-primary)' }}>{rep.totalLeads}</div>
                                         </td>
-                                        <td style={{ padding: '16px 24px' }}>
-                                            <div style={{ fontSize: 15, fontWeight: 700, color: 'var(--accent-emerald)' }}>{rep.closedWon}</div>
+                                        <td style={{ padding: '10px 24px' }}>
+                                            <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--accent-emerald)' }}>{rep.closedWon}</div>
                                         </td>
-                                        <td style={{ padding: '16px 24px' }}>
-                                            <div style={{ fontSize: 14, fontWeight: 500, color: 'var(--text-secondary)' }}>{rep.tasksCompleted} completed</div>
+                                        <td style={{ padding: '10px 24px' }}>
+                                            <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-secondary)' }}>{rep.tasksCompleted} <span style={{ fontSize: 11, fontWeight: 500, color: 'var(--text-muted)' }}>done</span></div>
                                         </td>
-                                        <td style={{ padding: '16px 24px' }}>
-                                            <div style={{ fontSize: 14, fontWeight: 500, color: 'var(--text-muted)' }}>{rep.totalHours}h recorded</div>
+                                        <td style={{ padding: '10px 24px' }}>
+                                            <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-muted)' }}>{rep.totalHours}h <span style={{ fontSize: 11, fontWeight: 500 }}>logged</span></div>
                                         </td>
                                     </tr>
                                 ))}

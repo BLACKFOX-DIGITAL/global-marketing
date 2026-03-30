@@ -25,7 +25,10 @@ export async function GET(req: NextRequest) {
     const [logs, total] = await Promise.all([
         prisma.activityLog.findMany({
             where,
-            include: { user: { select: { name: true, email: true } } },
+            include: { 
+                user: { select: { name: true, email: true } },
+                lead: { select: { company: true, website: true } }
+            },
             orderBy: { createdAt: 'desc' },
             skip,
             take: limit,

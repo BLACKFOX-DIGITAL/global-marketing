@@ -10,6 +10,7 @@ interface AuditLog {
     description: string
     createdAt: string
     user: { name: string; email: string }
+    lead?: { company: string; website: string } | null
 }
 
 interface ActionType {
@@ -54,15 +55,26 @@ export default function AuditLedger() {
 
     return (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-            <div style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 12, padding: '16px 20px', display: 'flex', gap: 16, alignItems: 'center' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                    <Filter size={16} color="var(--text-muted)" />
-                    <span style={{ fontSize: 12, color: 'var(--text-muted)', fontWeight: 600, textTransform: 'uppercase' }}>Filter Action:</span>
+            <div style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 12, padding: '10px 16px', display: 'flex', gap: 12, alignItems: 'center' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                    <Filter size={14} color="var(--text-muted)" />
+                    <span style={{ fontSize: 11, color: 'var(--text-muted)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.2px' }}>Filter:</span>
                 </div>
                 <select
                     value={actionFilter}
                     onChange={e => { setActionFilter(e.target.value); setAuditPage(1) }}
-                    style={{ padding: '8px 12px', borderRadius: 8, border: '1px solid var(--border)', background: 'var(--bg-main)', color: 'var(--text-primary)', fontSize: 13, fontWeight: 500, outline: 'none', cursor: 'pointer' }}
+                    style={{ 
+                        width: '210px',
+                        padding: '6px 10px', 
+                        borderRadius: 8, 
+                        border: '1px solid var(--border)', 
+                        background: 'var(--bg-main)', 
+                        color: 'var(--text-primary)', 
+                        fontSize: 12, 
+                        fontWeight: 600, 
+                        outline: 'none', 
+                        cursor: 'pointer' 
+                    }}
                 >
                     <option value="">All Global Events</option>
                     {actionTypes.map(at => (
@@ -70,20 +82,20 @@ export default function AuditLedger() {
                     ))}
                 </select>
                 <div style={{ flex: 1 }} />
-                <span style={{ color: 'var(--text-secondary)', fontSize: 13, fontWeight: 600 }}>
+                <span style={{ color: 'var(--text-secondary)', fontSize: 13, fontWeight: 700, whiteSpace: 'nowrap' }}>
                     {auditTotal.toLocaleString()} Events Tracked
                 </span>
             </div>
 
             <div style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 16, overflow: 'hidden' }}>
                 <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
-                    <thead style={{ background: '#fafafa', borderBottom: '1px solid var(--border)' }}>
-                        <tr style={{ color: 'var(--text-muted)', fontSize: 12, textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-                            <th style={{ padding: '16px 24px', fontWeight: 600 }}>Timestamp</th>
-                            <th style={{ padding: '16px 24px', fontWeight: 600 }}>Operator</th>
-                            <th style={{ padding: '16px 24px', fontWeight: 600 }}>Category</th>
-                            <th style={{ padding: '16px 24px', fontWeight: 600 }}>Action</th>
-                            <th style={{ padding: '16px 24px', fontWeight: 600 }}>Description</th>
+                    <thead style={{ background: 'rgba(255,255,255,0.02)', borderBottom: '1px solid var(--border)' }}>
+                        <tr style={{ color: 'var(--text-muted)', fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.8px' }}>
+                            <th style={{ padding: '12px 16px', fontWeight: 700 }}>Timestamp</th>
+                            <th style={{ padding: '12px 16px', fontWeight: 700 }}>Operator</th>
+                            <th style={{ padding: '12px 16px', fontWeight: 700 }}>Target Lead</th>
+                            <th style={{ padding: '12px 16px', fontWeight: 700 }}>Action</th>
+                            <th style={{ padding: '12px 16px', fontWeight: 700 }}>Description</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -93,29 +105,39 @@ export default function AuditLedger() {
                             <tr><td colSpan={5} style={{ textAlign: 'center', padding: 80, color: 'var(--text-muted)' }}>No audit events found.</td></tr>
                         ) : logs.map((log, idx) => (
                             <tr key={log.id} style={{ borderBottom: idx === logs.length - 1 ? 'none' : '1px solid var(--border)' }}>
-                                <td style={{ padding: '16px 24px' }}>
-                                    <div style={{ fontSize: 14, fontWeight: 600, color: 'var(--text-primary)' }}>{format(parseISO(log.createdAt), 'MMM dd, yyyy')}</div>
-                                    <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>{format(parseISO(log.createdAt), 'HH:mm:ss')}</div>
+                                <td style={{ padding: '10px 16px' }}>
+                                    <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--text-primary)' }}>{format(parseISO(log.createdAt), 'MMM dd, yyyy')}</div>
+                                    <div style={{ fontSize: 11, color: 'var(--text-muted)' }}>{format(parseISO(log.createdAt), 'HH:mm:ss')}</div>
                                 </td>
-                                <td style={{ padding: '16px 24px' }}>
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                                        <div style={{ width: 32, height: 32, borderRadius: '50%', background: 'linear-gradient(135deg, #1e293b, #0f172a)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11, fontWeight: 700, color: '#fff' }}>{log.user.name.substring(0,2).toUpperCase()}</div>
+                                <td style={{ padding: '10px 16px' }}>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                                        <div style={{ width: 28, height: 28, borderRadius: '50%', background: 'var(--bg-main)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 10, fontWeight: 700, border: '1px solid var(--border)' }}>
+                                            {log.user?.name.substring(0, 2).toUpperCase()}
+                                        </div>
                                         <div>
-                                            <div style={{ fontWeight: 600, fontSize: 14, color: 'var(--text-primary)' }}>{log.user.name}</div>
-                                            <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>{log.user.email}</div>
+                                            <div style={{ fontSize: 13, fontWeight: 600 }}>{log.user?.name}</div>
+                                            <div style={{ fontSize: 11, color: 'var(--text-muted)' }}>{log.user?.email}</div>
                                         </div>
                                     </div>
                                 </td>
-                                <td style={{ padding: '16px 24px' }}>
-                                    <span style={{ fontSize: 11, fontWeight: 600, padding: '4px 8px', borderRadius: 4, background: 'var(--bg-main)', border: '1px solid var(--border)', color: 'var(--text-secondary)' }}>{log.type}</span>
+                                <td style={{ padding: '10px 16px' }}>
+                                    {log.lead ? (
+                                        <div>
+                                            <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-primary)' }}>{log.lead.company || 'N/A'}</div>
+                                            <div style={{ fontSize: 11, color: 'var(--text-muted)', maxWidth: 180, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{log.lead.website || '-'}</div>
+                                        </div>
+                                    ) : (
+                                        <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>-</span>
+                                    )}
                                 </td>
-                                <td style={{ padding: '16px 24px' }}>
+                                <td style={{ padding: '10px 16px' }}>
                                     <span style={{
-                                        fontSize: 11, fontWeight: 600, padding: '4px 8px', borderRadius: 4,
-                                        background: `${getActionColor(log.action)}15`, color: getActionColor(log.action), border: `1px solid ${getActionColor(log.action)}30`
+                                        fontSize: 10, fontWeight: 700, padding: '2px 6px', borderRadius: 4,
+                                        background: `${getActionColor(log.action)}12`, color: getActionColor(log.action), border: `1px solid ${getActionColor(log.action)}25`,
+                                        display: 'inline-block', lineHeight: 1
                                     }}>{log.action}</span>
                                 </td>
-                                <td style={{ padding: '16px 24px', fontSize: 13, color: 'var(--text-secondary)', maxWidth: 300, lineHeight: 1.5 }}>
+                                <td style={{ padding: '10px 16px', fontSize: 13, color: 'var(--text-secondary)', fontWeight: 500, lineHeight: 1.4 }}>
                                     {log.description}
                                 </td>
                             </tr>

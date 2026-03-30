@@ -2,7 +2,7 @@
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import { useEffect, useState, useRef } from 'react'
-import { LayoutDashboard, Users, Target, CheckSquare, Zap, LogOut, ShieldAlert, Settings, Briefcase, ChevronLeft, ChevronRight, Banknote, BarChart3, Database } from 'lucide-react'
+import { LayoutDashboard, Users, Target, CheckSquare, Zap, LogOut, ShieldAlert, Settings, Briefcase, ChevronLeft, ChevronRight, Banknote, BarChart3, Database, History } from 'lucide-react'
 import ThemeSwitcher from './ThemeSwitcher'
 
 const ADMIN_LINKS = [
@@ -13,6 +13,7 @@ const ADMIN_LINKS = [
     ]},
     { section: 'Management', items: [
         { href: '/admin/leads', label: 'Global Leads', icon: Database },
+        { href: '/admin/audit', label: 'Leads Activity', icon: History },
         { href: '/admin/workforce', label: 'Attendance', icon: Users },
         { href: '/admin/payroll', label: 'Payroll', icon: Banknote },
     ]},
