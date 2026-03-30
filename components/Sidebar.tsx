@@ -22,15 +22,17 @@ const HR_ITEMS = [
 ]
 
 const ADMIN_PERFORMANCE = [
-    { href: '/admin/dashboard', label: 'Executive Dashboard', icon: LayoutDashboard },
+    { href: '/admin/dashboard', label: 'Dashboard', icon: LayoutDashboard },
+    { href: '/admin/reports/sales', label: 'Analytics', icon: Waves }, // Using Waves/BarChart icon
     { href: '/admin/goals', label: 'Targets & Quotas', icon: Target },
 ]
 
 const ADMIN_SYSTEM = [
-    { href: '/admin/leads', label: 'Lead Operations', icon: Users },
+    { href: '/admin/leads', label: 'Global Leads', icon: Users },
+    { href: '/admin/audit', label: 'Leads Activity', icon: ClipboardList },
     { href: '/admin/workforce', label: 'Attendance', icon: Clock },
-    { href: '/admin/payroll', label: 'Payroll Intelligence', icon: Banknote },
-    { href: '/admin/settings', label: 'System Settings', icon: Settings },
+    { href: '/admin/payroll', label: 'Payroll', icon: Banknote },
+    { href: '/admin/settings', label: 'Settings', icon: Settings },
 ]
 
 interface SidebarProps {
@@ -145,15 +147,22 @@ export default function Sidebar({ user }: SidebarProps) {
                 ) : (
                     <>
                         <div className="nav-section">
-                            {!isCollapsed && <div className="nav-section-label">Performance & Strategy</div>}
+                            {!isCollapsed && <div className="nav-section-label">Overview</div>}
                             {ADMIN_PERFORMANCE.map(({ href, label, icon }) => {
                                 const active = pathname === href || pathname.startsWith(href + '/')
                                 return <NavLink key={href} href={href} label={label} icon={icon} active={active} />
                             })}
                         </div>
                         <div className="nav-section">
-                            {!isCollapsed && <div className="nav-section-label">System & Operations</div>}
-                            {ADMIN_SYSTEM.map(({ href, label, icon }) => {
+                            {!isCollapsed && <div className="nav-section-label">Management</div>}
+                            {ADMIN_SYSTEM.slice(0, 4).map(({ href, label, icon }) => {
+                                const active = pathname === href || pathname.startsWith(href + '/')
+                                return <NavLink key={href} href={href} label={label} icon={icon} active={active} />
+                            })}
+                        </div>
+                        <div className="nav-section">
+                            {!isCollapsed && <div className="nav-section-label">System</div>}
+                            {ADMIN_SYSTEM.slice(4).map(({ href, label, icon }) => {
                                 const active = pathname === href || pathname.startsWith(href + '/')
                                 return <NavLink key={href} href={href} label={label} icon={icon} active={active} />
                             })}
