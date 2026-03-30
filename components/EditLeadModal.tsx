@@ -127,6 +127,7 @@ export default function EditLeadModal({ id, onSuccess, onClose }: { id: string, 
         e.preventDefault()
         if (websiteError) return
         if (!form.company.trim()) { setError('Company Name is required'); return }
+        if (!form.website.trim()) { setError('Website is required'); return }
 
         let finalCountry = form.country;
         if (form.country) {
@@ -237,8 +238,8 @@ export default function EditLeadModal({ id, onSuccess, onClose }: { id: string, 
 
                                     <div style={{ display: 'flex', gap: 10 }}>
                                         <div className="form-group" style={{ marginBottom: 0, flex: 1 }}>
-                                            <label className="form-label">Website</label>
-                                            <input type="text" placeholder="acme.com" value={form.website} onChange={e => set('website', cleanWebsite(e.target.value))} style={{ borderColor: websiteError ? '#ef4444' : undefined }} />
+                                            <label className="form-label">Website *</label>
+                                            <input type="text" placeholder="acme.com" value={form.website} onChange={e => set('website', cleanWebsite(e.target.value))} style={{ borderColor: websiteError ? '#ef4444' : undefined }} required />
                                             {websiteError && <div style={{ color: '#ef4444', fontSize: 10, marginTop: 3 }}>{websiteError}</div>}
                                         </div>
                                         <div className="form-group" style={{ marginBottom: 0, flex: 1 }}>

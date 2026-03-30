@@ -106,6 +106,10 @@ export async function POST(req: NextRequest) {
         // Sanitize all free-text string fields before saving
         const body = sanitizeObject(rawBody, ['name', 'company', 'email', 'phone', 'website', 'country', 'notes', 'socials', 'industry'])
 
+        if (!body.website) {
+            return NextResponse.json({ error: 'Website is required' }, { status: 400 })
+        }
+
         const orConditions = []
         if (body.website) orConditions.push({ website: body.website })
         if (body.email) orConditions.push({ email: body.email })

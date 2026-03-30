@@ -42,6 +42,10 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
             return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
         }
 
+        if (!body.website || !body.website.trim()) {
+            return NextResponse.json({ error: 'Website is required' }, { status: 400 })
+        }
+
         const lead = await prisma.lead.update({
             where: { id },
             data: {
