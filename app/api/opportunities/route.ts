@@ -14,6 +14,9 @@ export async function GET(req: NextRequest) {
         const search = searchParams.get('search') || ''
 
         const where: any = {}
+        if (user.role !== 'Administrator' && user.role !== 'Manager') {
+            where.ownerId = user.userId
+        }
         if (stage) where.stage = stage
         if (search) {
             where.OR = [

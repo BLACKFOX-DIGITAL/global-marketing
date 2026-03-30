@@ -28,16 +28,26 @@ export async function GET(req: NextRequest) {
 
     const since = getStartDate(period)
 
+    const statsWhere: any = {
+        isDeleted: false,
+    }
+
+    if (user.role !== 'Administrator' && user.role !== 'Manager') {
+        statsWhere.ownerId = user.userId
+    }
+
     const [newLeads, calledLeads, mailSentLeads] = await Promise.all([
         // New leads created in period
         prisma.lead.count({
             where: {
+                ...statsWhere,
                 createdAt: { gte: since }
             }
         }),
         // Leads that have at least 1 call attempt in the period
         prisma.lead.count({
             where: {
+                ...statsWhere,
                 callAttempts: {
                     some: {
                         createdAt: { gte: since }
@@ -48,6 +58,7 @@ export async function GET(req: NextRequest) {
         // Leads that have at least 1 mail attempt in the period
         prisma.lead.count({
             where: {
+                ...statsWhere,
                 mailAttempts: {
                     some: {
                         createdAt: { gte: since }

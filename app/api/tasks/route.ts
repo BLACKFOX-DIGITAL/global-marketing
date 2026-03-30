@@ -13,6 +13,11 @@ export async function GET(req: NextRequest) {
     const leadId = searchParams.get('leadId') || ''
 
     const where: any = {}
+    
+    if (user.role !== 'Administrator' && user.role !== 'Manager') {
+        where.ownerId = user.userId
+    }
+
     if (status === 'Pending') {
         where.completed = false
     } else if (status === 'Completed') {

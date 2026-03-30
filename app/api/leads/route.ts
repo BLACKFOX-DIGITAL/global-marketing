@@ -24,9 +24,7 @@ export async function GET(req: NextRequest) {
         const where: any = { isDeleted: false }
 
         if (user.role !== 'Administrator' && user.role !== 'Manager') {
-            where.AND = [
-                { OR: [{ ownerId: user.userId }, { ownerId: null }] }
-            ]
+            where.ownerId = user.userId
         }
 
         if (search) {
