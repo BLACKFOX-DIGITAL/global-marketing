@@ -1,6 +1,6 @@
 'use client'
 import { useState, useEffect, useCallback } from 'react'
-import Header from '@/components/Header'
+import NotificationCenter from '@/components/NotificationCenter'
 import { Plus, X, Trash2, User as UserIcon, Calendar, FileText, Upload, Zap, Users } from 'lucide-react'
 import { format, parseISO, isWeekend, addDays } from 'date-fns'
 
@@ -150,17 +150,19 @@ export default function LeavePage() {
     })
 
     return (
-        <div>
-            <Header title="Leave Requests" user={null} />
-            <div className="crm-content">
+        <>
+            <div className="crm-content" style={{ paddingTop: 16 }}>
                 <div className="page-header" style={{ marginBottom: 20 }}>
                     <div>
                         <h2>Leave Management</h2>
                         <p>Submit your leaves and monitor remaining balances.</p>
                     </div>
-                    <button onClick={() => setShowModal(true)} className="btn-primary">
-                        <Plus size={16} /> Request Leave
-                    </button>
+                    <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
+                        <NotificationCenter />
+                        <button onClick={() => setShowModal(true)} className="btn-primary">
+                            <Plus size={16} /> Request Leave
+                        </button>
+                    </div>
                 </div>
 
                 {/* Balances Block */}
@@ -372,6 +374,6 @@ export default function LeavePage() {
                     </div>
                 </div>
             )}
-        </div>
+        </>
     )
 }

@@ -1,6 +1,6 @@
 'use client'
 import { useState, useEffect, useRef } from 'react'
-import Header from '@/components/Header'
+import NotificationCenter from '@/components/NotificationCenter'
 import { Play, Square, Timer, CalendarDays } from 'lucide-react'
 import { format } from 'date-fns'
 
@@ -110,19 +110,14 @@ export default function AttendancePage() {
     const now = new Date()
 
     if (loading) return (
-        <div>
-            <Header title="Attendance" user={null} />
-            <div className="crm-content" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: 400 }}>
+            <div className="crm-content" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: 400, paddingTop: 16 }}>
                 <div className="spinner" style={{ width: 32, height: 32 }} />
             </div>
-        </div>
     )
 
     return (
-        <div>
-            <Header title="Attendance" user={null} />
-            <div className="crm-content">
-                <div className="page-header">
+        <div className="crm-content" style={{ paddingTop: 16 }}>
+                <div className="page-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                     <div>
                         <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 8 }}>
                             <h2>Attendance</h2>
@@ -130,6 +125,7 @@ export default function AttendancePage() {
                         </div>
                         <p>Track your daily work hours with punch in and out.</p>
                     </div>
+                    <NotificationCenter />
                 </div>
 
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 340px', gap: 20 }}>
@@ -254,6 +250,5 @@ export default function AttendancePage() {
                     </div>
                 </div>
             </div>
-        </div>
-    )
-}
+        )
+    }

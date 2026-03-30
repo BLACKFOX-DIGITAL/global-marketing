@@ -1,6 +1,6 @@
 'use client'
 import { useState, useEffect, useCallback } from 'react'
-import Header from '@/components/Header'
+import NotificationCenter from '@/components/NotificationCenter'
 import Link from 'next/link'
 import { Plus, CheckCircle, Calendar, LayoutList, Calendar as CalendarIcon, Building, Search, Pencil } from 'lucide-react'
 import { format, parseISO, isPast, isToday, isTomorrow, formatDistanceToNow } from 'date-fns'
@@ -359,15 +359,15 @@ export default function TasksPage() {
     const getTaskTypeInfo = (type: string) => TASK_TYPES.find(t => t.value === type) || TASK_TYPES[5]
 
     return (
-        <div style={{ display: 'flex', flexDirection: 'column', height: '100%', overflow: 'hidden' }}>
-            <Header title="Tasks & Follow-Ups" user={null} />
-            <div className="crm-content">
+        <>
+            <div className="crm-content" style={{ paddingTop: 16 }}>
                 <div className="page-header">
                     <div>
                         <h2>Tasks & Follow-Ups</h2>
                         <p>All your pending actions for leads — calls, emails, meetings & more.</p>
                     </div>
-                    <div style={{ display: 'flex', gap: 12 }}>
+                     <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
+                        <NotificationCenter />
                         <div style={{ display: 'flex', background: 'var(--bg-input)', padding: 4, borderRadius: 10, border: '1px solid var(--border)' }}>
                             <button
                                 onClick={() => setView('list')}
@@ -592,6 +592,6 @@ export default function TasksPage() {
                     </div>
                 </div>
             )}
-        </div>
+        </>
     )
 }

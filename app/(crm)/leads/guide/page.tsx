@@ -1,18 +1,20 @@
 'use client'
 import React from 'react'
-import Header from '@/components/Header'
+import NotificationCenter from '@/components/NotificationCenter'
 import Link from 'next/link'
 import { ChevronLeft, BookOpen, Target, Users, Zap, Clock, ShieldAlert, Trophy, RotateCcw, Info } from 'lucide-react'
 
 export default function LeadGuidePage() {
     return (
-        <div style={{ display: 'flex', flexDirection: 'column', height: '100%', overflow: 'hidden' }}>
-            <Header title="Sales Guide" user={null} />
+        <>
             <div className="crm-content" style={{ padding: '32px', overflowY: 'auto' }}>
-                <div style={{ maxWidth: 800, margin: '0 auto' }}>
-                    <Link href="/leads" style={{ display: 'flex', alignItems: 'center', gap: 6, color: 'var(--text-muted)', textDecoration: 'none', fontSize: 14, marginBottom: 24, fontWeight: 500 }} className="hover-text-primary">
+            <div style={{ maxWidth: 800, margin: '0 auto' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
+                    <Link href="/leads" style={{ display: 'flex', alignItems: 'center', gap: 6, color: 'var(--text-muted)', textDecoration: 'none', fontSize: 14, fontWeight: 500 }} className="hover-text-primary">
                         <ChevronLeft size={16} /> Back to Leads
                     </Link>
+                    <NotificationCenter />
+                </div>
 
                     <div style={{ position: 'relative', marginBottom: 40 }}>
                         <div style={{ width: 64, height: 64, borderRadius: 16, background: 'var(--accent-primary)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', marginBottom: 16, boxShadow: '0 8px 24px -6px var(--accent-primary)' }}>
@@ -187,6 +189,6 @@ export default function LeadGuidePage() {
                     color: var(--text-primary) !important;
                 }
             `}</style>
-        </div>
+        </>
     )
 }

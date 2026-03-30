@@ -2,6 +2,7 @@
 import { useState } from 'react'
 import Header from '@/components/Header'
 import { Search, ChevronLeft, ChevronRight, Hand, Waves, MapPin, AtSign, Clock } from 'lucide-react'
+import NotificationCenter from '@/components/NotificationCenter'
 import StatusBadge from '@/components/StatusBadge'
 import { formatDistanceToNow } from 'date-fns'
 import { List } from 'react-window'
@@ -34,6 +35,7 @@ export default function PoolPage() {
     const [search, setSearch] = useState('')
     const [statusFilter, setStatusFilter] = useState('')
     const [claiming, setClaiming] = useState<string | null>(null)
+    const [isScrolled, setIsScrolled] = useState(false)
 
     const params = new URLSearchParams({ page: String(page), limit: '50' })
     if (search) params.set('search', search)
@@ -67,9 +69,14 @@ export default function PoolPage() {
 
     return (
         <div style={{ display: 'flex', flexDirection: 'column', height: '100%', overflow: 'hidden' }}>
-            <Header title="Open Pool" user={null} />
-            <div className="crm-content" style={{ display: 'flex', flexDirection: 'column', flex: 1, minHeight: 0, overflow: 'hidden' }}>
-                <div className="page-header" style={{ marginBottom: 12 }}>
+            <div className="crm-content" style={{ display: 'flex', flexDirection: 'column', flex: 1, minHeight: 0, overflow: 'hidden', paddingTop: 16 }}>
+                <div className="page-header" style={{ 
+                    marginBottom: isScrolled ? 0 : 12,
+                    maxHeight: isScrolled ? 0 : 60,
+                    opacity: isScrolled ? 0 : 1,
+                    overflow: 'hidden',
+                    transition: 'all 0.3s ease-in-out'
+                }}>
                     <div style={{ display: 'flex', alignItems: 'baseline', gap: 12 }}>
                         <h2 style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 0 }}>
                             <Waves size={20} color="var(--accent-primary)" /> Open Lead Pool
@@ -100,9 +107,18 @@ export default function PoolPage() {
                         <option value="Unqualified">Unqualified</option>
                         <option value="Follow-up">Follow-up</option>
                     </select>
+
+                    <NotificationCenter />
+
+                    {/* Scroll Indicator (Compact Pool Count) */}
+                    {isScrolled && (
+                       <div style={{ fontSize: 11, fontWeight: 700, background: 'rgba(56, 189, 248, 0.1)', color: '#38bdf8', padding: '4px 10px', borderRadius: 6, display: 'flex', alignItems: 'center', gap: 6, transition: 'all 0.2s' }}>
+                            <Waves size={12} /> {total} Left
+                       </div>
+                    )}
                 </div>
 
-                <div className="card" style={{ padding: 0, height: 'calc(100vh - 220px)', minHeight: 400, display: 'flex', flexDirection: 'column', flex: 1, overflow: 'hidden' }}>
+                <div className="card" style={{ padding: 0, display: 'flex', flexDirection: 'column', flex: 1, overflow: 'hidden' }}>
                     <div style={{ 
                         display: 'flex', background: 'var(--bg-card)', 
                         borderBottom: '1px solid var(--border)', 
@@ -131,6 +147,7 @@ export default function PoolPage() {
                                 <List
                                     rowCount={leads.length}
                                     rowHeight={56} 
+                                    onScroll={(e: any) => setIsScrolled(e.currentTarget.scrollTop > 50)}
                                     style={{ height: height as any, width: width as any, overflowY: 'auto' as any }}
                                     rowProps={{}}
                                     rowComponent={({ index, style }: any) => {

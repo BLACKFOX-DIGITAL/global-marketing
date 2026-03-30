@@ -4,6 +4,7 @@ import Header from '@/components/Header'
 import Link from 'next/link'
 import { Plus, Search, Filter, Trash2, Pencil, ChevronLeft, ChevronRight, UserPlus, PhoneCall, Mail } from 'lucide-react'
 import { } from 'date-fns'
+import NotificationCenter from '@/components/NotificationCenter'
 import NewLeadModal from '@/components/NewLeadModal'
 import EditLeadModal from '@/components/EditLeadModal'
 
@@ -134,9 +135,8 @@ export default function CustomersPage() {
     const pageNums = Array.from({ length: Math.min(totalPages, 5) }, (_, i) => i + 1)
 
     return (
-        <div>
-            <Header title="Customers" user={null} />
-            <div className="crm-content">
+        <>
+            <div className="crm-content" style={{ paddingTop: 16 }}>
                 <div className="page-header">
                     <div>
                         <h2>Customers</h2>
@@ -154,6 +154,7 @@ export default function CustomersPage() {
                             onChange={e => { setSearch(e.target.value); setPage(1) }}
                         />
                     </div>
+                    <NotificationCenter />
                 </div>
 
                 {/* Table */}
@@ -270,6 +271,6 @@ export default function CustomersPage() {
                     </div>
                 </div>
             )}
-        </div>
+        </>
     )
 }

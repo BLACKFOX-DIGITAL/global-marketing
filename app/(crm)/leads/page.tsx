@@ -1,9 +1,10 @@
 'use client'
 import React, { useState, useDeferredValue } from 'react'
-import Header from '@/components/Header'
+import Header from '@/components/Header' // Will remove after relocations
+import NotificationCenter from '@/components/NotificationCenter'
 import Link from 'next/link'
 import dynamic from 'next/dynamic'
-import { Plus, Search, Filter, Trash2, Pencil, ChevronLeft, ChevronRight, UserPlus, PhoneCall, Mail, BookOpen } from 'lucide-react'
+import { Plus, Search, Filter, Trash2, Pencil, ChevronLeft, ChevronRight, UserPlus, PhoneCall, Mail, BookOpen, Copy } from 'lucide-react'
 import { List } from 'react-window'
 import { AutoSizer } from 'react-virtualized-auto-sizer'
 import useSWR from 'swr'
@@ -104,6 +105,7 @@ export default function LeadsPage() {
     const [showAddModal, setShowAddModal] = useState(false)
     const [editLeadId, setEditLeadId] = useState<string | null>(null)
     const [periodIndex, setPeriodIndex] = useState(0)
+    const [isScrolled, setIsScrolled] = useState(false)
 
     const currentPeriod = PERIODS[periodIndex]
 
@@ -148,15 +150,17 @@ export default function LeadsPage() {
 
     return (
         <div style={{ display: 'flex', flexDirection: 'column', height: '100%', overflow: 'hidden' }}>
-            <Header title="Leads Management" user={null} />
-            <div className="crm-content" style={{ display: 'flex', flexDirection: 'column', flex: 1, minHeight: 0, overflow: 'hidden' }}>
-                <div className="page-header" style={{ marginBottom: 16 }}>
+            <div className="crm-content" style={{ display: 'flex', flexDirection: 'column', flex: 1, minHeight: 0, overflow: 'hidden', paddingTop: 16 }}>
+                <div className="page-header" style={{ 
+                    marginBottom: isScrolled ? 0 : 12,
+                }}>
                     <div style={{ display: 'flex', alignItems: 'baseline', gap: 12 }}>
                         <h2 style={{ marginBottom: 0 }}>Leads</h2>
                         <span style={{ fontSize: 13, color: 'var(--text-muted)' }}>{total} total prospects</span>
                     </div>
 
-                    <div style={{ display: 'flex', gap: 10 }}>
+                    <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
+                        <NotificationCenter />
                         <Link href="/leads/guide" className="btn-secondary" style={{ textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 8, padding: '4px 12px', fontSize: 13 }}>
                             <BookOpen size={14} /> Guide
                         </Link>
@@ -166,8 +170,17 @@ export default function LeadsPage() {
                     </div>
                 </div>
 
-                {/* Stats Dashboard */}
-                <div style={{ display: 'flex', gap: 12, marginBottom: 16 }}>
+                {/* Stats Dashboard - Collapses on scroll */}
+                <div style={{
+                    display: 'flex', gap: 12,
+                    maxHeight: isScrolled ? 0 : 100,
+                    opacity: isScrolled ? 0 : 1,
+                    overflow: 'hidden',
+                    marginBottom: isScrolled ? 0 : 16,
+                    visibility: isScrolled ? 'hidden' : 'visible',
+                    transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                    pointerEvents: isScrolled ? 'none' : 'auto'
+                }}>
                     <StatCard
                         icon={<UserPlus size={18} color="#6366f1" />}
                         label="New"
@@ -208,10 +221,27 @@ export default function LeadsPage() {
                     <select value={status} onChange={e => { setStatus(e.target.value); setPage(1) }} style={{ width: 120, height: 32, fontSize: 12, padding: '0 8px' }}>
                         {statusOptions.map(s => <option key={s} value={s}>{s || 'All Status'}</option>)}
                     </select>
+
+                    {/* Mini Stats (Persistent while scrolled) */}
+                    <div style={{
+                        display: 'flex', gap: 6, opacity: isScrolled ? 1 : 0, transition: 'opacity 0.2s',
+                        pointerEvents: isScrolled ? 'auto' : 'none', flexShrink: 0
+                    }}>
+                        <div title={`${stats.newLeads} New Leads`} style={{ fontSize: 10, fontWeight: 700, background: 'rgba(99,102,241,0.1)', color: '#6366f1', padding: '4px 8px', borderRadius: 6, display: 'flex', alignItems: 'center', gap: 4 }}>
+                            <UserPlus size={12} /> {stats.newLeads}
+                        </div>
+                        <div title={`${stats.calledLeads} Called`} style={{ fontSize: 10, fontWeight: 700, background: 'rgba(245,158,11,0.1)', color: '#f59e0b', padding: '4px 8px', borderRadius: 6, display: 'flex', alignItems: 'center', gap: 4 }}>
+                            <PhoneCall size={12} /> {stats.calledLeads}
+                        </div>
+                        <div title={`${stats.mailSentLeads} Mailed`} style={{ fontSize: 10, fontWeight: 700, background: 'rgba(16,185,129,0.1)', color: '#10b981', padding: '4px 8px', borderRadius: 6, display: 'flex', alignItems: 'center', gap: 4 }}>
+                            <Mail size={12} /> {stats.mailSentLeads}
+                        </div>
+                    </div>
+
                     <button className="btn-ghost" style={{ width: 32, height: 32, padding: 0 }}><Filter size={14} /></button>
                 </div>
 
-                <div className="card" style={{ padding: 0, height: 'calc(100vh - 280px)', minHeight: 400, display: 'flex', flexDirection: 'column', flex: 1, overflow: 'hidden' }}>
+                <div className="card" style={{ padding: 0, display: 'flex', flexDirection: 'column', flex: 1, overflow: 'hidden' }}>
                     <div style={{ 
                         display: 'flex', background: 'var(--bg-card)', 
                         borderBottom: '1px solid var(--border)', 
@@ -242,6 +272,7 @@ export default function LeadsPage() {
                                 <List
                                     rowCount={leads.length}
                                     rowHeight={56} 
+                                    onScroll={(e: any) => setIsScrolled(e.currentTarget.scrollTop > 50)}
                                     style={{ height: height as any, width: width as any, overflowY: 'auto' as any }}
                                     rowProps={{}}
                                     rowComponent={({ index, style }: any) => {

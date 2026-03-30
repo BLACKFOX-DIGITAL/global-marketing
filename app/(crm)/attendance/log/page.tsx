@@ -1,6 +1,6 @@
 'use client'
 import { useState, useEffect, useCallback, useMemo } from 'react'
-import Header from '@/components/Header'
+import NotificationCenter from '@/components/NotificationCenter'
 import { Clock, ChevronLeft, ChevronRight, AlertCircle, ChevronDown, ChevronUp } from 'lucide-react'
 import { format, parseISO, differenceInHours } from 'date-fns'
 
@@ -81,15 +81,13 @@ export default function AttendanceLogPage() {
     const isOvertime = diffMinutes > 0
 
     return (
-        <div>
-            <Header title="Attendance Log" user={null} />
-            <div className="crm-content">
+        <div className="crm-content" style={{ paddingTop: 16 }}>
                 <div className="page-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                     <div>
                         <h2>Attendance Timesheet</h2>
                         <p>Track your daily hours, breaks, and overtime progress.</p>
                     </div>
-
+                    <NotificationCenter />
                 </div>
 
                 {/* Tracking Cards */}
@@ -278,6 +276,5 @@ export default function AttendanceLogPage() {
                     </div>
                 )}
             </div>
-        </div>
-    )
-}
+        )
+    }

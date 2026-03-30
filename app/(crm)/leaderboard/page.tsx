@@ -1,6 +1,6 @@
 'use client'
 import { useState, useEffect } from 'react'
-import Header from '@/components/Header'
+import NotificationCenter from '@/components/NotificationCenter'
 import { Trophy, Award, Star, TrendingUp, Target, CheckCircle, Clock, Flame, Zap, ChevronDown, ChevronUp } from 'lucide-react'
 import { format } from 'date-fns'
 
@@ -58,14 +58,14 @@ export default function LeaderboardPage() {
     const podiumOrder = top3.length >= 3 ? [top3[1], top3[0], top3[2]] : top3
 
     return (
-        <div>
-            <Header title="Leaderboard" user={null} />
-            <div className="crm-content">
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 340px', gap: 20 }}>
-                    {/* Left column */}
-                    <div>
-                        {/* Header */}
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 28 }}>
+        <div className="crm-content" style={{ paddingTop: 16 }}>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 340px', gap: 20 }}>
+                {/* Left column */}
+                <div>
+                    {/* Header */}
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 28 }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 15 }}>
+                            <NotificationCenter />
                             <div>
                                 <h2 style={{ fontSize: 22, fontWeight: 700, marginBottom: 4, display: 'flex', alignItems: 'center', gap: 10 }}>
                                     <Trophy size={22} color="#f59e0b" /> Sales Leaderboard
@@ -75,23 +75,24 @@ export default function LeaderboardPage() {
                                     Last updated: {data ? format(new Date(), 'MMM dd, h:mm a') : '—'}
                                 </p>
                             </div>
-                            <div style={{ display: 'flex', background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 10, overflow: 'hidden' }}>
-                                {PERIODS.map(p => (
-                                    <button
-                                        key={p.key}
-                                        onClick={() => setPeriod(p.key)}
-                                        style={{
-                                            padding: '8px 16px', border: 'none', fontSize: 12, fontWeight: 600, cursor: 'pointer',
-                                            background: period === p.key ? 'var(--accent-primary)' : 'transparent',
-                                            color: period === p.key ? 'white' : 'var(--text-secondary)',
-                                            transition: 'all 0.2s',
-                                        }}
-                                    >
-                                        {p.label}
-                                    </button>
-                                ))}
-                            </div>
                         </div>
+                        <div style={{ display: 'flex', background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 10, overflow: 'hidden' }}>
+                            {PERIODS.map(p => (
+                                <button
+                                    key={p.key}
+                                    onClick={() => setPeriod(p.key)}
+                                    style={{
+                                        padding: '8px 16px', border: 'none', fontSize: 12, fontWeight: 600, cursor: 'pointer',
+                                        background: period === p.key ? 'var(--accent-primary)' : 'transparent',
+                                        color: period === p.key ? 'white' : 'var(--text-secondary)',
+                                        transition: 'all 0.2s',
+                                    }}
+                                >
+                                    {p.label}
+                                </button>
+                            ))}
+                        </div>
+                    </div>
 
                         {loading ? (
                             <div style={{ display: 'flex', justifyContent: 'center', padding: 80 }}>
@@ -364,6 +365,5 @@ export default function LeaderboardPage() {
                     </div>
                 </div>
             </div>
-        </div>
-    )
-}
+        )
+    }

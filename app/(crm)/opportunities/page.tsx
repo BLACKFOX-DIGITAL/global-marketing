@@ -3,7 +3,8 @@ import { useState, useEffect } from 'react'
 import Header from '@/components/Header'
 import Link from 'next/link'
 
-import { Calendar, CheckCircle2, ListTodo } from 'lucide-react'
+import { Calendar, CheckCircle2, ListTodo, Search } from 'lucide-react'
+import NotificationCenter from '@/components/NotificationCenter'
 import { format, parseISO, differenceInDays } from 'date-fns'
 
 interface Opportunity {
@@ -143,16 +144,20 @@ export default function OpportunitiesPage() {
     }
 
     return (
-        <div style={{ display: 'flex', flexDirection: 'column', height: '100%', overflow: 'hidden' }}>
-            <Header title="Opportunities" user={null} onSearch={setSearchQuery} />
-            <div className="crm-content" style={{ display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
-                <div className="page-header">
+            <div className="crm-content" style={{ display: 'flex', flexDirection: 'column', overflow: 'hidden', paddingTop: 16 }}>
+                <div className="page-header" style={{ marginBottom: 12, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                     <div>
-                        <h2>Opportunities Board</h2>
-                        <p style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                            <span style={{ color: 'var(--text-muted)' }}>Showing {filteredOpportunities.length} deals</span>
-
-                        </p>
+                        <h2 style={{ marginBottom: 0 }}>Opportunities Board</h2>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginTop: 4 }}>
+                            <span style={{ fontSize: 13, color: 'var(--text-muted)' }}>Showing {filteredOpportunities.length} deals</span>
+                            <div className="search-bar" style={{ width: 220, height: 30 }}>
+                                <Search size={13} color="var(--text-muted)" />
+                                <input placeholder="Filter deals..." value={searchQuery} onChange={e => setSearchQuery(e.target.value)} style={{ fontSize: 12 }} />
+                            </div>
+                        </div>
+                    </div>
+                    <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
+                        <NotificationCenter />
                     </div>
                 </div>
 
@@ -285,6 +290,5 @@ export default function OpportunitiesPage() {
                     </div>
                 )}
             </div>
-        </div>
-    )
-}
+        )
+    }
