@@ -3,7 +3,7 @@ import { useState, useDeferredValue } from 'react'
 import Header from '@/components/Header'
 import Link from 'next/link'
 import dynamic from 'next/dynamic'
-import { Plus, Search, Filter, Trash2, Pencil, ChevronLeft, ChevronRight, UserPlus, PhoneCall, Mail } from 'lucide-react'
+import { Plus, Search, Filter, Trash2, Pencil, ChevronLeft, ChevronRight, UserPlus, PhoneCall, Mail, BookOpen } from 'lucide-react'
 import { List } from 'react-window'
 import { AutoSizer } from 'react-virtualized-auto-sizer'
 import useSWR from 'swr'
@@ -154,9 +154,14 @@ export default function LeadsPage() {
                         <h2>Leads</h2>
                         <p>Manage and track your incoming prospects and pipeline conversion.</p>
                     </div>
-                    <button onClick={() => setShowAddModal(true)} className="btn-primary">
-                        <Plus size={16} /> New Lead
-                    </button>
+                    <div style={{ display: 'flex', gap: 10 }}>
+                        <Link href="/leads/guide" className="btn-secondary" style={{ textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 8 }}>
+                            <BookOpen size={16} /> Guide
+                        </Link>
+                        <button onClick={() => setShowAddModal(true)} className="btn-primary">
+                            <Plus size={16} /> New Lead
+                        </button>
+                    </div>
                 </div>
 
                 {/* Stats Dashboard */}
