@@ -33,6 +33,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
         const lostStatusOpt = statusOptions.find(o => o.value.toLowerCase() === 'lost' || o.value.toLowerCase().includes('lost'))
         const lostStatus = lostStatusOpt ? lostStatusOpt.value : 'Lost'
         
+        
         // Increment call count and update last outcome
         const lead = await prisma.lead.update({
             where: { id },
@@ -72,7 +73,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
             await prisma.task.create({
                 data: {
                     title: `Follow-up call — ${lead.company || lead.name}`,
-                    taskType: 'Call',
+                    taskType: 'Follow-up',
                     priority: 'High',
                     dueDate: new Date(body.dueDate),
                     leadId: id,

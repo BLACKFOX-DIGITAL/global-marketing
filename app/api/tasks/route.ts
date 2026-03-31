@@ -39,19 +39,61 @@ export async function GET(req: NextRequest) {
             { completedAt: null },
         ]
     }
-    if (priority) where.priority = priority
+    if (priority && priority !== 'All Priority') {
+        where.priority = priority
+    }
     if (leadId) where.leadId = leadId
 
-    const tasks = await prisma.task.findMany({
-        where,
-        include: {
-            owner: { select: { id: true, name: true, email: true } },
-            lead: { select: { id: true, name: true, company: true } },
-        },
-        orderBy: [{ completed: 'asc' }, { dueDate: 'asc' }, { createdAt: 'desc' }],
+    const page = parseInt(searchParams.get('page') || '1')
+    const limit = parseInt(searchParams.get('limit') || '10')
+    const skip = (page - 1) * limit
+
+    const [tasks, total, countsData] = await Promise.all([
+        prisma.task.findMany({
+            where,
+            include: {
+                owner: { select: { id: true, name: true, email: true } },
+                lead: { select: { id: true, name: true, company: true } },
+            },
+            orderBy: [{ completed: 'asc' }, { dueDate: 'asc' }, { createdAt: 'desc' }],
+            skip,
+            take: limit
+        }),
+        prisma.task.count({ where }),
+        // Get counts for all tabs in one go
+        prisma.task.groupBy({
+            by: ['completed'],
+            where: user.role !== 'Administrator' && user.role !== 'Manager' ? { ownerId: user.userId } : {},
+            _count: true
+        })
+    ])
+
+    // Get overdue count specifically
+    const overdueCount = await prisma.task.count({
+        where: {
+            ...(user.role !== 'Administrator' && user.role !== 'Manager' ? { ownerId: user.userId } : {}),
+            completed: false,
+            dueDate: { lt: new Date() }
+        }
     })
 
-    return NextResponse.json(tasks)
+    const counts = {
+        All: countsData.reduce((acc, c) => acc + c._count, 0),
+        Pending: countsData.find(c => !c.completed)?._count || 0,
+        Completed: countsData.find(c => c.completed)?._count || 0,
+        Overdue: overdueCount
+    }
+
+    return NextResponse.json({
+        tasks,
+        pagination: {
+            total,
+            page,
+            limit,
+            totalPages: Math.ceil(total / limit)
+        },
+        counts
+    })
 }
 
 export async function POST(req: NextRequest) {

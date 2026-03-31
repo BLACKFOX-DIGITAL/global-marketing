@@ -27,6 +27,8 @@ export default function GoalsPage() {
     const [goals, setGoals] = useState<UserGoal[]>([])
     const [goalUsers, setGoalUsers] = useState<{ id: string, name: string, role: string }[]>([])
     const [goalPeriod, setGoalPeriod] = useState(format(new Date(), 'yyyy-MM'))
+    const [actuals, setActuals] = useState<any[]>([])
+    const [stats, setStats] = useState<any>(null)
     const [pendingChanges, setPendingChanges] = useState<Record<string, number>>({})
     const [saving, setSaving] = useState(false)
     const [showSuccess, setShowSuccess] = useState(false)
@@ -39,6 +41,8 @@ export default function GoalsPage() {
                 const d = await res.json()
                 setGoalUsers(d.users || [])
                 setGoals(d.goals || [])
+                setActuals(d.actuals || [])
+                setStats(d.stats || null)
             }
         } catch (err) {
             console.error(err)
@@ -162,8 +166,10 @@ export default function GoalsPage() {
                             <div>
                                 <div style={{ color: '#94a3b8', fontSize: 11, fontWeight: 800, letterSpacing: '0.05em', marginBottom: 4 }}>TOTAL {cat.label.toUpperCase()}</div>
                                 <div style={{ fontSize: 24, fontWeight: 900, color: '#f8fafc', display: 'flex', alignItems: 'baseline', gap: 6 }}>
-                                    {totals[cat.id]}
-                                    <span style={{ fontSize: 11, color: cat.color, fontWeight: 700 }}>+8% vs LY</span>
+                                    {stats?.totalActuals?.[cat.id] || 0}
+                                    <span style={{ fontSize: 11, color: (stats?.comparisons?.[cat.id] || 0) >= 0 ? '#10b981' : '#f43f5e', fontWeight: 700 }}>
+                                        {(stats?.comparisons?.[cat.id] || 0) >= 0 ? '+' : ''}{stats?.comparisons?.[cat.id]?.toFixed(1) || 0}% vs LY
+                                    </span>
                                 </div>
                             </div>
                             <div style={{ background: `${cat.color}15`, padding: 8, borderRadius: 10, color: cat.color }}>
@@ -171,18 +177,31 @@ export default function GoalsPage() {
                             </div>
                         </div>
                         <div style={{ marginTop: 12, height: 4, background: 'rgba(255,255,255,0.03)', borderRadius: 2, overflow: 'hidden' }}>
-                            <div style={{ width: '72%', height: '100%', background: `linear-gradient(90deg, ${cat.color}, ${cat.color}80)`, borderRadius: 2 }} />
+                            <div style={{ 
+                                width: `${Math.min(((stats?.totalActuals?.[cat.id] || 0) / (totals[cat.id] || 1)) * 100, 100)}%`, 
+                                height: '100%', 
+                                background: `linear-gradient(90deg, ${cat.color}, ${cat.color}80)`, 
+                                borderRadius: 2,
+                                transition: 'width 1s ease-out'
+                            }} />
                         </div>
                     </div>
                 ))}
                 
                 {/* SYSTEM METADATA CARD */}
                 <div style={{ background: 'rgba(30, 41, 59, 0.2)', border: '1px dashed rgba(255,255,255,0.1)', borderRadius: 16, padding: '16px 20px', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
-                    <div style={{ fontSize: 11, fontWeight: 800, color: '#64748b', marginBottom: 4 }}>DATA QUALITY SCORE</div>
+                    <div style={{ fontSize: 11, fontWeight: 800, color: '#64748b', marginBottom: 4 }}>WIN RATE</div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                        <div style={{ fontSize: 20, fontWeight: 900, color: '#10b981' }}>98.4%</div>
+                        <div style={{ fontSize: 20, fontWeight: 900, color: '#10b981' }}>{stats?.winRate?.toFixed(1) || 0}%</div>
                         <div style={{ display: 'flex', gap: 2 }}>
-                            {[1,2,3,4,5].map(i => <div key={i} style={{ width: 3, height: 10, borderRadius: 1, background: i < 5 ? '#10b981' : '#1e293b' }} />)}
+                            {Array.from({ length: 5 }).map((_, i) => (
+                                <div key={i} style={{ 
+                                    width: 3, 
+                                    height: 10, 
+                                    borderRadius: 1, 
+                                    background: (i + 1) * 20 <= (stats?.winRate || 0) ? '#10b981' : '#1e293b' 
+                                }} />
+                            ))}
                         </div>
                     </div>
                 </div>
@@ -217,11 +236,11 @@ export default function GoalsPage() {
                                 </td>
                                 {CATEGORIES.map(cat => {
                                     const goal = goals.find(g => g.userId === user.id && g.category === cat.id)
+                                    const actual = actuals.find(a => a.userId === user.id)?.[cat.id] || 0
                                     const key = `${user.id}_${cat.id}`
-                                    const val = pendingChanges[key] !== undefined ? pendingChanges[key] : (goal?.targetValue || 0)
+                                    const targetVal = pendingChanges[key] !== undefined ? pendingChanges[key] : (goal?.targetValue || 0)
                                     const changed = pendingChanges[key] !== undefined
-                                    const mockActual = Math.floor(val * (0.6 + Math.random() * 0.3))
-                                    const perc = val > 0 ? Math.min((mockActual/val)*100, 100) : 0
+                                    const perc = targetVal > 0 ? Math.min((actual/targetVal)*100, 100) : 0
 
                                     return (
                                         <td key={cat.id} style={{ padding: '12px 24px' }}>
@@ -229,7 +248,7 @@ export default function GoalsPage() {
                                                 <div style={{ position: 'relative' }}>
                                                     <input
                                                         type="number"
-                                                        value={val}
+                                                        value={targetVal}
                                                         onChange={e => setPendingChanges(prev => ({ ...prev, [key]: parseInt(e.target.value) || 0 }))}
                                                         className="compact-input"
                                                         style={{ borderColor: changed ? cat.color : 'rgba(255,255,255,0.1)', boxShadow: changed ? `0 0 10px ${cat.color}20` : 'none' }}
@@ -239,7 +258,7 @@ export default function GoalsPage() {
                                                 <div style={{ flex: 1 }}>
                                                     <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 10, fontWeight: 800, marginBottom: 4 }}>
                                                         <span style={{ color: '#475569' }}>ACHIEVED</span>
-                                                        <span style={{ color: cat.color }}>{mockActual} / {val}</span>
+                                                        <span style={{ color: cat.color, fontVariantNumeric: 'tabular-nums' }}>{actual} / {targetVal}</span>
                                                     </div>
                                                     <div style={{ height: 3, background: 'rgba(255,255,255,0.03)', borderRadius: 1, overflow: 'hidden' }}>
                                                         <div style={{ width: `${perc}%`, height: '100%', background: cat.color, transition: 'width 0.8s ease-out' }} />

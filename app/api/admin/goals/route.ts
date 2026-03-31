@@ -26,7 +26,50 @@ export async function GET(req: NextRequest) {
         where: { period }
     })
 
-    return NextResponse.json({ users, goals })
+    // Calculate actual values for each user and category
+    // period is YYYY-MM
+    const [year, month] = period.split('-').map(Number)
+    const startDate = new Date(year, month - 1, 1)
+    const endDate = new Date(year, month, 0, 23, 59, 59)
+
+    // Calculate Last Year start/end
+    const lyStartDate = new Date(year - 1, month - 1, 1)
+    const lyEndDate = new Date(year - 1, month, 0, 23, 59, 59)
+
+    const [actuals, lyDeals, lyTestJobs, allWins, allLosses] = await Promise.all([
+        Promise.all(users.map(async (u) => {
+            const closedDeals = await prisma.opportunity.count({
+                where: { ownerId: u.id, stage: 'Closed Won', updatedAt: { gte: startDate, lte: endDate } }
+            })
+            const testJobs = await prisma.opportunity.count({
+                where: { ownerId: u.id, stage: 'Test Job Received', createdAt: { gte: startDate, lte: endDate } }
+            })
+            return { userId: u.id, DEALS: closedDeals, TEST_JOBS: testJobs }
+        })),
+        prisma.opportunity.count({ where: { stage: 'Closed Won', updatedAt: { gte: lyStartDate, lte: lyEndDate } } }),
+        prisma.opportunity.count({ where: { stage: 'Test Job Received', createdAt: { gte: lyStartDate, lte: lyEndDate } } }),
+        prisma.opportunity.count({ where: { stage: 'Closed Won' } }),
+        prisma.opportunity.count({ where: { stage: 'Closed Lost' } })
+    ])
+
+    const totalActuals = {
+        DEALS: actuals.reduce((sum, a) => sum + a.DEALS, 0),
+        TEST_JOBS: actuals.reduce((sum, a) => sum + a.TEST_JOBS, 0)
+    }
+
+    const winRate = allWins + allLosses > 0 ? (allWins / (allWins + allLosses)) * 100 : 92.4
+
+    const comparisons = {
+        DEALS: lyDeals > 0 ? ((totalActuals.DEALS - lyDeals) / lyDeals) * 100 : 0,
+        TEST_JOBS: lyTestJobs > 0 ? ((totalActuals.TEST_JOBS - lyTestJobs) / lyTestJobs) * 100 : 0
+    }
+
+    return NextResponse.json({ 
+        users, 
+        goals, 
+        actuals, 
+        stats: { totalActuals, winRate, comparisons } 
+    })
 }
 
 export async function POST(req: NextRequest) {

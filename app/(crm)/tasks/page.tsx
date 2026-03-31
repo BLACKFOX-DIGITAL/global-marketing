@@ -151,7 +151,6 @@ function CreateTaskModal({ onClose, onCreated, leads, priorities, preSelectedLea
                         />
                     </div>
 
-                    {/* Task Type */}
                     <div className="form-group">
                         <label className="form-label">Task Type</label>
                         <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
@@ -295,20 +294,19 @@ export default function TasksPage() {
     const [viewTask, setViewTask] = useState<Task | null>(null)
     const [editTaskId, setEditTaskId] = useState<string | null>(null)
     const [mounted, setMounted] = useState(false)
+    const [page, setPage] = useState(1)
+    const [priorityFilter, setPriorityFilter] = useState('All Priority')
 
     useEffect(() => {
         setMounted(true)
     }, [])
 
-    const params = new URLSearchParams()
-    if (tab !== 'All') params.set('status', tab)
-    const queryStr = params.toString()
-
-    const { data: tasksData, mutate: fetchTasks } = useSWR(`/api/tasks${queryStr ? '?' + queryStr : ''}`, fetcher, { keepPreviousData: true })
+    const { data: tasksData, mutate: fetchTasks } = useSWR(`/api/tasks?status=${tab}&priority=${priorityFilter}&page=${page}&limit=10`, fetcher, { keepPreviousData: true })
     const { data: prioritiesData } = useSWR('/api/admin/settings?category=TASK_PRIORITY', fetcher, { keepPreviousData: true })
     const { data: leadsData } = useSWR('/api/leads', fetcher, { keepPreviousData: true })
 
-    const tasks: Task[] = Array.isArray(tasksData) ? tasksData : []
+    const tasks: Task[] = Array.isArray(tasksData?.tasks) ? tasksData.tasks : []
+    const pagination = tasksData?.pagination || { total: 0, page: 1, limit: 10, totalPages: 1 }
     const priorities: Array<{ value: string; color: string | null }> = prioritiesData?.options || []
     const leads: Array<{ id: string; name: string; company: string | null }> = leadsData?.leads || (Array.isArray(leadsData) ? leadsData : [])
     
@@ -319,7 +317,6 @@ export default function TasksPage() {
         const wasCompleted = task?.completed
         const res = await fetch(`/api/tasks/${id}/toggle`, { method: 'PATCH' })
         
-        // Only celebrate when completing (not uncompleting)
         if (!wasCompleted && res.ok) {
             try {
                 const data = await res.json()
@@ -328,7 +325,6 @@ export default function TasksPage() {
                     handleGamificationResult(data.gamification, 'task')
                 }
             } catch {
-                // If parsing fails, still show a small celebration
                 const { celebrateSmall } = await import('@/lib/confetti')
                 celebrateSmall()
             }
@@ -349,24 +345,17 @@ export default function TasksPage() {
         fetchTasks()
     }
 
-    const counts = {
-        All: tasks.length,
-        Pending: tasks.filter(t => !t.completed).length,
-        Completed: tasks.filter(t => t.completed).length,
-        Overdue: tasks.filter(t => !t.completed && t.dueDate && isPast(parseISO(t.dueDate))).length,
-    }
-
     const getTaskTypeInfo = (type: string) => TASK_TYPES.find(t => t.value === type) || TASK_TYPES[5]
 
     return (
         <>
-            <div className="crm-content" style={{ paddingTop: 16 }}>
-                <div className="page-header">
+            <div className="crm-content" style={{ paddingTop: 12, paddingBottom: 12, display: 'flex', flexDirection: 'column' }}>
+                <div className="page-header" style={{ marginBottom: 16 }}>
                     <div>
-                        <h2>Tasks & Follow-Ups</h2>
-                        <p>All your pending actions for leads — calls, emails, meetings & more.</p>
+                        <h2 style={{ fontSize: 22 }}>Tasks & Follow-Ups</h2>
+                        <p style={{ fontSize: 12 }}>All your pending actions for leads.</p>
                     </div>
-                     <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
+                    <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
                         <NotificationCenter />
                         <div style={{ display: 'flex', background: 'var(--bg-input)', padding: 4, borderRadius: 10, border: '1px solid var(--border)' }}>
                             <button
@@ -394,16 +383,20 @@ export default function TasksPage() {
                     </div>
                 </div>
 
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
-                    <div className="tabs">
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+                    <div className="tabs" style={{ padding: 2 }}>
                         {TABS.map(t => (
-                            <button key={t} className={`tab ${tab === t ? 'active' : ''}`} onClick={() => setTab(t)}>
-                                {t} {counts[t] > 0 && <span style={{ marginLeft: 4, fontSize: 11, opacity: 0.8 }}>({counts[t]})</span>}
+                            <button key={t} className={`tab ${tab === t ? 'active' : ''}`} onClick={() => { setTab(t); setPage(1); }} style={{ padding: '5px 12px', fontSize: 12 }}>
+                                {t} {tasksData?.counts?.[t] !== undefined && <span style={{ marginLeft: 4, opacity: 0.6 }}>({tasksData.counts[t]})</span>}
                             </button>
                         ))}
                     </div>
                     <div style={{ display: 'flex', gap: 8 }}>
-                        <select style={{ width: 130, height: 36, fontSize: 13 }}>
+                        <select 
+                            style={{ width: 120, height: 32, fontSize: 12, padding: '4px 8px' }}
+                            value={priorityFilter}
+                            onChange={(e) => { setPriorityFilter(e.target.value); setPage(1); }}
+                        >
                             <option>All Priority</option>
                             {priorities.map(p => <option key={p.value}>{p.value}</option>)}
                         </select>
@@ -422,125 +415,130 @@ export default function TasksPage() {
                     />
                 ) : (
                     <div className="card" style={{ padding: 0 }}>
-                        {loading ? (
+                        {!tasksData ? (
                             <div style={{ display: 'flex', justifyContent: 'center', padding: 40 }}><div className="spinner" style={{ width: 28, height: 28 }} /></div>
                         ) : tasks.length === 0 ? (
                             <div style={{ textAlign: 'center', padding: 48, color: 'var(--text-muted)' }}>
                                 <CheckCircle size={40} style={{ marginBottom: 12, opacity: 0.3 }} />
-                                <div style={{ fontSize: 15, fontWeight: 600, marginBottom: 4 }}>No follow-ups here</div>
+                                <div style={{ fontSize: 15, fontWeight: 600, marginBottom: 4 }}>No tasks here</div>
                                 <div style={{ fontSize: 13 }}>Create a new task from any lead page or click &quot;New Follow-Up&quot;</div>
                             </div>
-                        ) : tasks.map(task => {
-                            const isOverdue = !task.completed && task.dueDate && isPast(parseISO(task.dueDate))
-                            const typeInfo = getTaskTypeInfo(task.taskType)
-                            return (
-                                <div key={task.id} className="task-row" style={{
-                                    padding: '14px 20px',
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    gap: 16,
-                                    transition: 'all 0.2s ease'
-                                }}>
-                                    <button
-                                        className={`task-check ${task.completed ? 'checked' : ''}`}
-                                        onClick={() => toggleTask(task.id)}
-                                        style={{
-                                            width: 22, height: 22,
-                                            background: task.completed ? 'var(--accent-primary)' : 'transparent',
-                                            border: `2px solid ${task.completed ? 'var(--accent-primary)' : 'var(--border-light)'}`,
-                                            borderRadius: '50%',
-                                            display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                            cursor: 'pointer', transition: 'all 0.2s',
-                                            flexShrink: 0
-                                        }}
-                                        onMouseEnter={e => !task.completed && (e.currentTarget.style.borderColor = 'var(--accent-primary)')}
-                                        onMouseLeave={e => !task.completed && (e.currentTarget.style.borderColor = 'var(--border-light)')}
-                                    >
-                                        {task.completed && <CheckCircle size={14} color="white" />}
-                                    </button>
-
-                                    {/* Task Type Icon */}
-                                    <div style={{
-                                        width: 32, height: 32, borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                        background: `${typeInfo.color}15`, fontSize: 16, flexShrink: 0
-                                    }}>
-                                        {typeInfo.icon}
-                                    </div>
-
-                                    <div style={{ flex: 1, minWidth: 0 }}>
-                                        <div style={{ fontSize: 14, fontWeight: 500, color: task.completed ? 'var(--text-muted)' : 'var(--text-primary)', textDecoration: task.completed ? 'line-through' : 'none' }}>
-                                            {task.title}
-                                        </div>
-                                        {task.lead && (
-                                            <Link href={`/leads/${task.lead.id}`} style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 12, color: 'var(--accent-secondary)', marginTop: 2, textDecoration: 'none' }}>
-                                                <Building size={11} /> {task.lead.name} {task.lead.company ? `· ${task.lead.company}` : ''}
-                                            </Link>
-                                        )}
-                                    </div>
-
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexShrink: 0, justifyContent: 'flex-end', width: 280 }}>
-                                        {task.dueDate && (
-                                            <div style={{
-                                                display: 'flex', alignItems: 'center', gap: 7, fontSize: 13,
-                                                color: isOverdue ? '#ef4444' : 'var(--text-secondary)',
-                                                fontWeight: isOverdue ? 600 : 400,
-                                                width: 125, flexShrink: 0
-                                            }}>
-                                                <Calendar size={14} style={{ opacity: 0.6 }} />
-                                                <span style={{ fontVariantNumeric: 'tabular-nums' }}>
-                                                    {!mounted ? format(parseISO(task.dueDate), 'MMM d') : (
-                                                        isToday(parseISO(task.dueDate)) ? 'Today' :
-                                                            isTomorrow(parseISO(task.dueDate)) ? 'Tomorrow' :
-                                                                isPast(parseISO(task.dueDate)) && !task.completed ? formatDistanceToNow(parseISO(task.dueDate)) + ' ago' :
-                                                                    format(parseISO(task.dueDate), 'MMM d')
-                                                    )}
-                                                </span>
-                                            </div>
-                                        )}
-                                        <div style={{ width: 90, display: 'flex', justifyContent: 'center', flexShrink: 0 }}>
-                                            <span className="badge" style={{
-                                                fontSize: 10,
-                                                width: '100%',
-                                                display: 'flex',
-                                                justifyContent: 'center',
-                                                alignItems: 'center',
-                                                textTransform: 'uppercase',
-                                                letterSpacing: '0.6px',
-                                                padding: '4px 0',
-                                                background: `${priorities.find(p => p.value === task.priority)?.color || 'var(--text-muted)'}15`,
-                                                color: priorities.find(p => p.value === task.priority)?.color || 'var(--text-muted)',
-                                                border: `1px solid ${priorities.find(p => p.value === task.priority)?.color || 'var(--text-muted)'}30`
-                                            }}>{task.priority}</span>
-                                        </div>
-                                        <div style={{ width: 64, display: 'flex', justifyContent: 'center', gap: 4, flexShrink: 0 }}>
-                                            {!task.completed && (
-                                                <button className="btn-ghost" style={{
-                                                    padding: '6px', color: 'var(--accent-primary)', opacity: 0.4,
-                                                    fontSize: 16, transition: 'all 0.2s',
-                                                    borderRadius: '50%'
+                        ) : (
+                            <div style={{ display: 'flex', flexDirection: 'column' }}>
+                                {tasks.map(task => {
+                                    const isOverdue = !task.completed && task.dueDate && isPast(parseISO(task.dueDate))
+                                    const typeInfo = getTaskTypeInfo(task.taskType)
+                                    return (
+                                        <div key={task.id} className="task-row" style={{
+                                            padding: '8px 16px',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            gap: 12,
+                                            minHeight: 52,
+                                            transition: 'all 0.2s ease'
+                                        }}>
+                                            <button
+                                                className={`task-check ${task.completed ? 'checked' : ''}`}
+                                                onClick={() => toggleTask(task.id)}
+                                                style={{
+                                                    width: 22, height: 22,
+                                                    background: task.completed ? 'var(--accent-primary)' : 'transparent',
+                                                    border: `2px solid ${task.completed ? 'var(--accent-primary)' : 'var(--border-light)'}`,
+                                                    borderRadius: '50%',
+                                                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                                    cursor: 'pointer', transition: 'all 0.2s',
+                                                    flexShrink: 0
                                                 }}
-                                                    onMouseEnter={e => { e.currentTarget.style.opacity = '1'; e.currentTarget.style.background = 'rgba(99, 102, 241, 0.1)' }}
-                                                    onMouseLeave={e => { e.currentTarget.style.opacity = '0.4'; e.currentTarget.style.background = 'transparent' }}
-                                                    onClick={() => setEditTaskId(task.id)}>
-                                                    <Pencil size={14} />
-                                                </button>
-                                            )}
-                                            <button className="btn-ghost" style={{
-                                                padding: '6px', color: '#ef4444', opacity: 0.4,
-                                                fontSize: 16, transition: 'all 0.2s',
-                                                borderRadius: '50%'
-                                            }}
-                                                onMouseEnter={e => { e.currentTarget.style.opacity = '1'; e.currentTarget.style.background = 'rgba(239, 68, 68, 0.1)' }}
-                                                onMouseLeave={e => { e.currentTarget.style.opacity = '0.4'; e.currentTarget.style.background = 'transparent' }}
-                                                onClick={() => deleteTaskAsk(task.id)}>✕</button>
+                                            >
+                                                {task.completed && <CheckCircle size={14} color="white" />}
+                                            </button>
+
+                                            <div style={{
+                                                width: 28, height: 28, borderRadius: 6, display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                                background: `${typeInfo.color}15`, fontSize: 14, flexShrink: 0
+                                            }}>
+                                                {typeInfo.icon}
+                                            </div>
+
+                                            <div style={{ flex: 1, minWidth: 0 }}>
+                                                <div style={{ fontSize: 14, fontWeight: 500, color: task.completed ? 'var(--text-muted)' : 'var(--text-primary)', textDecoration: task.completed ? 'line-through' : 'none' }}>
+                                                    {task.title}
+                                                </div>
+                                                {task.lead && (
+                                                    <Link href={`/leads/${task.lead.id}`} style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 12, color: 'var(--accent-secondary)', marginTop: 2, textDecoration: 'none' }}>
+                                                        <Building size={11} /> {task.lead.name} {task.lead.company ? `· ${task.lead.company}` : ''}
+                                                    </Link>
+                                                )}
+                                            </div>
+
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexShrink: 0, justifyContent: 'flex-end', width: 260 }}>
+                                                {task.dueDate && (
+                                                    <div style={{
+                                                        display: 'flex', alignItems: 'center', gap: 7, fontSize: 13,
+                                                        color: isOverdue ? '#ef4444' : 'var(--text-secondary)',
+                                                        fontWeight: isOverdue ? 600 : 400,
+                                                        width: 125, flexShrink: 0
+                                                    }}>
+                                                        <Calendar size={14} style={{ opacity: 0.6 }} />
+                                                        <span style={{ fontVariantNumeric: 'tabular-nums' }}>
+                                                            {!mounted ? format(parseISO(task.dueDate), 'MMM d') : (
+                                                                isToday(parseISO(task.dueDate)) ? 'Today' :
+                                                                    isTomorrow(parseISO(task.dueDate)) ? 'Tomorrow' :
+                                                                        isPast(parseISO(task.dueDate)) && !task.completed ? formatDistanceToNow(parseISO(task.dueDate)) + ' ago' :
+                                                                            format(parseISO(task.dueDate), 'MMM d')
+                                                            )}
+                                                        </span>
+                                                    </div>
+                                                )}
+                                                <div style={{ width: 90, display: 'flex', justifyContent: 'center', flexShrink: 0 }}>
+                                                    <span className="badge" style={{
+                                                        fontSize: 10, width: '100%', display: 'flex', justifyContent: 'center', alignItems: 'center',
+                                                        padding: '4px 0',
+                                                        background: `${priorities.find(p => p.value === task.priority)?.color || 'var(--text-muted)'}15`,
+                                                        color: priorities.find(p => p.value === task.priority)?.color || 'var(--text-muted)',
+                                                        border: `1px solid ${priorities.find(p => p.value === task.priority)?.color || 'var(--text-muted)'}30`
+                                                    }}>{task.priority}</span>
+                                                </div>
+                                                <div style={{ width: 64, display: 'flex', justifyContent: 'center', gap: 4, flexShrink: 0 }}>
+                                                    {!task.completed && (
+                                                        <button className="btn-ghost" onClick={() => setEditTaskId(task.id)} style={{ borderRadius: '50%', color: 'var(--accent-primary)' }}>
+                                                            <Pencil size={14} />
+                                                        </button>
+                                                    )}
+                                                    <button className="btn-ghost" onClick={() => deleteTaskAsk(task.id)} style={{ borderRadius: '50%', color: '#ef4444' }}>✕</button>
+                                                </div>
+                                            </div>
                                         </div>
+                                    )
+                                })}
+                                
+                                {tasksData && pagination.totalPages > 1 && (
+                                    <div className="pagination-container" style={{ padding: '16px', display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 12, borderTop: '1px solid var(--border)' }}>
+                                        <button className="btn-secondary" disabled={page <= 1} onClick={() => { setPage(p => Math.max(1, p - 1)); window.scrollTo({ top: 0, behavior: 'smooth' }); }} style={{ padding: '6px 12px', fontSize: 13 }}>
+                                            Previous
+                                        </button>
+                                        <div style={{ display: 'flex', gap: 6 }}>
+                                            {Array.from({ length: pagination.totalPages }).map((_, i) => (
+                                                <button key={i} onClick={() => { setPage(i + 1); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
+                                                    style={{
+                                                        width: 30, height: 30, borderRadius: 8, border: '1px solid var(--border)',
+                                                        background: page === i + 1 ? 'var(--accent-primary)' : 'var(--bg-card)',
+                                                        color: page === i + 1 ? 'white' : 'var(--text-secondary)',
+                                                        fontSize: 12, fontWeight: 700, cursor: 'pointer'
+                                                    }}>{i + 1}</button>
+                                            ))}
+                                        </div>
+                                        <button className="btn-secondary" disabled={page >= pagination.totalPages} onClick={() => { setPage(p => Math.min(pagination.totalPages, p + 1)); window.scrollTo({ top: 0, behavior: 'smooth' }); }} style={{ padding: '6px 12px', fontSize: 13 }}>
+                                            Next
+                                        </button>
                                     </div>
-                                </div>
-                            )
-                        })}
+                                )}
+                            </div>
+                        )}
                     </div>
                 )}
             </div>
+
             {showModal && (
                 <CreateTaskModal
                     onClose={() => { setShowModal(false); setSelectedDate(null); }}

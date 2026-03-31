@@ -78,6 +78,7 @@ export default function DashboardPage() {
     const { mutate } = useSWRConfig()
     const [activeActionPopup, setActiveActionPopup] = useState<{ leadId: string, type: 'call' | 'mail' } | null>(null)
     const [editTaskId, setEditTaskId] = useState<string | null>(null)
+    const [taskTab, setTaskTab] = useState<'today' | 'upcoming'>('today')
     
     // Lightweight bootstrap: auth + settings + gamification (cached 5 min)
     const { data: init, error: initError } = useSWR('/api/dashboard/init', fetcher, {
@@ -394,52 +395,121 @@ export default function DashboardPage() {
 
                     {/* Today's Tasks — span 4 or 5 */}
                     <div className="dash-card" style={{ gridColumn: goalsData?.goals?.filter(g => g.category !== 'TASKS').length ? 'span 4' : 'span 4', padding: 0, animation: 'fadeSlideUp 0.4s ease both 0.32s', display: 'flex', flexDirection: 'column' }}>
-                        <div style={{ padding: '12px 18px', borderBottom: '1px solid var(--border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                            <div>
-                                <div className="section-label" style={{ marginBottom: 2 }}>Today</div>
-                                <h3 style={{ margin: 0, fontSize: 15, fontWeight: 700 }}>Task Overview</h3>
+                        <div style={{ padding: '10px 14px', borderBottom: '1px solid var(--border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12 }}>
+                            <div style={{ display: 'flex', background: 'rgba(255,255,255,0.03)', padding: 3, borderRadius: 8, border: '1px solid var(--border)' }}>
+                                <button
+                                    onClick={() => setTaskTab('today')}
+                                    style={{
+                                        padding: '4px 10px', borderRadius: 6, border: 'none',
+                                        background: taskTab === 'today' ? 'var(--bg-card)' : 'transparent',
+                                        color: taskTab === 'today' ? 'var(--accent-primary)' : 'var(--text-muted)',
+                                        fontSize: 11, fontWeight: taskTab === 'today' ? 700 : 500, cursor: 'pointer',
+                                        boxShadow: taskTab === 'today' ? '0 1px 3px rgba(0,0,0,0.1)' : 'none',
+                                        transition: 'all 0.2s'
+                                    }}
+                                >Today</button>
+                                <button
+                                    onClick={() => setTaskTab('upcoming')}
+                                    style={{
+                                        padding: '4px 10px', borderRadius: 6, border: 'none',
+                                        background: taskTab === 'upcoming' ? 'var(--bg-card)' : 'transparent',
+                                        color: taskTab === 'upcoming' ? 'var(--accent-primary)' : 'var(--text-muted)',
+                                        fontSize: 11, fontWeight: taskTab === 'upcoming' ? 700 : 500, cursor: 'pointer',
+                                        boxShadow: taskTab === 'upcoming' ? '0 1px 3px rgba(0,0,0,0.1)' : 'none',
+                                        transition: 'all 0.2s'
+                                    }}
+                                >Upcoming</button>
                             </div>
                             <Link href="/tasks" style={{ fontSize: 11, color: 'var(--accent-primary)', textDecoration: 'none', fontWeight: 700, display: 'flex', alignItems: 'center', gap: 4 }}>
-                                All tasks <ChevronRight size={12} />
+                                All <ChevronRight size={12} />
                             </Link>
                         </div>
                         <div style={{ flex: 1, overflowY: 'auto', maxHeight: 320 }}>
-                            {!data?.todaysTasks.length ? (
-                                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: 40, gap: 12 }}>
-                                    <div style={{ width: 48, height: 48, borderRadius: '50%', background: 'rgba(16,185,129,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                                        <CheckCircle size={22} color="#10b981" />
-                                    </div>
-                                    <div style={{ fontSize: 13, color: 'var(--text-muted)', textAlign: 'center' }}>All clear for today!</div>
-                                </div>
-                            ) : (
-                                data?.todaysTasks.map((task, idx) => (
-                                    <div key={task.id} className="task-item" style={{
-                                        padding: '10px 18px', display: 'flex', gap: 12, alignItems: 'flex-start',
-                                        borderBottom: idx < (data?.todaysTasks.length || 0) - 1 ? '1px solid var(--border)' : 'none',
-                                        transition: 'background 0.15s'
-                                    }}>
-                                        <button 
-                                            onClick={() => handleToggleTask(task.id)}
-                                            style={{
-                                                width: 18, height: 18, borderRadius: 6, flexShrink: 0, marginTop: 2,
-                                                border: `2px solid ${task.completed ? '#10b981' : 'var(--border)'}`,
-                                                background: task.completed ? '#10b981' : 'transparent',
-                                                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                                cursor: 'pointer', outline: 'none', padding: 0
-                                            }}
-                                        >
-                                            {task.completed && <Check size={10} color="white" strokeWidth={4} />}
-                                        </button>
-                                        <div style={{ flex: 1, minWidth: 0 }}>
-                                            <div style={{
-                                                fontSize: 13, fontWeight: 600,
-                                                color: task.completed ? 'var(--text-muted)' : 'var(--text-primary)',
-                                                textDecoration: task.completed ? 'line-through' : 'none',
-                                                whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', marginBottom: 4
-                                            }}>{task.title}</div>
-                                            <PriorityBadge priority={task.priority} options={settings.priorities} />
+                            {taskTab === 'today' ? (
+                                !data?.todaysTasks.length ? (
+                                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: 40, gap: 12 }}>
+                                        <div style={{ width: 48, height: 48, borderRadius: '50%', background: 'rgba(16,185,129,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                            <CheckCircle size={22} color="#10b981" />
                                         </div>
-                                        {!task.completed && (
+                                        <div style={{ fontSize: 13, color: 'var(--text-muted)', textAlign: 'center' }}>All clear for today!</div>
+                                    </div>
+                                ) : (
+                                    data?.todaysTasks.map((task, idx) => (
+                                        <div key={task.id} className="task-item" style={{
+                                            padding: '10px 18px', display: 'flex', gap: 12, alignItems: 'flex-start',
+                                            borderBottom: idx < (data?.todaysTasks.length || 0) - 1 ? '1px solid var(--border)' : 'none',
+                                            transition: 'background 0.15s'
+                                        }}>
+                                            <button 
+                                                onClick={() => handleToggleTask(task.id)}
+                                                style={{
+                                                    width: 18, height: 18, borderRadius: 6, flexShrink: 0, marginTop: 2,
+                                                    border: `2px solid ${task.completed ? '#10b981' : 'var(--border)'}`,
+                                                    background: task.completed ? '#10b981' : 'transparent',
+                                                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                                    cursor: 'pointer', outline: 'none', padding: 0
+                                                }}
+                                            >
+                                                {task.completed && <Check size={10} color="white" strokeWidth={4} />}
+                                            </button>
+                                            <div style={{ flex: 1, minWidth: 0 }}>
+                                                <div style={{
+                                                    fontSize: 13, fontWeight: 600,
+                                                    color: task.completed ? 'var(--text-muted)' : 'var(--text-primary)',
+                                                    textDecoration: task.completed ? 'line-through' : 'none',
+                                                    whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', marginBottom: 4
+                                                }}>{task.title}</div>
+                                                <PriorityBadge priority={task.priority} options={settings.priorities} />
+                                            </div>
+                                            {!task.completed && (
+                                                <button 
+                                                    onClick={() => setEditTaskId(task.id)}
+                                                    style={{ 
+                                                        padding: '4px', borderRadius: 4, border: 'none', background: 'transparent', 
+                                                        color: 'var(--accent-primary)', cursor: 'pointer', opacity: 0.6,
+                                                        display: 'flex', alignItems: 'center'
+                                                    }}
+                                                    onMouseEnter={e => e.currentTarget.style.opacity = '1'}
+                                                    onMouseLeave={e => e.currentTarget.style.opacity = '0.6'}
+                                                >
+                                                    <Pencil size={12} />
+                                                </button>
+                                            )}
+                                        </div>
+                                    ))
+                                )
+                            ) : (
+                                !data?.upcomingTasks.length ? (
+                                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: 40, gap: 12 }}>
+                                        <div style={{ width: 48, height: 48, borderRadius: '50%', background: 'rgba(99,102,241,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                            <Calendar size={22} color="var(--accent-primary)" />
+                                        </div>
+                                        <div style={{ fontSize: 13, color: 'var(--text-muted)', textAlign: 'center' }}>No upcoming follow-ups</div>
+                                    </div>
+                                ) : (
+                                    data?.upcomingTasks.map((task, idx) => (
+                                        <div key={task.id} className="task-item" style={{
+                                            padding: '10px 18px', display: 'flex', gap: 12, alignItems: 'flex-start',
+                                            borderBottom: idx < (data?.upcomingTasks.length || 0) - 1 ? '1px solid var(--border)' : 'none',
+                                            transition: 'background 0.15s'
+                                        }}>
+                                            <div style={{
+                                                width: 18, height: 18, borderRadius: 6, flexShrink: 0, marginTop: 2,
+                                                border: '2px solid var(--border)',
+                                                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                            }}>
+                                                <Calendar size={10} color="var(--text-muted)" />
+                                            </div>
+                                            <div style={{ flex: 1, minWidth: 0 }}>
+                                                <div style={{
+                                                    fontSize: 13, fontWeight: 600,
+                                                    color: 'var(--text-primary)',
+                                                    whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', marginBottom: 2
+                                                }}>{task.title}</div>
+                                                <div style={{ fontSize: 10, color: 'var(--accent-primary)', fontWeight: 600 }}>
+                                                    {task.dueDate ? format(new Date(task.dueDate), 'MMM d, h:mm a') : 'No date'}
+                                                </div>
+                                            </div>
                                             <button 
                                                 onClick={() => setEditTaskId(task.id)}
                                                 style={{ 
@@ -452,9 +522,9 @@ export default function DashboardPage() {
                                             >
                                                 <Pencil size={12} />
                                             </button>
-                                        )}
-                                    </div>
-                                ))
+                                        </div>
+                                    ))
+                                )
                             )}
                         </div>
                     </div>

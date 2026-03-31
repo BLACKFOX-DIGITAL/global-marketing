@@ -116,12 +116,19 @@ function Stepper({ lead, onRefresh, onConvert, availableStatuses }: { lead: Lead
     const [activePopup, setActivePopup] = useState<string | null>(null)
     const [note, setNote] = useState('')
     const [dueDate, setDueDate] = useState('')
+    const [showDatePicker, setShowDatePicker] = useState(false)
     const [submitting, setSubmitting] = useState(false)
 
     useEffect(() => {
         const handleClickOutside = (e: MouseEvent) => {
             const target = e.target as HTMLElement
-            if (activePopup && !target.closest('.action-popup') && !target.closest('.action-trigger')) {
+            // Don't close if clicking inside the popup, the trigger, or if it's an input/calendar interaction
+            if (activePopup && 
+                !target.closest('.action-popup') && 
+                !target.closest('.action-trigger') &&
+                target.tagName !== 'INPUT' && 
+                target.tagName !== 'SELECT'
+            ) {
                 setActivePopup(null)
             }
         }
@@ -147,6 +154,7 @@ function Stepper({ lead, onRefresh, onConvert, availableStatuses }: { lead: Lead
             setActivePopup(activePopup === 'Call' ? null : 'Call')
             setNote('')
             setDueDate('')
+            setShowDatePicker(false)
         } else if (val.includes('mail') || val.includes('email')) {
             setActivePopup(activePopup === 'Mail' ? null : 'Mail')
             setNote('')
@@ -155,6 +163,11 @@ function Stepper({ lead, onRefresh, onConvert, availableStatuses }: { lead: Lead
     }
 
     const logCallAttempt = async (outcome: string) => {
+        if (outcome === 'call_back_later' && !dueDate) {
+            setShowDatePicker(true)
+            return
+        }
+        
         setSubmitting(true)
         try {
             await fetch(`/api/leads/${lead.id}/call-attempt`, {
@@ -165,6 +178,7 @@ function Stepper({ lead, onRefresh, onConvert, availableStatuses }: { lead: Lead
             setActivePopup(null)
             setNote('')
             setDueDate('')
+            setShowDatePicker(false)
             onRefresh()
         } catch (err) { console.error(err) }
         finally { setSubmitting(false) }
@@ -349,16 +363,18 @@ function Stepper({ lead, onRefresh, onConvert, availableStatuses }: { lead: Lead
                     <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
                         {CALL_OUTCOME_OPTIONS.map(opt => (
                             <button key={opt.value}
-                                onClick={() => opt.value === 'call_back_later' && !dueDate ? setDueDate('show') : logCallAttempt(opt.value)}
+                                onClick={() => logCallAttempt(opt.value)}
                                 disabled={submitting}
                                 style={{
                                     display: 'flex', alignItems: 'center', gap: 8, padding: '8px 12px',
                                     borderRadius: 8, cursor: 'pointer', fontSize: 12, fontWeight: 600,
                                     border: '1px solid var(--border)', background: 'transparent',
-                                    color: opt.color, transition: 'all 0.15s', textAlign: 'left'
+                                    color: opt.color, transition: 'all 0.15s', textAlign: 'left',
+                                    borderColor: (opt.value === 'call_back_later' && showDatePicker) ? opt.color : 'var(--border)',
+                                    boxShadow: (opt.value === 'call_back_later' && showDatePicker) ? `0 0 0 2px ${opt.color}15` : 'none'
                                 }}
                                 onMouseOver={e => { e.currentTarget.style.background = `${opt.color}12`; e.currentTarget.style.borderColor = `${opt.color}40` }}
-                                onMouseOut={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.borderColor = 'var(--border)' }}
+                                onMouseOut={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.borderColor = (opt.value === 'call_back_later' && showDatePicker) ? opt.color : 'var(--border)' }}
                             >
                                 <span style={{ fontSize: 14 }}>{opt.icon}</span> {opt.label}
                             </button>
@@ -366,11 +382,11 @@ function Stepper({ lead, onRefresh, onConvert, availableStatuses }: { lead: Lead
                     </div>
 
                     {/* Follow-up date picker for Call Back Later */}
-                    {dueDate === 'show' && (
+                    {showDatePicker && (
                         <div style={{ marginTop: 10, display: 'flex', gap: 8, alignItems: 'center' }}>
-                            <input type="datetime-local" onChange={e => setDueDate(e.target.value)}
+                            <input type="datetime-local" value={dueDate} onChange={e => setDueDate(e.target.value)}
                                 style={{ flex: 1, fontSize: 12, padding: '6px 10px', borderRadius: 8, border: '1px solid var(--border)', background: 'var(--bg-card)', color: 'var(--text-primary)' }} />
-                            <button onClick={() => logCallAttempt('call_back_later')} disabled={!dueDate || dueDate === 'show' || submitting}
+                            <button onClick={() => logCallAttempt('call_back_later')} disabled={!dueDate || submitting}
                                 style={{ padding: '6px 14px', borderRadius: 8, fontSize: 11, fontWeight: 700, cursor: 'pointer', border: '1px solid #06b6d4', background: 'rgba(6,182,212,0.1)', color: '#06b6d4' }}>
                                 Schedule
                             </button>
@@ -841,7 +857,7 @@ export default function LeadDetailContent({ id, linkPrefix = '' }: { id: string,
                                     {(!lead.tasks || lead.tasks.length === 0) ? (
                                         <div style={{ textAlign: 'center', padding: '24px 16px', color: 'var(--text-muted)', background: 'var(--bg-input)', borderRadius: 10, border: '1px dashed var(--border)' }}>
                                             <div style={{ fontSize: 24, marginBottom: 6, opacity: 0.4 }}>📋</div>
-                                            <div style={{ fontSize: 13, fontWeight: 600 }}>No follow-ups yet</div>
+                                            <div style={{ fontSize: 13, fontWeight: 600 }}>No tasks yet</div>
                                             <div style={{ fontSize: 11, marginTop: 2 }}>Create your first task above to stay on track</div>
                                         </div>
                                     ) : (

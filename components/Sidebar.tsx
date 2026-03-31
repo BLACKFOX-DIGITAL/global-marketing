@@ -176,33 +176,33 @@ export default function Sidebar({ user }: SidebarProps) {
                 {menuOpen && user && (
                     <div style={{
                         position: 'absolute',
-                        bottom: 'calc(100% - 10px)',
-                        left: isCollapsed ? 10 : 14,
+                        bottom: 'calc(100% + 12px)',
+                        left: isCollapsed ? 12 : 14,
                         right: isCollapsed ? 'auto' : 14,
                         width: isCollapsed ? 240 : 'auto',
-                        background: 'var(--bg-card)',
-                        border: '1px solid var(--border)',
+                        background: '#0f172a', /* Solid background to prevent bleed */
+                        border: '1px solid var(--border-light)',
                         borderRadius: 16,
-                        boxShadow: '0 10px 40px rgba(0,0,0,0.5)',
-                        padding: '16px',
-                        zIndex: 100,
-                        animation: 'fadeSlideUp 0.2s ease both',
+                        boxShadow: '0 20px 50px rgba(0,0,0,0.6), 0 0 0 1px rgba(255,255,255,0.05)',
+                        padding: '20px',
+                        zIndex: 1000,
+                        animation: 'fadeSlideUp 0.3s cubic-bezier(0.4, 0, 0.2, 1) both',
                     }}>
-                        <div style={{ marginBottom: 16 }}>
-                            <div style={{ fontSize: 11, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: 8 }}>Account</div>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                                <div className="avatar" style={{ background: colors[colorIndex], color: 'white', width: 40, height: 40, fontSize: 14 }}>
+                        <div style={{ marginBottom: 20 }}>
+                            <div style={{ fontSize: 10, color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 700, letterSpacing: '1px', marginBottom: 12 }}>User Account</div>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+                                <div className="avatar" style={{ background: colors[colorIndex], color: 'white', width: 44, height: 44, fontSize: 16, fontWeight: 700, border: '2px solid rgba(255,255,255,0.1)' }}>
                                     {initials}
                                 </div>
                                 <div style={{ flex: 1, minWidth: 0 }}>
-                                    <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--text-primary)' }}>{user?.name}</div>
-                                    <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>{user?.email}</div>
+                                    <div style={{ fontSize: 15, fontWeight: 700, color: 'white', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{user?.name}</div>
+                                    <div style={{ fontSize: 12, color: 'var(--text-muted)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{user?.email}</div>
                                 </div>
                             </div>
                         </div>
 
-                        <div style={{ marginBottom: 16 }}>
-                            <div style={{ fontSize: 11, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: 8 }}>Preferences</div>
+                        <div style={{ padding: '16px 0', borderTop: '1px solid var(--border)', borderBottom: '1px solid var(--border)', marginBottom: 16 }}>
+                            <div style={{ fontSize: 10, color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 700, letterSpacing: '1px', marginBottom: 12 }}>Appearance</div>
                             <ThemeSwitcher variant="sidebar" />
                         </div>
 
@@ -211,15 +211,19 @@ export default function Sidebar({ user }: SidebarProps) {
                             className="nav-item" 
                             style={{ 
                                 width: '100%', 
-                                justifyContent: 'flex-start', 
+                                justifyContent: 'center', 
                                 color: '#ef4444', 
-                                border: '1px solid rgba(239, 68, 68, 0.1)',
-                                background: 'rgba(239, 68, 68, 0.05)',
-                                marginTop: 8
+                                border: '1px solid rgba(239, 68, 68, 0.2)',
+                                background: 'rgba(239, 68, 68, 0.1)',
+                                padding: '10px',
+                                fontWeight: 600,
+                                borderRadius: 10
                             }}
+                            onMouseEnter={e => e.currentTarget.style.background = 'rgba(239, 68, 68, 0.2)'}
+                            onMouseLeave={e => e.currentTarget.style.background = 'rgba(239, 68, 68, 0.1)'}
                         >
                             <LogOut size={16} />
-                            <span style={{ marginLeft: 10 }}>Sign out</span>
+                            <span style={{ marginLeft: 8 }}>Sign out</span>
                         </button>
                     </div>
                 )}
