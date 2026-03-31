@@ -39,17 +39,17 @@ export async function GET(req: NextRequest) {
     const [actuals, lyDeals, lyTestJobs, allWins, allLosses] = await Promise.all([
         Promise.all(users.map(async (u) => {
             const closedDeals = await prisma.opportunity.count({
-                where: { ownerId: u.id, stage: 'Closed Won', updatedAt: { gte: startDate, lte: endDate } }
+                where: { ownerId: u.id, stage: 'Closed Won', isDeleted: false, updatedAt: { gte: startDate, lte: endDate } }
             })
             const testJobs = await prisma.opportunity.count({
-                where: { ownerId: u.id, stage: 'Test Job Received', createdAt: { gte: startDate, lte: endDate } }
+                where: { ownerId: u.id, stage: 'Test Job Received', isDeleted: false, createdAt: { gte: startDate, lte: endDate } }
             })
             return { userId: u.id, DEALS: closedDeals, TEST_JOBS: testJobs }
         })),
-        prisma.opportunity.count({ where: { stage: 'Closed Won', updatedAt: { gte: lyStartDate, lte: lyEndDate } } }),
-        prisma.opportunity.count({ where: { stage: 'Test Job Received', createdAt: { gte: lyStartDate, lte: lyEndDate } } }),
-        prisma.opportunity.count({ where: { stage: 'Closed Won' } }),
-        prisma.opportunity.count({ where: { stage: 'Closed Lost' } })
+        prisma.opportunity.count({ where: { stage: 'Closed Won', isDeleted: false, updatedAt: { gte: lyStartDate, lte: lyEndDate } } }),
+        prisma.opportunity.count({ where: { stage: 'Test Job Received', isDeleted: false, createdAt: { gte: lyStartDate, lte: lyEndDate } } }),
+        prisma.opportunity.count({ where: { stage: 'Closed Won', isDeleted: false } }),
+        prisma.opportunity.count({ where: { stage: 'Closed Lost', isDeleted: false } })
     ])
 
     const totalActuals = {

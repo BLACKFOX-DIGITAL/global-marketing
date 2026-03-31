@@ -13,7 +13,7 @@ export async function GET(req: NextRequest) {
         const stage = searchParams.get('stage') || ''
         const search = searchParams.get('search') || ''
 
-        const where: any = {}
+        const where: any = { isDeleted: false }
         if (user.role !== 'Administrator' && user.role !== 'Manager') {
             where.ownerId = user.userId
         }

@@ -5,10 +5,11 @@ import { format, parseISO } from 'date-fns'
 
 interface DeletedLead {
     id: string
+    type: 'Lead' | 'Opportunity'
     name: string
     company: string | null
     deletedAt: string
-    deletedBy: { name: string } | null
+    deletedBy: string | null
     status: string
 }
 
@@ -66,8 +67,9 @@ export default function DeletionReview() {
                     <thead style={{ background: 'rgba(255,255,255,0.02)', borderBottom: '1px solid var(--border)' }}>
                         <tr style={{ color: 'var(--text-muted)', fontSize: 10, textTransform: 'uppercase', letterSpacing: '1px' }}>
                             <th style={{ padding: '12px 20px', fontWeight: 800, width: 320 }}>Entity Identity</th>
-                            <th style={{ padding: '12px 20px', fontWeight: 800, width: 220 }}>Associated Org</th>
-                            <th style={{ padding: '12px 20px', fontWeight: 800, width: 220 }}>Termination Log</th>
+                            <th style={{ padding: '12px 20px', fontWeight: 800, width: 120 }}>Type</th>
+                            <th style={{ padding: '12px 20px', fontWeight: 800, width: 180 }}>Associated Org</th>
+                            <th style={{ padding: '12px 20px', fontWeight: 800, width: 180 }}>Termination Log</th>
                             <th style={{ padding: '12px 20px', fontWeight: 800 }}>Strategic Action</th>
                         </tr>
                     </thead>
@@ -88,12 +90,17 @@ export default function DeletionReview() {
                                             </div>
                                         </div>
                                     </td>
-                                    <td style={{ padding: '8px 20px', verticalAlign: 'middle', width: 220 }}>
+                                    <td style={{ padding: '8px 20px', verticalAlign: 'middle', width: 120 }}>
+                                        <div style={{ padding: '2px 8px', borderRadius: 6, fontSize: 9, fontWeight: 900, display: 'inline-block', background: lead.type === 'Lead' ? 'rgba(56, 189, 248, 0.1)' : 'rgba(168, 85, 247, 0.1)', color: lead.type === 'Lead' ? '#38bdf8' : '#a855f7', border: `1px solid ${lead.type === 'Lead' ? 'rgba(56, 189, 248, 0.2)' : 'rgba(168, 85, 247, 0.2)'}`, textTransform: 'uppercase' }}>
+                                            {lead.type}
+                                        </div>
+                                    </td>
+                                    <td style={{ padding: '8px 20px', verticalAlign: 'middle', width: 180 }}>
                                         <div style={{ fontWeight: 700, fontSize: 12, color: 'var(--text-secondary)' }}>{lead.company || '—'}</div>
                                     </td>
-                                    <td style={{ padding: '8px 20px', verticalAlign: 'middle', width: 220 }}>
+                                    <td style={{ padding: '8px 20px', verticalAlign: 'middle', width: 180 }}>
                                         <div style={{ fontSize: 11, fontWeight: 800, color: '#f1f5f9' }}>{format(parseISO(lead.deletedAt), 'MMM dd, HH:mm')}</div>
-                                        <div style={{ fontSize: 10, color: '#64748b', fontWeight: 600 }}>Operator: <span style={{ color: '#94a3b8' }}>{lead.deletedBy?.name || 'System'}</span></div>
+                                        <div style={{ fontSize: 10, color: '#64748b', fontWeight: 600 }}>ID: <span style={{ color: '#94a3b8' }}>{lead.id.substring(0, 8)}...</span></div>
                                     </td>
                                     <td style={{ padding: '8px 20px', verticalAlign: 'middle' }}>
                                         <div style={{ display: 'flex', gap: 8 }}>

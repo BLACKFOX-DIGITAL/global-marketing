@@ -8,8 +8,8 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
     const user = await getCurrentUser()
     if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     const { id } = await params
-    const opp = await prisma.opportunity.findUnique({
-        where: { id },
+    const opp = await prisma.opportunity.findFirst({
+        where: { id, isDeleted: false },
         include: {
             owner: { select: { id: true, name: true, email: true, role: true } },
             lead: { select: { id: true, name: true, company: true } },
@@ -136,13 +136,20 @@ export async function DELETE(_req: NextRequest, { params }: { params: Promise<{ 
         await logActivity({
             userId: user.userId,
             type: 'OPPORTUNITY',
-            action: 'DELETED',
-            description: `Deleted opportunity: ${opp.title}`,
+            action: 'DELETION_REQUESTED',
+            description: `Moved opportunity to review queue: ${opp.title}`,
             referenceId: id
         })
 
-        await prisma.opportunity.delete({ where: { id } })
-        return NextResponse.json({ message: 'Deleted' })
+        await prisma.opportunity.update({ 
+            where: { id },
+            data: {
+                isDeleted: true,
+                deletedAt: new Date(),
+                deletedBy: user.userId
+            }
+        })
+        return NextResponse.json({ message: 'Soft Deleted (Pending Review)' })
     } catch {
         return NextResponse.json({ error: 'Internal error' }, { status: 500 })
     }
