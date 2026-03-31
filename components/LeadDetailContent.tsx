@@ -694,7 +694,16 @@ export default function LeadDetailContent({ id, linkPrefix = '' }: { id: string,
                                     {initials}
                                 </div>
                                 <div style={{ minWidth: 0 }}>
-                                    <h1 style={{ fontSize: 18, fontWeight: 700, margin: 0, color: 'var(--text-primary)', lineHeight: 1.1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{displayTitle}</h1>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                                        <h1 style={{ fontSize: 18, fontWeight: 700, margin: 0, color: 'var(--text-primary)', lineHeight: 1.1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{displayTitle}</h1>
+                                        <button 
+                                            onClick={() => copyToClipboard(displayTitle, 'Company Name')}
+                                            style={{ background: 'none', border: 'none', padding: 0, color: 'var(--text-muted)', cursor: 'pointer', display: 'flex', alignItems: 'center', opacity: 0.4 }} 
+                                            className="hover-copy"
+                                        >
+                                            <Copy size={12} />
+                                        </button>
+                                    </div>
                                     <div style={{ display: 'flex', alignItems: 'center', gap: 6, color: 'var(--text-secondary)', fontSize: 11, marginTop: 4 }}>
                                         <User size={12} /> {lead.name} • {lead.industry || 'Lead'}
                                     </div>
@@ -719,13 +728,17 @@ export default function LeadDetailContent({ id, linkPrefix = '' }: { id: string,
                                 <div style={{ width: 28, height: 28, borderRadius: 6, background: 'rgba(99,102,241,0.08)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Mail size={13} color="var(--accent-primary)" /></div>
                                 <div style={{ minWidth: 0 }}>
                                     <div style={{ fontSize: 9, color: 'var(--text-muted)', fontWeight: 700, textTransform: 'uppercase', display: 'flex', alignItems: 'center', gap: 6 }}>Email <EmailBadge email={lead.email || ''} /></div>
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-                                        <Link href={`mailto:${lead.email?.split(',')[0].trim()}`} 
-                                            onClick={(e) => { if (e.altKey) { e.preventDefault(); copyToClipboard(lead.email?.split(',')[0].trim() || '', 'Email'); } }}
-                                            style={{ color: 'var(--text-primary)', textDecoration: 'none', fontSize: 12, fontWeight: 500, display: 'block', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                                            {lead.email?.split(',')[0].trim() || '—'}
-                                        </Link>
-                                        {lead.email && <button onClick={() => copyToClipboard(lead.email?.split(',')[0].trim() || '', 'Email')} style={{ background: 'none', border: 'none', padding: 0, color: 'var(--text-muted)', cursor: 'pointer', opacity: 0.4 }} className="hover-copy"><Copy size={10} /></button>}
+                                    <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                                        {lead.email ? lead.email.split(',').map((email, idx) => (
+                                            <div key={idx} style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                                                <Link href={`mailto:${email.trim()}`}
+                                                    onClick={(e) => { if (e.altKey) { e.preventDefault(); copyToClipboard(email.trim(), 'Email'); } }}
+                                                    style={{ color: 'var(--text-primary)', textDecoration: 'none', fontSize: 12, fontWeight: 500, display: 'block', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                                                    {email.trim()}
+                                                </Link>
+                                                <button onClick={() => copyToClipboard(email.trim(), 'Email')} style={{ background: 'none', border: 'none', padding: 0, color: 'var(--text-muted)', cursor: 'pointer', opacity: 0.4 }} className="hover-copy"><Copy size={10} /></button>
+                                            </div>
+                                        )) : <span style={{ color: 'var(--text-muted)', fontSize: 12 }}>—</span>}
                                     </div>
                                 </div>
                             </div>
@@ -733,15 +746,17 @@ export default function LeadDetailContent({ id, linkPrefix = '' }: { id: string,
                                 <div style={{ width: 28, height: 28, borderRadius: 6, background: 'rgba(34,197,94,0.08)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Phone size={13} color="#22c55e" /></div>
                                 <div>
                                     <div style={{ fontSize: 9, color: 'var(--text-muted)', fontWeight: 700, textTransform: 'uppercase' }}>Phone</div>
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-                                        {lead.phone ? (
-                                            <Link href={`tel:${lead.phone.split(',')[0].trim()}`} 
-                                                onClick={(e) => { if (e.altKey) { e.preventDefault(); copyToClipboard(lead.phone!.split(',')[0].trim(), 'Phone'); } }}
-                                                style={{ color: 'var(--text-primary)', textDecoration: 'none', fontSize: 12, fontWeight: 500 }}>
-                                                {lead.phone.split(',')[0].trim()}
-                                            </Link>
-                                        ) : <span style={{ color: 'var(--text-muted)', fontSize: 12 }}>—</span>}
-                                        {lead.phone && <button onClick={() => copyToClipboard(lead.phone!.split(',')[0].trim(), 'Phone')} style={{ background: 'none', border: 'none', padding: 0, color: 'var(--text-muted)', cursor: 'pointer', opacity: 0.4 }} className="hover-copy"><Copy size={10} /></button>}
+                                    <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                                        {lead.phone ? lead.phone.split(',').map((phone, idx) => (
+                                            <div key={idx} style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                                                <Link href={`tel:${phone.trim()}`}
+                                                    onClick={(e) => { if (e.altKey) { e.preventDefault(); copyToClipboard(phone.trim(), 'Phone'); } }}
+                                                    style={{ color: 'var(--text-primary)', textDecoration: 'none', fontSize: 12, fontWeight: 500 }}>
+                                                    {phone.trim()}
+                                                </Link>
+                                                <button onClick={() => copyToClipboard(phone.trim(), 'Phone')} style={{ background: 'none', border: 'none', padding: 0, color: 'var(--text-muted)', cursor: 'pointer', opacity: 0.4 }} className="hover-copy"><Copy size={10} /></button>
+                                            </div>
+                                        )) : <span style={{ color: 'var(--text-muted)', fontSize: 12 }}>—</span>}
                                     </div>
                                 </div>
                             </div>
@@ -967,17 +982,25 @@ export default function LeadDetailContent({ id, linkPrefix = '' }: { id: string,
                                     </div>
                                     <div style={{ fontSize: 11, color: 'var(--text-secondary)', marginTop: 2 }}>{c.position || 'No Title'}</div>
                                     {c.email && (
-                                        <div style={{ fontSize: 11, color: 'var(--accent-primary)', marginTop: 4, display: 'flex', alignItems: 'center', gap: 4 }}>
-                                            <Mail size={10} /> 
-                                            <span onClick={() => copyToClipboard(c.email || '', 'Email')} style={{ cursor: 'pointer' }}>{c.email.split(',')[0]}</span>
-                                            <span className="hover-copy" style={{ cursor: 'pointer', marginLeft: 4 }} onClick={() => copyToClipboard(c.email || '', 'Email')}><Copy size={10} /></span>
+                                        <div style={{ display: 'flex', flexDirection: 'column', gap: 2, marginTop: 4 }}>
+                                            {c.email.split(',').map((email, idx) => (
+                                                <div key={idx} style={{ fontSize: 11, color: 'var(--accent-primary)', display: 'flex', alignItems: 'center', gap: 4 }}>
+                                                    <Mail size={10} />
+                                                    <span onClick={() => copyToClipboard(email.trim(), 'Email')} style={{ cursor: 'pointer' }}>{email.trim()}</span>
+                                                    <span className="hover-copy" style={{ cursor: 'pointer', marginLeft: 4 }} onClick={() => copyToClipboard(email.trim(), 'Email')}><Copy size={10} /></span>
+                                                </div>
+                                            ))}
                                         </div>
                                     )}
                                     {c.phone && (
-                                        <div style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 2, display: 'flex', alignItems: 'center', gap: 4 }}>
-                                            <Phone size={10} /> 
-                                            <span onClick={() => copyToClipboard(c.phone || '', 'Phone')} style={{ cursor: 'pointer' }}>{c.phone.split(',')[0]}</span>
-                                            <span className="hover-copy" style={{ cursor: 'pointer', marginLeft: 4 }} onClick={() => copyToClipboard(c.phone || '', 'Phone')}><Copy size={10} /></span>
+                                        <div style={{ display: 'flex', flexDirection: 'column', gap: 2, marginTop: 2 }}>
+                                            {c.phone.split(',').map((phone, idx) => (
+                                                <div key={idx} style={{ fontSize: 11, color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: 4 }}>
+                                                    <Phone size={10} />
+                                                    <span onClick={() => copyToClipboard(phone.trim(), 'Phone')} style={{ cursor: 'pointer' }}>{phone.trim()}</span>
+                                                    <span className="hover-copy" style={{ cursor: 'pointer', marginLeft: 4 }} onClick={() => copyToClipboard(phone.trim(), 'Phone')}><Copy size={10} /></span>
+                                                </div>
+                                            ))}
                                         </div>
                                     )}
                                 </div>
@@ -1077,9 +1100,9 @@ export default function LeadDetailContent({ id, linkPrefix = '' }: { id: string,
                     to { transform: translate(-50%, 0); opacity: 1; }
                 }
                 @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
-                .hover-copy { opacity: 0; transition: opacity 0.2s; }
+                .hover-copy { opacity: 0.3; transition: opacity 0.2s; }
                 .hover-copy:hover { opacity: 1 !important; }
-                div:hover > .hover-copy { opacity: 0.4; }
+                div:hover > .hover-copy { opacity: 0.8; }
             `}</style>
             {showEmailModal && lead && (
                 <EmailModal
