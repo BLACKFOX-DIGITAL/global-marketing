@@ -71,6 +71,40 @@ export async function GET() {
         return Number((((current - previous) / previous) * 100).toFixed(1));
     }
 
+    // --- 14-DAY PERFORMANCE TRACKING ---
+    const fourteenDaysAgo = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 13, 0, 0, 0, 0)
+    
+    const [trendLeads, trendOpps, trendTasks] = await Promise.all([
+        prisma.lead.findMany({
+            where: { createdAt: { gte: fourteenDaysAgo }, isDeleted: false },
+            select: { createdAt: true }
+        }),
+        prisma.opportunity.findMany({
+            where: { updatedAt: { gte: fourteenDaysAgo }, stage: 'Closed Won' },
+            select: { updatedAt: true }
+        }),
+        prisma.task.findMany({
+            where: { completedAt: { gte: fourteenDaysAgo }, completed: true },
+            select: { completedAt: true }
+        })
+    ])
+
+    const dailyTrends = []
+    const { format, startOfDay, endOfDay, subDays } = require('date-fns')
+    
+    for (let i = 0; i < 14; i++) {
+        const day = subDays(new Date(), 13 - i)
+        const dayStart = startOfDay(day)
+        const dayEnd = endOfDay(day)
+        
+        dailyTrends.push({
+            date: format(day, 'MMM dd'),
+            leads: trendLeads.filter(l => l.createdAt >= dayStart && l.createdAt <= dayEnd).length,
+            closed: trendOpps.filter(o => o.updatedAt >= dayStart && o.updatedAt <= dayEnd).length,
+            tasks: trendTasks.filter(t => t.completedAt && t.completedAt >= dayStart && t.completedAt <= dayEnd).length
+        })
+    }
+
     const trends = {
         deals: calculateTrend(actualWon, lastMonthDeals),
         pipeline: calculateTrend(totalOpportunities, lastMonthPipeline),
@@ -102,6 +136,8 @@ export async function GET() {
         recentLeads,
         globalGoals,
         leaderboard,
-        trends
+        trends,
+        dailyTrends
     })
 }
+

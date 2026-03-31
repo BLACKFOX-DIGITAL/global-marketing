@@ -294,22 +294,13 @@ export default function LeadOperationsHub() {
                 <div style={{ overflowX: 'auto' }}>
                     <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', minWidth: 800 }}>
                         <thead style={{ background: 'rgba(255,255,255,0.02)', borderBottom: '1px solid var(--border)', position: 'sticky', top: 0, zIndex: 10 }}>
-                            <tr style={{ color: 'var(--text-muted)', fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.8px' }}>
-                                <th style={{ padding: '12px 24px', width: 40, textAlign: 'center' }}>
-                                    <input type="checkbox" checked={leads.length > 0 && selectedIds.size === leads.length} onChange={toggleSelectAll} style={{ width: 16, height: 16, cursor: 'pointer', accentColor: 'var(--accent-primary)' }} />
-                                </th>
-                                <th onClick={() => handleSort('company')} style={{ padding: '10px 16px', fontWeight: 700, cursor: 'pointer' }}>
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>Company <SortIcon field="company" /></div>
-                                </th>
-                                <th onClick={() => handleSort('status')} style={{ padding: '10px 16px', fontWeight: 700, cursor: 'pointer', width: 130 }}>
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>Status <SortIcon field="status" /></div>
-                                </th>
-                                <th onClick={() => handleSort('owner')} style={{ padding: '10px 16px', fontWeight: 700, cursor: 'pointer', width: 180 }}>
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>Owner <SortIcon field="owner" /></div>
-                                </th>
-                                <th onClick={() => handleSort('updatedAt')} style={{ padding: '10px 16px', fontWeight: 700, cursor: 'pointer', width: 130 }}>
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>Updated <SortIcon field="updatedAt" /></div>
-                                </th>
+                            <tr style={{ color: 'var(--text-muted)', fontSize: 10, textTransform: 'uppercase', letterSpacing: '1px' }}>
+                                <th style={{ padding: '12px 20px', width: 60, textAlign: 'center' }}><input type="checkbox" checked={leads.length > 0 && selectedIds.size === leads.length} onChange={toggleSelectAll} style={{ width: 15, height: 15, cursor: 'pointer', accentColor: 'var(--accent-primary)' }} /></th>
+                                <th onClick={() => handleSort('company')} style={{ padding: '12px 16px', fontWeight: 800, cursor: 'pointer', width: 320 }}><div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>Corporate Entity <SortIcon field="company" /></div></th>
+                                <th onClick={() => handleSort('status')} style={{ padding: '12px 16px', fontWeight: 800, cursor: 'pointer', width: 150 }}><div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>Lifecycle Status <SortIcon field="status" /></div></th>
+                                <th onClick={() => handleSort('owner')} style={{ padding: '12px 16px', fontWeight: 800, cursor: 'pointer', width: 220 }}><div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>Asset Ownership <SortIcon field="owner" /></div></th>
+                                <th onClick={() => handleSort('updatedAt')} style={{ padding: '12px 16px', fontWeight: 800, cursor: 'pointer', width: 140 }}><div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>Last Activity <SortIcon field="updatedAt" /></div></th>
+                                <th style={{ padding: '12px 16px' }}></th>
                             </tr>
                         </thead>
                         <tbody>
@@ -323,33 +314,12 @@ export default function LeadOperationsHub() {
                                     const statusCol = statusOptions.find(so => so.value === l.status)?.color || 'var(--accent-primary)'
                                     return (
                                         <tr key={l.id} className="lead-row" style={{ background: isSelected ? 'rgba(99, 102, 241, 0.05)' : 'transparent', borderBottom: '1px solid var(--border)', transition: 'all 0.2s', cursor: 'default' }}>
-                                            <td style={{ padding: '10px 24px', textAlign: 'center' }}>
-                                                <input type="checkbox" checked={isSelected} onChange={() => toggleSelect(l.id)} style={{ width: 14, height: 14, cursor: 'pointer', accentColor: 'var(--accent-primary)' }} />
-                                            </td>
-                                            <td style={{ padding: '10px 16px' }}>
-                                                <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                                                    <div style={{ width: 28, height: 28, borderRadius: 6, background: 'linear-gradient(135deg, #1e293b, #0f172a)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 10, fontWeight: 700, color: '#fff', flexShrink: 0 }}>
-                                                        {(l.company || 'L')[0].toUpperCase()}
-                                                    </div>
-                                                    <Link href={`/admin/leads/${l.id}`} style={{ fontWeight: 600, color: 'var(--text-primary)', textDecoration: 'none', fontSize: 13 }}>{l.company || l.name}</Link>
-                                                </div>
-                                            </td>
-                                            <td style={{ padding: '12px 16px' }}>
-                                                <span style={{ fontSize: 10, fontWeight: 600, padding: '2px 8px', borderRadius: 20, background: `${statusCol}15`, color: statusCol, border: `1px solid ${statusCol}30` }}>
-                                                    {l.status}
-                                                </span>
-                                            </td>
-                                            <td style={{ padding: '12px 16px', width: 180 }}>
-                                                {l.owner ? (
-                                                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, whiteSpace: 'nowrap' }}>
-                                                        <div style={{ width: 22, height: 22, borderRadius: 4, background: 'rgba(255,255,255,0.05)', border: '1px solid var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 10, fontWeight: 800, color: 'var(--accent-primary)', flexShrink: 0 }}>{l.owner.name[0]}</div>
-                                                        <span style={{ fontWeight: 600, fontSize: 12, color: 'var(--text-primary)', letterSpacing: '-0.2px' }}>{l.owner.name}</span>
-                                                    </div>
-                                                ) : <span style={{ color: 'var(--text-muted)', fontSize: 12, fontStyle: 'italic' }}>Unassigned</span>}
-                                            </td>
-                                            <td style={{ padding: '10px 16px', fontSize: 11, color: 'var(--text-muted)', fontWeight: 600, letterSpacing: '0.2px' }}>
-                                                {format(parseISO(l.updatedAt), 'MMM dd, yy')}
-                                            </td>
+                                            <td style={{ padding: '8px 20px', textAlign: 'center', verticalAlign: 'middle', width: 60 }}><input type="checkbox" checked={isSelected} onChange={() => toggleSelect(l.id)} style={{ width: 14, height: 14, cursor: 'pointer', accentColor: 'var(--accent-primary)' }} /></td>
+                                            <td style={{ padding: '8px 16px', verticalAlign: 'middle', width: 320 }}><div style={{ display: 'flex', alignItems: 'center', gap: 10 }}><div style={{ width: 28, height: 28, borderRadius: 8, background: 'linear-gradient(135deg, #1e293b, #0f172a)', border: '1px solid rgba(255,255,255,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 10, fontWeight: 900, color: '#f8fafc', flexShrink: 0 }}>{(l.company || 'L')[0].toUpperCase()}</div><Link href={`/admin/leads/${l.id}`} style={{ fontWeight: 800, color: '#f8fafc', textDecoration: 'none', fontSize: 12, display: 'block' }}>{l.company || l.name}</Link></div></td>
+                                            <td style={{ padding: '8px 16px', verticalAlign: 'middle', width: 150 }}><div style={{ display: 'flex', alignItems: 'center' }}><span style={{ fontSize: 9, fontWeight: 900, padding: '2px 8px', borderRadius: 6, background: `${statusCol}15`, color: statusCol, border: `1px solid ${statusCol}30`, textTransform: 'uppercase', letterSpacing: '0.4px' }}>{l.status}</span></div></td>
+                                            <td style={{ padding: '8px 16px', verticalAlign: 'middle', width: 220 }}>{l.owner ? (<div style={{ display: 'flex', alignItems: 'center', gap: 8, whiteSpace: 'nowrap' }}><div style={{ width: 24, height: 24, borderRadius: 6, background: 'linear-gradient(135deg, #1e293b, #0f172a)', border: '1px solid rgba(255,255,255,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 10, fontWeight: 900, color: 'var(--accent-primary)', flexShrink: 0 }}>{l.owner.name[0]}</div><span style={{ fontWeight: 700, fontSize: 12, color: '#f1f5f9' }}>{l.owner.name}</span></div>) : <span style={{ color: '#475569', fontSize: 11, fontWeight: 700 }}>Unassigned Portfolio</span>}</td>
+                                            <td style={{ padding: '8px 16px', verticalAlign: 'middle', width: 140 }}><div style={{ fontSize: 11, color: '#64748b', fontWeight: 700, letterSpacing: '0.2px' }}>{format(parseISO(l.updatedAt), 'MMM dd, yyyy')}</div></td>
+                                            <td style={{ padding: '8px 16px' }}></td>
                                         </tr>
                                     )
                                 })

@@ -36,7 +36,32 @@ export async function POST(req: NextRequest) {
     }
 
     try {
-        const { userId, category, targetValue, period } = await req.json()
+        const body = await req.json()
+        const { userId, category, targetValue, period, bulk } = body
+
+        if (bulk && Array.isArray(bulk)) {
+            const results = []
+            for (const item of bulk) {
+                const goal = await prisma.userGoal.upsert({
+                    where: {
+                        userId_category_period: {
+                            userId: item.userId,
+                            category: item.category,
+                            period: item.period || period
+                        }
+                    },
+                    update: { targetValue: parseFloat(item.targetValue) },
+                    create: {
+                        userId: item.userId,
+                        category: item.category,
+                        targetValue: parseFloat(item.targetValue),
+                        period: item.period || period
+                    }
+                })
+                results.push(goal)
+            }
+            return NextResponse.json({ success: true, results })
+        }
 
         if (!userId || !category || !period) {
             return NextResponse.json({ error: 'Missing required fields' }, { status: 400 })

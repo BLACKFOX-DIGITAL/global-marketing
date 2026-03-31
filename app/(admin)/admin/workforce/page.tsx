@@ -19,18 +19,22 @@ interface LeaveRequest { id: string; type: string; startDate: string; endDate: s
 function MetricCard({ label, value, subValue, icon: Icon, color, isAlert = false }: any) {
     return (
         <div style={{
-            padding: '16px 20px', borderRadius: '12px', background: 'var(--bg-card)',
+            padding: '12px 14px', borderRadius: 14, background: 'rgba(255,255,255,0.02)',
             border: isAlert ? `1px solid ${color}40` : '1px solid var(--border)',
-            display: 'flex', flexDirection: 'column', gap: 10, boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
+            display: 'flex', flexDirection: 'column', gap: 6, backdropFilter: 'blur(24px)',
+            boxShadow: isAlert ? `0 0 15px ${color}10` : 'none', position: 'relative', overflow: 'hidden'
         }}>
+            <div style={{ position: 'absolute', top: 0, right: 0, width: 40, height: 40, background: `radial-gradient(circle at 100% 0%, ${color}12, transparent)`, pointerEvents: 'none' }} />
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <div style={{ fontSize: 11, color: 'var(--text-secondary)', fontWeight: 700, letterSpacing: '0.4px', textTransform: 'uppercase' }}>{label}</div>
-                <div style={{ width: 28, height: 28, borderRadius: 8, background: `${color}12`, color, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                    <Icon size={14} />
+                <div style={{ fontSize: 9, color: '#475569', fontWeight: 900, letterSpacing: '0.8px', textTransform: 'uppercase' }}>{label}</div>
+                <div style={{ width: 24, height: 24, borderRadius: 8, background: `${color}12`, color, display: 'flex', alignItems: 'center', justifyContent: 'center', border: `1px solid ${color}15` }}>
+                    <Icon size={12} strokeWidth={2.5} />
                 </div>
             </div>
-            <div style={{ fontSize: 24, fontWeight: 800, color: isAlert ? color : 'var(--text-primary)', letterSpacing: '-0.8px' }}>{value}</div>
-            <div style={{ fontSize: 11, color: 'var(--text-muted)', fontWeight: 500 }}>{subValue}</div>
+            <div style={{ fontSize: 20, fontWeight: 900, color: isAlert ? color : '#f8fafc', letterSpacing: '-0.8px', display: 'flex', alignItems: 'baseline', gap: 4 }}>
+                {value}
+                <span style={{ fontSize: 9, color: '#444c5a', fontWeight: 800 }}>{subValue}</span>
+            </div>
         </div>
     )
 }
@@ -100,181 +104,196 @@ export default function WorkforceDashboard() {
         avgHours: attendanceRecords.length > 0 ? (attendanceRecords.reduce((acc, r) => acc + (r.duration || 0), 0) / 60 / attendanceRecords.length).toFixed(1) : '0.0'
     }
 
-    if (error) return <div style={{ padding: 40 }}>{error}</div>
+    if (error) return <div style={{ padding: 40, color: '#f43f5e', fontWeight: 800 }}>{error}</div>
 
     return (
-        <div style={{ padding: '20px 32px', maxWidth: 1200, margin: '0 auto', width: '100%' }}>
-            <div style={{ marginBottom: 20 }}>
-                <h1 style={{ fontSize: 22, fontWeight: 800, letterSpacing: '-0.4px', margin: 0, color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: 10 }}>
-                    <Users size={24} color="var(--accent-primary)" /> Workforce Intelligence
-                </h1>
-                <p style={{ margin: '4px 0 0 0', color: 'var(--text-secondary)', fontSize: 13 }}>Strategic attendance monitoring and team availability management.</p>
+        <div style={{ padding: '16px 24px', maxWidth: 1400, margin: '0 auto', width: '100%' }}>
+            {/* Header Section */}
+            <div style={{ marginBottom: 20, display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', gap: 20 }}>
+                <div>
+                    <h1 style={{ fontSize: 22, fontWeight: 900, color: '#f8fafc', margin: 0, letterSpacing: '-0.8px', display: 'flex', alignItems: 'center', gap: 10 }}>
+                        <div style={{ width: 32, height: 32, borderRadius: 10, background: 'linear-gradient(135deg, var(--accent-primary), #10b981)', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 0 15px rgba(99, 102, 241, 0.2)' }}>
+                            <Users size={18} color="#fff" strokeWidth={2.5} />
+                        </div>
+                        Workforce Intelligence
+                    </h1>
+                    <p style={{ margin: '4px 0 0 0', color: '#64748b', fontSize: 12.5, fontWeight: 600 }}>Strategic live attendance monitoring and workforce availability matrix.</p>
+                </div>
             </div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 16, marginBottom: 24 }}>
-                <MetricCard label="Active Personnel" value={stats.punchedIn} subValue="Clocked in today" icon={Users} color="var(--accent-primary)" />
-                <MetricCard label="Pending Leave" value={stats.pendingLeave} subValue="Awaiting approval" icon={Calendar} color="var(--accent-primary)" />
-                <MetricCard label="Avg. Shift" value={`${stats.avgHours}h`} subValue="System average" icon={Clock} color="var(--accent-cyan)" />
-                <MetricCard label="Shift Anomalies" value={stats.anomalies} subValue="Missed punch-outs" icon={AlertCircle} color={stats.anomalies > 0 ? 'var(--accent-primary)' : 'var(--accent-emerald)'} isAlert={stats.anomalies > 0} />
+            {/* High-Density Summary Cards */}
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12, marginBottom: 20 }}>
+                <MetricCard label="Active Status" value={stats.punchedIn} subValue="Operators Clocked In" icon={Users} color="var(--accent-primary)" />
+                <MetricCard label="Pending Review" value={stats.pendingLeave} subValue="Awaiting Absence Approval" icon={Calendar} color="#f59e0b" />
+                <MetricCard label="Temporal Avg" value={`${stats.avgHours}h`} subValue="System Daily Average" icon={Clock} color="#10b981" />
+                <MetricCard label="System Anomalies" value={stats.anomalies} subValue="Critical Punch Failures" icon={AlertCircle} color={stats.anomalies > 0 ? '#f43f5e' : '#10b981'} isAlert={stats.anomalies > 0} />
             </div>
 
-            {/* Content Switcher */}
-            <div style={{ display: 'flex', gap: 12, borderBottom: '1px solid var(--border)', marginBottom: 20 }}>
+            {/* Content Switcher (Obsidian Tabs) */}
+            <div style={{ display: 'flex', gap: 4, borderBottom: '1px solid var(--border)', marginBottom: 16, paddingBottom: '1px' }}>
                 <button
                     onClick={() => setActiveTab('attendance')}
-                    style={{ padding: '8px 12px', background: 'transparent', border: 'none', borderBottom: activeTab === 'attendance' ? '2px solid var(--accent-primary)' : '2px solid transparent', color: activeTab === 'attendance' ? 'var(--text-primary)' : 'var(--text-muted)', fontWeight: 700, fontSize: 13, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 8, transition: 'all 0.2s', letterSpacing: '0.2px' }}
+                    style={{ padding: '6px 14px', background: activeTab === 'attendance' ? 'rgba(255,255,255,0.03)' : 'transparent', border: 'none', borderBottom: activeTab === 'attendance' ? '2px solid var(--accent-primary)' : '2px solid transparent', color: activeTab === 'attendance' ? '#f8fafc' : '#475569', fontWeight: 900, fontSize: 10, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 8, transition: 'all 0.2s', letterSpacing: '0.8px', textTransform: 'uppercase' }}
                 >
-                    <Activity size={14} /> Live Attendance
+                    <Activity size={13} strokeWidth={2.5} /> Live Attendance
                 </button>
                 <button
                     onClick={() => setActiveTab('leave')}
-                    style={{ padding: '8px 12px', background: 'transparent', border: 'none', borderBottom: activeTab === 'leave' ? '2px solid var(--accent-primary)' : '2px solid transparent', color: activeTab === 'leave' ? 'var(--text-primary)' : 'var(--text-muted)', fontWeight: 700, fontSize: 13, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 8, transition: 'all 0.2s', letterSpacing: '0.2px' }}
+                    style={{ padding: '6px 14px', background: activeTab === 'leave' ? 'rgba(255,255,255,0.03)' : 'transparent', border: 'none', borderBottom: activeTab === 'leave' ? '2px solid var(--accent-primary)' : '2px solid transparent', color: activeTab === 'leave' ? '#f8fafc' : '#475569', fontWeight: 900, fontSize: 10, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 8, transition: 'all 0.2s', letterSpacing: '0.8px', textTransform: 'uppercase' }}
                 >
-                    <Briefcase size={14} /> Leave Hub {stats.pendingLeave > 0 && <span style={{ background: 'var(--accent-primary)', color: 'white', fontSize: 10, padding: '2px 6px', borderRadius: 10 }}>{stats.pendingLeave}</span>}
+                    <Briefcase size={13} strokeWidth={2.5} /> Leave Hub {stats.pendingLeave > 0 && <span style={{ background: 'var(--accent-primary)', color: 'white', fontSize: 8, padding: '1px 5px', borderRadius: 6, fontWeight: 900 }}>{stats.pendingLeave}</span>}
                 </button>
             </div>
 
-            <div style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 16, overflow: 'hidden' }}>
-                {/* Dynamic Toolbar */}
-                <div style={{ padding: '12px 24px', borderBottom: '1px solid var(--border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'rgba(255,255,255,0.01)' }}>
-                    <h3 style={{ fontSize: 14, fontWeight: 800, margin: 0, textTransform: 'uppercase', letterSpacing: '0.6px', color: 'var(--text-muted)' }}>
-                        {activeTab === 'attendance' ? 'Daily Records' : 'Absence Requests'}
+            <div style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 16, overflow: 'hidden', backdropFilter: 'blur(20px)' }}>
+                {/* Dynamic Matrix Toolbar */}
+                <div style={{ padding: '8px 20px', borderBottom: '1px solid var(--border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'rgba(255,255,255,0.02)' }}>
+                    <h3 style={{ fontSize: 9.5, fontWeight: 900, margin: 0, textTransform: 'uppercase', letterSpacing: '1.2px', color: '#64748b' }}>
+                        {activeTab === 'attendance' ? 'Daily Temporal Logs' : 'Critical Absence Requests'}
                     </h3>
                     {activeTab === 'attendance' ? (
-                        <input type="date" value={attendanceDate} onChange={e => setAttendanceDate(e.target.value)} style={{ padding: '6px 10px', borderRadius: 8, border: '1px solid var(--border)', background: 'rgba(0,0,0,0.1)', color: 'var(--text-primary)', fontSize: 12, fontWeight: 700, outline: 'none' }} />
+                        <div style={{ padding: '4px 10px', background: 'rgba(0,0,0,0.2)', border: '1px solid var(--border)', borderRadius: 8, display: 'flex', alignItems: 'center', gap: 6 }}>
+                            <Calendar size={12} color="#64748b" />
+                            <input type="date" value={attendanceDate} onChange={e => setAttendanceDate(e.target.value)} style={{ background: 'transparent', border: 'none', color: '#f1f5f9', fontSize: 10, fontWeight: 800, outline: 'none', cursor: 'pointer' }} />
+                        </div>
                     ) : (
-                        <div style={{ display: 'flex', background: 'rgba(255,255,255,0.03)', borderRadius: 8, padding: 3, border: '1px solid var(--border)' }}>
+                        <div style={{ display: 'flex', background: 'rgba(0,0,0,0.2)', borderRadius: 8, padding: 2, border: '1px solid var(--border)' }}>
                             {['Pending', 'Approved', 'Rejected', 'All'].map(s => (
-                                <button key={s} onClick={() => setLeaveFilter(s)} style={{ padding: '4px 10px', borderRadius: 6, border: 'none', fontSize: 11, fontWeight: 700, background: leaveFilter === s ? 'var(--accent-primary)' : 'transparent', color: leaveFilter === s ? '#fff' : 'var(--text-muted)', cursor: 'pointer', transition: 'all 0.2s' }}>{s}</button>
+                                <button key={s} onClick={() => setLeaveFilter(s)} style={{ padding: '3px 10px', borderRadius: 6, border: 'none', fontSize: 9, fontWeight: 900, background: leaveFilter === s ? 'var(--accent-primary)' : 'transparent', color: leaveFilter === s ? '#fff' : '#475569', cursor: 'pointer', transition: 'all 0.2s', textTransform: 'uppercase', letterSpacing: '0.4px' }}>{s}</button>
                             ))}
                         </div>
                     )}
                 </div>
 
-                {/* Table Area */}
-                <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-                    <thead>
-                        {activeTab === 'attendance' ? (
-                            <tr style={{ background: 'rgba(255,255,255,0.02)', textAlign: 'left', color: 'var(--text-muted)', fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.8px', borderBottom: '1px solid var(--border)' }}>
-                                <th style={{ padding: '12px 24px', fontWeight: 700 }}>Representative</th>
-                                <th style={{ padding: '12px 24px', fontWeight: 700 }}>Punch In</th>
-                                <th style={{ padding: '12px 24px', fontWeight: 700 }}>Punch Out</th>
-                                <th style={{ padding: '12px 24px', fontWeight: 700 }}>Duration</th>
-                                <th style={{ padding: '12px 24px', fontWeight: 700 }}>Notes</th>
-                                <th style={{ padding: '12px 24px', fontWeight: 700, textAlign: 'right' }}>Actions</th>
-                            </tr>
-                        ) : (
-                            <tr style={{ background: 'rgba(255,255,255,0.02)', textAlign: 'left', color: 'var(--text-muted)', fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.8px', borderBottom: '1px solid var(--border)' }}>
-                                <th style={{ padding: '12px 24px', fontWeight: 700 }}>Representative</th>
-                                <th style={{ padding: '12px 24px', fontWeight: 700 }}>Absence Type</th>
-                                <th style={{ padding: '12px 24px', fontWeight: 700 }}>Duration</th>
-                                <th style={{ padding: '12px 24px', fontWeight: 700 }}>Schedule</th>
-                                <th style={{ padding: '12px 24px', fontWeight: 700 }}>Status</th>
-                                <th style={{ padding: '12px 24px', fontWeight: 700, textAlign: 'right' }}>Decision</th>
-                            </tr>
-                        )}
-                    </thead>
-                    <tbody>
-                        {loading ? (
-                            <tr><td colSpan={6} style={{ textAlign: 'center', padding: 60 }}><div className="spinner" /></td></tr>
-                        ) : activeTab === 'attendance' ? (
-                            attendanceRecords.length === 0 ? <tr><td colSpan={6} style={{ padding: 40, textAlign: 'center', color: 'var(--text-muted)' }}>No records found.</td></tr> :
-                            attendanceRecords.map(r => {
-                                const isAnom = !r.punchOut && differenceInHours(new Date(), parseISO(r.punchIn)) > 16
-                                return (
-                                    <tr key={r.id} style={{ borderBottom: '1px solid var(--border)', transition: 'background 0.2s' }}>
-                                        <td style={{ padding: '10px 24px', display: 'flex', alignItems: 'center', gap: 10 }}>
-                                            <div style={{ width: 28, height: 28, borderRadius: '50%', background: 'var(--accent-primary)', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 10, fontWeight: 700 }}>
-                                                {r.user.name.split(' ').map(n=>n[0]).join('').slice(0,2)}
-                                            </div>
-                                            <div>
-                                                <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--text-primary)' }}>{r.user.name}</div>
-                                                <div style={{ fontSize: 11, color: 'var(--text-muted)', fontWeight: 500 }}>{r.user.role}</div>
-                                            </div>
-                                        </td>
-                                        <td style={{ padding: '10px 24px', fontSize: 13, color: 'var(--text-secondary)', fontWeight: 500 }}>{format(parseISO(r.punchIn), 'hh:mm a')}</td>
-                                        <td style={{ padding: '10px 24px', fontSize: 13, fontWeight: 600, color: r.punchOut ? 'var(--text-secondary)' : isAnom ? 'var(--accent-primary)' : 'var(--accent-cyan)' }}>
-                                            {r.punchOut ? format(parseISO(r.punchOut), 'hh:mm a') : isAnom ? 'STALE' : 'ACTIVE'}
-                                        </td>
-                                        <td style={{ padding: '10px 24px', fontSize: 13, fontWeight: 700, color: 'var(--text-primary)' }}>{r.duration ? `${Math.floor(r.duration / 60)}h ${r.duration % 60}m` : '—'}</td>
-                                        <td style={{ padding: '10px 24px', fontSize: 11, color: 'var(--text-muted)', fontWeight: 500 }}>{r.notes || '—'}</td>
-                                        <td style={{ padding: '10px 24px', textAlign: 'right' }}>
-                                            <button onClick={() => { setEditingAttendance(r); setEditPunchIn(format(parseISO(r.punchIn), "yyyy-MM-dd'T'HH:mm")); setEditPunchOut(r.punchOut ? format(parseISO(r.punchOut), "yyyy-MM-dd'T'HH:mm") : ''); setEditNote(r.notes || '') }} style={{ background: 'transparent', border: 'none', color: 'var(--accent-primary)', fontSize: 11, fontWeight: 800, cursor: 'pointer', letterSpacing: '0.4px' }}>
-                                                EDIT
-                                            </button>
-                                        </td>
-                                    </tr>
+                {/* Table Matrix */}
+                <div style={{ overflowX: 'auto' }}>
+                    <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', minWidth: 900 }}>
+                        <thead style={{ background: 'rgba(255,255,255,0.01)', borderBottom: '1px solid var(--border)' }}>
+                            {activeTab === 'attendance' ? (
+                                <tr style={{ color: '#475569', fontSize: 9, textTransform: 'uppercase', letterSpacing: '0.8px' }}>
+                                    <th style={{ padding: '10px 20px', fontWeight: 800 }}>Professional Identity</th>
+                                    <th style={{ padding: '10px 20px', fontWeight: 800 }}>Temporal Start</th>
+                                    <th style={{ padding: '10px 20px', fontWeight: 800 }}>Temporal End</th>
+                                    <th style={{ padding: '10px 20px', fontWeight: 800 }}>Shift Velocity</th>
+                                    <th style={{ padding: '10px 20px', fontWeight: 800 }}>Context Log</th>
+                                    <th style={{ padding: '10px 20px', fontWeight: 800, textAlign: 'right' }}>Operation</th>
+                                </tr>
+                            ) : (
+                                <tr style={{ color: '#475569', fontSize: 9, textTransform: 'uppercase', letterSpacing: '0.4px' }}>
+                                    <th style={{ padding: '10px 20px', fontWeight: 800 }}>Professional Identity</th>
+                                    <th style={{ padding: '10px 20px', fontWeight: 800 }}>Absence Protocol</th>
+                                    <th style={{ padding: '10px 20px', fontWeight: 800 }}>Scale</th>
+                                    <th style={{ padding: '10px 20px', fontWeight: 800 }}>Interval</th>
+                                    <th style={{ padding: '10px 20px', fontWeight: 800 }}>Authorization</th>
+                                    <th style={{ padding: '10px 20px', fontWeight: 800, textAlign: 'right' }}>Decision Matrix</th>
+                                </tr>
+                            )}
+                        </thead>
+                        <tbody>
+                             {loading ? (
+                                <tr><td colSpan={6} style={{ textAlign: 'center', padding: 80 }}><div className="spinner" /></td></tr>
+                             ) : activeTab === 'attendance' ? (
+                                attendanceRecords.length === 0 ? (
+                                    <tr><td colSpan={6} style={{ padding: 60, textAlign: 'center', color: '#475569', fontWeight: 800, fontSize: 12 }}>SYSTEM NOMINAL • ZERO DATA DETECTED</td></tr>
+                                ) : (
+                                    attendanceRecords.map(r => {
+                                        const isAnom = !r.punchOut && differenceInHours(new Date(), parseISO(r.punchIn)) > 16
+                                        return (
+                                            <tr key={r.id} style={{ borderBottom: '1px solid var(--border)', transition: 'all 0.2s' }}>
+                                                <td style={{ padding: '6px 20px', verticalAlign: 'middle' }}>
+                                                    <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                                                        <div style={{ width: 24, height: 24, borderRadius: 6, background: 'linear-gradient(135deg, var(--accent-primary), #4338ca)', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 9, fontWeight: 900, flexShrink: 0 }}>{r.user.name.substring(0, 2).toUpperCase()}</div>
+                                                        <div>
+                                                            <div style={{ fontSize: 12.5, fontWeight: 800, color: '#f8fafc' }}>{r.user.name}</div>
+                                                            <div style={{ fontSize: 8.5, color: '#64748b', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.4px', marginTop: 1 }}>{r.user.role}</div>
+                                                        </div>
+                                                    </div>
+                                                </td>
+                                                <td style={{ padding: '6px 20px', verticalAlign: 'middle', fontSize: 12, color: '#94a3b8', fontWeight: 700 }}>{format(parseISO(r.punchIn), 'hh:mm a')}</td>
+                                                <td style={{ padding: '6px 20px', verticalAlign: 'middle' }}>
+                                                    <div style={{ fontSize: 10.5, fontWeight: 900, color: r.punchOut ? '#94a3b8' : isAnom ? '#f43f5e' : '#10b981', display: 'flex', alignItems: 'center', gap: 5 }}>
+                                                        {r.punchOut ? format(parseISO(r.punchOut), 'hh:mm a') : <><div style={{ width: 5, height: 5, borderRadius: '50%', background: isAnom ? '#f43f5e' : '#10b981', animation: 'pulse 2s infinite' }} /> {isAnom ? 'STALE ALERT' : 'ACTIVE'}</>}
+                                                    </div>
+                                                </td>
+                                                <td style={{ padding: '6px 20px', verticalAlign: 'middle', fontSize: 12, fontWeight: 800, color: '#f1f5f9' }}>{r.duration ? `${Math.floor(r.duration / 60)}h ${r.duration % 60}m` : '—'}</td>
+                                                <td style={{ padding: '6px 20px', verticalAlign: 'middle', fontSize: 9.5, color: '#64748b', fontWeight: 600 }}>{r.notes || '—'}</td>
+                                                <td style={{ padding: '6px 20px', verticalAlign: 'middle', textAlign: 'right' }}>
+                                                    <button onClick={() => { setEditingAttendance(r); setEditPunchIn(format(parseISO(r.punchIn), "yyyy-MM-dd'T'HH:mm")); setEditPunchOut(r.punchOut ? format(parseISO(r.punchOut), "yyyy-MM-dd'T'HH:mm") : ''); setEditNote(r.notes || '') }} style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.05)', color: '#94a3b8', padding: '3px 8px', borderRadius: 6, fontSize: 9, fontWeight: 800, cursor: 'pointer', letterSpacing: '0.4px', textTransform: 'uppercase' }}>Adjust</button>
+                                                </td>
+                                            </tr>
+                                        )
+                                    })
                                 )
-                            })
-                        ) : (
-                            leaveRequests.filter(r => leaveFilter === 'All' ? true : r.status === leaveFilter).length === 0 ? <tr><td colSpan={6} style={{ padding: 40, textAlign: 'center', color: 'var(--text-muted)' }}>No requests found.</td></tr> :
-                            leaveRequests.filter(r => leaveFilter === 'All' ? true : r.status === leaveFilter).map(req => {
-                                const days = calcDays(req.startDate, req.endDate)
-                                return (
-                                    <tr key={req.id} style={{ borderBottom: '1px solid var(--border)', transition: 'background 0.2s' }}>
-                                         <td style={{ padding: '10px 24px', display: 'flex', alignItems: 'center', gap: 10 }}>
-                                            <div style={{ width: 28, height: 28, borderRadius: '50%', background: 'var(--accent-cyan)', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 10, fontWeight: 700 }}>
-                                                {req.user?.name.split(' ').map(n=>n[0]).join('').slice(0,2)}
-                                            </div>
-                                            <div>
-                                                <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--text-primary)' }}>{req.user?.name}</div>
-                                                <div style={{ fontSize: 11, color: 'var(--text-muted)', fontWeight: 500 }}>{req.user?.email}</div>
-                                            </div>
-                                        </td>
-                                        <td style={{ padding: '10px 24px', fontSize: 13, fontWeight: 700, color: 'var(--text-primary)' }}>{req.type}</td>
-                                        <td style={{ padding: '10px 24px', fontSize: 13, color: 'var(--text-secondary)', fontWeight: 500 }}>{days} Days</td>
-                                        <td style={{ padding: '10px 24px', fontSize: 12, color: 'var(--text-secondary)', fontWeight: 500 }}>
-                                            {format(parseISO(req.startDate), 'MMM dd')} - {format(parseISO(req.endDate), 'MMM dd, yy')}
-                                        </td>
-                                        <td style={{ padding: '10px 24px' }}>
-                                            <span style={{ fontSize: 10, fontWeight: 800, padding: '3px 10px', borderRadius: 20,
-                                                background: req.status === 'Pending' ? 'rgba(245,158,11,0.12)' : req.status === 'Approved' ? 'rgba(16,185,129,0.12)' : 'rgba(239,68,68,0.12)',
-                                                color: req.status === 'Pending' ? '#f59e0b' : req.status === 'Approved' ? '#10b981' : '#ef4444',
-                                                textTransform: 'uppercase', letterSpacing: '0.4px'
-                                            }}>
-                                                {req.status}
-                                            </span>
-                                        </td>
-                                        <td style={{ padding: '10px 24px', textAlign: 'right' }}>
-                                            {req.status === 'Pending' ? (
-                                                <div style={{ display: 'flex', gap: 6, justifyContent: 'flex-end' }}>
-                                                    <button onClick={() => handleLeaveAction(req.id, 'Approved')} style={{ background: 'rgba(16,185,129,0.1)', color: '#10b981', border: '1px solid rgba(16,185,129,0.2)', padding: '5px 10px', borderRadius: 6, fontSize: 11, fontWeight: 800, cursor: 'pointer' }}>APPROVE</button>
-                                                    <button onClick={() => handleLeaveAction(req.id, 'Rejected')} style={{ background: 'rgba(239,68,68,0.1)', color: '#ef4444', border: '1px solid rgba(239,68,68,0.2)', padding: '5px 10px', borderRadius: 6, fontSize: 11, fontWeight: 800, cursor: 'pointer' }}>REJECT</button>
-                                                </div>
-                                            ) : <span style={{ fontSize: 11, color: 'var(--text-muted)', fontWeight: 700, textTransform: 'uppercase' }}>PROCESSED</span>}
-                                        </td>
-                                    </tr>
+                             ) : (
+                                leaveRequests.filter(r => leaveFilter === 'All' ? true : r.status === leaveFilter).length === 0 ? (
+                                    <tr><td colSpan={6} style={{ padding: 60, textAlign: 'center', color: '#475569', fontWeight: 800, fontSize: 12 }}>ZERO ABSENCE REQUESTS FOUND</td></tr>
+                                ) : (
+                                    leaveRequests.filter(r => leaveFilter === 'All' ? true : r.status === leaveFilter).map(req => {
+                                        const days = calcDays(req.startDate, req.endDate)
+                                        return (
+                                            <tr key={req.id} style={{ borderBottom: '1px solid var(--border)', transition: 'all 0.2s' }}>
+                                                <td style={{ padding: '6px 20px', verticalAlign: 'middle' }}>
+                                                    <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                                                        <div style={{ width: 24, height: 24, borderRadius: 6, background: 'linear-gradient(135deg, #0d9488, #0f172a)', border: '1px solid rgba(13, 148, 136, 0.2)', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 9, fontWeight: 900, flexShrink: 0 }}>{req.user?.name.substring(0, 2).toUpperCase()}</div>
+                                                        <div>
+                                                            <div style={{ fontSize: 12.5, fontWeight: 800, color: '#f8fafc' }}>{req.user?.name}</div>
+                                                            <div style={{ fontSize: 8.5, color: '#475569', fontWeight: 700, marginTop: 1 }}>{req.user?.email}</div>
+                                                        </div>
+                                                    </div>
+                                                </td>
+                                                <td style={{ padding: '6px 20px', verticalAlign: 'middle', fontSize: 11.5, fontWeight: 800, color: '#f1f5f9' }}>{req.type}</td>
+                                                <td style={{ padding: '6px 20px', verticalAlign: 'middle', fontSize: 11.5, color: '#94a3b8', fontWeight: 700 }}>{days} Days</td>
+                                                <td style={{ padding: '6px 20px', verticalAlign: 'middle', fontSize: 10.5, color: '#94a3b8', fontWeight: 600 }}>{format(parseISO(req.startDate), 'MMM dd')} - {format(parseISO(req.endDate), 'MMM dd')}</td>
+                                                <td style={{ padding: '6px 20px', verticalAlign: 'middle' }}>
+                                                    <div style={{ fontSize: 8.5, fontWeight: 900, padding: '2px 8px', borderRadius: 4, display: 'inline-block',
+                                                        background: req.status === 'Pending' ? 'rgba(245,158,11,0.05)' : req.status === 'Approved' ? 'rgba(16,185,129,0.05)' : 'rgba(244,63,94,0.05)',
+                                                        color: req.status === 'Pending' ? '#f59e0b' : req.status === 'Approved' ? '#10b981' : '#f43f5e',
+                                                        border: `1px solid ${req.status === 'Pending' ? '#f59e0b30' : req.status === 'Approved' ? '#10b98130' : '#f43f5e30'}`,
+                                                        textTransform: 'uppercase', letterSpacing: '0.4px'
+                                                    }}>{req.status}</div>
+                                                </td>
+                                                <td style={{ padding: '6px 20px', verticalAlign: 'middle', textAlign: 'right' }}>
+                                                    {req.status === 'Pending' ? (
+                                                        <div style={{ display: 'flex', gap: 4, justifyContent: 'flex-end' }}>
+                                                            <button onClick={() => handleLeaveAction(req.id, 'Approved')} style={{ background: '#10b981', color: '#fff', border: 'none', padding: '3px 8px', borderRadius: 4, fontSize: 9, fontWeight: 900, cursor: 'pointer', textTransform: 'uppercase' }}>Authorize</button>
+                                                            <button onClick={() => handleLeaveAction(req.id, 'Rejected')} style={{ background: '#f43f5e', color: '#fff', border: 'none', padding: '3px 8px', borderRadius: 4, fontSize: 9, fontWeight: 900, cursor: 'pointer', textTransform: 'uppercase' }}>Deny</button>
+                                                        </div>
+                                                    ) : <span style={{ fontSize: 9, color: '#475569', fontWeight: 900, textTransform: 'uppercase' }}>Terminated</span>}
+                                                </td>
+                                            </tr>
+                                        )
+                                    })
                                 )
-                            })
-                        )}
-                    </tbody>
-                </table>
+                             )}
+                        </tbody>
+                    </table>
+                </div>
             </div>
 
-            {/* Edit Modal (Minimalist) */}
+            {/* Edit Modal (Obsidian Elite) */}
             {editingAttendance && (
-                <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(4px)', zIndex: 100, display: 'flex', alignItems: 'center', justifyContent: 'center' }} onClick={e => e.target === e.currentTarget && setEditingAttendance(null)}>
-                    <div style={{ width: 380, background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 16, padding: 24, boxShadow: '0 20px 40px rgba(0,0,0,0.4)', position: 'relative' }}>
+                <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(10px)', zIndex: 100, display: 'flex', alignItems: 'center', justifyContent: 'center' }} onClick={e => e.target === e.currentTarget && setEditingAttendance(null)}>
+                    <div style={{ width: 380, background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 20, padding: 24, boxShadow: '0 30px 60px rgba(0,0,0,0.5)', position: 'relative' }}>
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
-                            <h3 style={{ fontSize: 16, fontWeight: 800, margin: 0, textTransform: 'uppercase', letterSpacing: '0.6px' }}>Adjust Time Record</h3>
-                            <button onClick={() => setEditingAttendance(null)} style={{ background: 'transparent', border: 'none', color: 'var(--text-muted)', cursor: 'pointer' }}><X size={18} /></button>
+                            <h3 style={{ fontSize: 11, fontWeight: 900, margin: 0, textTransform: 'uppercase', letterSpacing: '1.2px', color: '#64748b' }}>Temporal Adjustment Matrix</h3>
+                            <button onClick={() => setEditingAttendance(null)} style={{ background: 'transparent', border: 'none', color: '#475569', cursor: 'pointer', transition: 'all 0.2s' }} onMouseEnter={e=>e.currentTarget.style.color='#f8fafc'} onMouseLeave={e=>e.currentTarget.style.color='#475569'}><X size={18} /></button>
                         </div>
                         <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
                             <div>
-                                <label style={{ display: 'block', fontSize: 11, fontWeight: 700, color: 'var(--text-muted)', marginBottom: 6, textTransform: 'uppercase', letterSpacing: '0.4px' }}>Punch In</label>
-                                <input type="datetime-local" value={editPunchIn} onChange={e => setEditPunchIn(e.target.value)} style={{ width: '100%', padding: '8px 12px', borderRadius: 8, border: '1px solid var(--border)', background: 'rgba(0,0,0,0.2)', color: 'white', outline: 'none', fontSize: 13, fontWeight: 600 }} />
+                                <label style={{ display: 'block', fontSize: 9, fontWeight: 900, color: '#475569', marginBottom: 6, textTransform: 'uppercase' }}>Shift Origin</label>
+                                <input type="datetime-local" value={editPunchIn} onChange={e => setEditPunchIn(e.target.value)} style={{ width: '100%', padding: '8px 12px', borderRadius: 8, border: '1px solid var(--border)', background: 'rgba(0,0,0,0.3)', color: '#f8fafc', outline: 'none', fontSize: 12, fontWeight: 700 }} />
                             </div>
                             <div>
-                                <label style={{ display: 'block', fontSize: 11, fontWeight: 700, color: 'var(--text-muted)', marginBottom: 6, textTransform: 'uppercase', letterSpacing: '0.4px' }}>Punch Out</label>
-                                <input type="datetime-local" value={editPunchOut} onChange={e => setEditPunchOut(e.target.value)} style={{ width: '100%', padding: '8px 12px', borderRadius: 8, border: '1px solid var(--border)', background: 'rgba(0,0,0,0.2)', color: 'white', outline: 'none', fontSize: 13, fontWeight: 600 }} />
+                                <label style={{ display: 'block', fontSize: 9, fontWeight: 900, color: '#475569', marginBottom: 6, textTransform: 'uppercase' }}>Shift Termination</label>
+                                <input type="datetime-local" value={editPunchOut} onChange={e => setEditPunchOut(e.target.value)} style={{ width: '100%', padding: '8px 12px', borderRadius: 8, border: '1px solid var(--border)', background: 'rgba(0,0,0,0.3)', color: '#f8fafc', outline: 'none', fontSize: 12, fontWeight: 700 }} />
                             </div>
                             <div>
-                                <label style={{ display: 'block', fontSize: 11, fontWeight: 700, color: 'var(--text-muted)', marginBottom: 6, textTransform: 'uppercase', letterSpacing: '0.4px' }}>Notes</label>
-                                <textarea value={editNote} onChange={e => setEditNote(e.target.value)} rows={3} style={{ width: '100%', padding: '8px 12px', borderRadius: 8, border: '1px solid var(--border)', background: 'rgba(0,0,0,0.2)', color: 'white', resize: 'none', outline: 'none', fontSize: 13, fontWeight: 500 }} />
+                                <label style={{ display: 'block', fontSize: 9, fontWeight: 900, color: '#475569', marginBottom: 6, textTransform: 'uppercase' }}>Operational Context</label>
+                                <textarea value={editNote} onChange={e => setEditNote(e.target.value)} rows={3} style={{ width: '100%', padding: '8px 12px', borderRadius: 8, border: '1px solid var(--border)', background: 'rgba(0,0,0,0.3)', color: '#f8fafc', resize: 'none', outline: 'none', fontSize: 11, fontWeight: 600 }} />
                             </div>
                             <div style={{ display: 'flex', gap: 10, marginTop: 4 }}>
-                                <button onClick={() => setEditingAttendance(null)} style={{ flex: 1, padding: '10px', borderRadius: 8, border: '1px solid var(--border)', background: 'transparent', color: 'var(--text-primary)', fontWeight: 700, fontSize: 13, cursor: 'pointer' }}>Cancel</button>
-                                <button onClick={handleSaveAttendance} disabled={saving} style={{ flex: 1, padding: '10px', borderRadius: 8, border: 'none', background: 'var(--accent-primary)', color: 'white', fontWeight: 700, fontSize: 13, cursor: 'pointer', opacity: saving ? 0.7 : 1 }}>{saving ? 'Saving...' : 'Save Changes'}</button>
+                                <button onClick={() => setEditingAttendance(null)} style={{ flex: 1, padding: '10px', borderRadius: 10, border: '1px solid var(--border)', background: 'transparent', color: '#94a3b8', fontWeight: 900, fontSize: 10, cursor: 'pointer', transition: 'all 0.2s', textTransform: 'uppercase' }}>Abort</button>
+                                <button onClick={handleSaveAttendance} disabled={saving} style={{ flex: 1, padding: '10px', borderRadius: 10, border: 'none', background: 'var(--accent-primary)', color: 'white', fontWeight: 900, fontSize: 10, cursor: 'pointer', opacity: saving ? 0.7 : 1, transition: 'all 0.2s', textTransform: 'uppercase' }}>{saving ? 'Processing...' : 'Authorize'}</button>
                             </div>
                         </div>
                     </div>

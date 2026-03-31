@@ -67,20 +67,25 @@ export default function AdminSidebar({ user }: AdminSidebarProps) {
         <Link href={href} style={{
             display: 'flex',
             alignItems: 'center',
-            gap: 12,
-            padding: isCollapsed ? '10px 0' : '8px 12px',
-            margin: '2px 10px',
+            gap: 10,
+            padding: isCollapsed ? '8px 0' : '6px 12px',
+            margin: '1px 8px',
             borderRadius: 8,
-            color: active ? 'var(--text-primary)' : 'var(--text-secondary)',
-            background: active ? 'rgba(255,255,255,0.06)' : 'transparent',
+            color: active ? '#f8fafc' : '#94a3b8',
+            background: active ? 'rgba(255,255,255,0.08)' : 'transparent',
             textDecoration: 'none',
-            fontSize: 13,
-            fontWeight: active ? 600 : 500,
+            fontSize: 12.5,
+            fontWeight: active ? 800 : 500,
             justifyContent: isCollapsed ? 'center' : 'flex-start',
-            transition: 'all 0.2s ease',
+            transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+            position: 'relative',
+            border: active ? '1px solid rgba(255,255,255,0.05)' : '1px solid transparent',
         }} onMouseEnter={e => { if(!active) e.currentTarget.style.background = 'rgba(255,255,255,0.03)' }} onMouseLeave={e => { if(!active) e.currentTarget.style.background = 'transparent' }}>
-            <Icon size={16} color={active ? 'var(--text-primary)' : 'var(--text-muted)'} />
-            {!isCollapsed && <span>{label}</span>}
+            {active && !isCollapsed && (
+                <div style={{ position: 'absolute', left: 0, top: '20%', bottom: '20%', width: 2, background: 'var(--accent-primary)', borderRadius: '0 4px 4px 0', boxShadow: '0 0 10px var(--accent-primary)' }} />
+            )}
+            <Icon size={15} color={active ? 'var(--accent-primary)' : 'inherit'} strokeWidth={active ? 2.5 : 2} />
+            {!isCollapsed && <span style={{ letterSpacing: '0.2px' }}>{label}</span>}
         </Link>
     )
 
@@ -98,14 +103,14 @@ export default function AdminSidebar({ user }: AdminSidebarProps) {
             zIndex: 40,
             transition: 'width 0.3s cubic-bezier(0.4, 0, 0.2, 1)'
         }}>
-            <div style={{ padding: isCollapsed ? '24px 0' : '24px 20px', display: 'flex', justifyContent: isCollapsed ? 'center' : 'flex-start', alignItems: 'center', minHeight: 70, position: 'relative' }}>
-                <div style={{ width: 24, height: 24, borderRadius: 6, background: 'var(--text-primary)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                    <Zap size={14} color="var(--bg-card)" fill="var(--bg-card)" />
+            <div style={{ padding: isCollapsed ? '16px 0' : '16px 16px', display: 'flex', justifyContent: isCollapsed ? 'center' : 'flex-start', alignItems: 'center', minHeight: 60, position: 'relative', borderBottom: '1px solid rgba(255,255,255,0.03)' }}>
+                <div style={{ width: 28, height: 28, borderRadius: 8, background: 'linear-gradient(135deg, var(--accent-primary), #4f46e5)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, boxShadow: '0 0 15px rgba(99, 102, 241, 0.3)' }}>
+                    <Zap size={16} color="#fff" fill="#fff" strokeWidth={3} />
                 </div>
                 {!isCollapsed && (
                     <div style={{ marginLeft: 12, overflow: 'hidden' }}>
-                        <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--text-primary)', letterSpacing: '-0.2px' }}>Workspace</div>
-                        <div style={{ fontSize: 11, color: 'var(--text-muted)', letterSpacing: '0.3px', textTransform: 'uppercase', fontWeight: 600 }}>Admin Portal</div>
+                        <div style={{ fontSize: 13, fontWeight: 900, color: '#f8fafc', letterSpacing: '-0.4px', textTransform: 'uppercase' }}>Obsidian</div>
+                        <div style={{ fontSize: 9, color: 'var(--accent-primary)', letterSpacing: '1px', textTransform: 'uppercase', fontWeight: 900, opacity: 0.8 }}>Professional</div>
                     </div>
                 )}
                 <button 
@@ -125,9 +130,10 @@ export default function AdminSidebar({ user }: AdminSidebarProps) {
 
             <div style={{ flex: 1, overflowY: 'auto', paddingTop: 10 }}>
                 {ADMIN_LINKS.map(section => (
-                    <div key={section.section} style={{ marginBottom: 16 }}>
-                        {!isCollapsed && <div style={{ padding: '0 22px', fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.8px', color: 'var(--text-muted)', marginBottom: 6 }}>
+                    <div key={section.section} style={{ marginBottom: 12 }}>
+                        {!isCollapsed && <div style={{ padding: '0 18px', fontSize: 9, fontWeight: 900, textTransform: 'uppercase', letterSpacing: '1.2px', color: '#475569', marginBottom: 6, display: 'flex', alignItems: 'center', gap: 8 }}>
                             {section.section}
+                            <div style={{ flex: 1, height: 1, background: 'rgba(255,255,255,0.02)' }} />
                         </div>}
                         {section.items.map(item => {
                             const active = pathname === item.href || pathname.startsWith(item.href + '/')
@@ -160,15 +166,16 @@ export default function AdminSidebar({ user }: AdminSidebarProps) {
                 )}
 
                 <button onClick={() => setMenuOpen(prev => !prev)} style={{
-                    width: '100%', background: 'transparent', border: 'none', padding: isCollapsed ? '4px' : '6px 8px', borderRadius: 8,
-                    display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer', transition: 'background 0.2s'
-                }} onMouseEnter={e => e.currentTarget.style.background = 'rgba(255, 255, 255, 0.04)'} onMouseLeave={e => e.currentTarget.style.background = 'transparent'}>
-                    <div style={{ background: avatarBg, color: '#fff', width: 28, height: 28, borderRadius: 6, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11, fontWeight: 700, border: '1px solid rgba(255,255,255,0.1)' }}>
+                    width: '100%', background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.05)', padding: isCollapsed ? '6px' : '6px 8px', borderRadius: 10,
+                    display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer', transition: 'all 0.2s'
+                }} onMouseEnter={e => e.currentTarget.style.background = 'rgba(255, 255, 255, 0.05)'} onMouseLeave={e => e.currentTarget.style.background = 'rgba(255,255,255,0.02)'}>
+                    <div style={{ background: avatarBg, color: '#fff', width: 26, height: 26, borderRadius: 6, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 10, fontWeight: 900, border: '1px solid rgba(255,255,255,0.1)' }}>
                         {initials}
                     </div>
                     {!isCollapsed && (
                         <div style={{ flex: 1, textAlign: 'left', overflow: 'hidden' }}>
-                            <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-primary)', whiteSpace: 'nowrap', textOverflow: 'ellipsis' }}>{user?.name || 'Admin'}</div>
+                            <div style={{ fontSize: 12, fontWeight: 800, color: '#f1f5f9', whiteSpace: 'nowrap', textOverflow: 'ellipsis' }}>{user?.name || 'Admin'}</div>
+                            <div style={{ fontSize: 9, fontWeight: 700, color: 'var(--accent-primary)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Administrator</div>
                         </div>
                     )}
                 </button>
