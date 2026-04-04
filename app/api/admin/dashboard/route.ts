@@ -20,6 +20,7 @@ export async function GET() {
 
     const [
         totalUsers,
+        totalLeads,
         totalOpportunities,
         stageGroups,
         recentLeads,
@@ -39,6 +40,7 @@ export async function GET() {
         trendOpps,
     ] = await Promise.all([
         prisma.user.count({ where: { role: { not: 'Administrator' }, isSuspended: false } }),
+        prisma.lead.count({ where: { isDeleted: false } }),
         prisma.opportunity.count({ where: { isDeleted: false } }),
         prisma.opportunity.groupBy({ by: ['stage'], where: { isDeleted: false }, _count: true }),
         prisma.lead.findMany({

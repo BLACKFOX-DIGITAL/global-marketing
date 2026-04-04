@@ -1,6 +1,6 @@
 'use client'
-import { useState } from 'react'
-import { File, Download, X, ImageIcon, FileText, Trash2 } from 'lucide-react'
+import { useRef, useState } from 'react'
+import { File, Download, X, ImageIcon, FileText, Trash2, Upload } from 'lucide-react'
 import { format } from 'date-fns'
 
 interface Attachment {
@@ -15,10 +15,15 @@ interface Attachment {
 export default function AttachmentList({
     attachments,
     onDelete,
+    onUpload,
+    uploading,
 }: {
     attachments: Attachment[]
     onDelete: (id: string) => void
+    onUpload?: (name: string) => void | Promise<void>
+    uploading?: boolean
 }) {
+    const fileInputRef = useRef<HTMLInputElement>(null)
     const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null)
 
     const getIcon = (type: string | null) => {
@@ -37,7 +42,32 @@ export default function AttachmentList({
 
     return (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-            <h4 style={{ fontSize: 13, fontWeight: 700, margin: '0 0 8px 0', color: 'var(--text-primary)' }}>Files & Documents</h4>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <h4 style={{ fontSize: 13, fontWeight: 700, margin: 0, color: 'var(--text-primary)' }}>Files & Documents</h4>
+                {onUpload && (
+                    <>
+                        <input
+                            ref={fileInputRef}
+                            type="file"
+                            style={{ display: 'none' }}
+                            onChange={e => {
+                                const file = e.target.files?.[0]
+                                if (file) onUpload(file.name)
+                                e.target.value = ''
+                            }}
+                        />
+                        <button
+                            className="btn-secondary"
+                            style={{ padding: '4px 10px', fontSize: 12, display: 'flex', alignItems: 'center', gap: 6 }}
+                            onClick={() => fileInputRef.current?.click()}
+                            disabled={uploading}
+                        >
+                            {uploading ? <div className="spinner" style={{ width: 12, height: 12 }} /> : <Upload size={12} />}
+                            {uploading ? 'Uploading…' : 'Add File'}
+                        </button>
+                    </>
+                )}
+            </div>
 
             {attachments.length === 0 ? (
                 <div style={{ padding: '30px', textAlign: 'center', border: '1.5px dashed var(--border)', borderRadius: 12, color: 'var(--text-muted)', fontSize: 13 }}>

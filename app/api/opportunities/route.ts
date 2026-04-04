@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { getCurrentUser, isManager } from '@/lib/auth'
+import type { Prisma } from '@prisma/client'
 
 export const dynamic = 'force-dynamic'
 
@@ -13,7 +14,7 @@ export async function GET(req: NextRequest) {
         const stage = searchParams.get('stage') || ''
         const search = searchParams.get('search') || ''
 
-        const where: any = { isDeleted: false }
+        const where: Prisma.OpportunityWhereInput = { isDeleted: false }
         if (!isManager(user)) {
             where.ownerId = user.userId
         }

@@ -12,13 +12,13 @@ export async function GET() {
         getCachedSystemOptions('TASK_PRIORITY'),
     ])
 
-    const responseData: any = {
+    const responseData: {
+        user: { name: string; email: string; role: string }
+        settings: { leadStatuses: unknown; stages: unknown; priorities: unknown }
+        redirect?: string
+    } = {
         user: { name: user.name, email: user.email, role: user.role },
-        settings: {
-            leadStatuses,
-            stages,
-            priorities,
-        },
+        settings: { leadStatuses, stages, priorities },
     }
 
     if (user.role === 'Administrator') {

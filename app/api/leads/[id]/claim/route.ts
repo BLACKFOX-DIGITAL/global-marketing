@@ -9,10 +9,11 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     const { id } = await params
 
+    // Fetch claim limit setting (read-only, safe outside transaction)
+    const claimLimitSetting = await prisma.systemSetting.findUnique({ where: { key: 'CLAIM_LIMIT' } })
+    const CLAIM_LIMIT = parseInt(claimLimitSetting?.value || '50')
+
     try {
-        // Fetch claim limit setting (read-only, safe outside transaction)
-        const claimLimitSetting = await prisma.systemSetting.findUnique({ where: { key: 'CLAIM_LIMIT' } })
-        const CLAIM_LIMIT = parseInt(claimLimitSetting?.value || '50')
 
         // Use a transaction to atomically check the claim limit AND claim the lead,
         // preventing race conditions where the same user claims multiple leads simultaneously.

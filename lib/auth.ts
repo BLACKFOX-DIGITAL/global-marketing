@@ -4,11 +4,10 @@ import { cookies } from 'next/headers'
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 
-const JWT_SECRET = process.env.JWT_SECRET
-
-if (!JWT_SECRET) {
+if (!process.env.JWT_SECRET) {
     throw new Error('JWT_SECRET environment variable is required')
 }
+const JWT_SECRET = process.env.JWT_SECRET as string
 export const COOKIE_NAME = 'crm_token'
 
 export interface JWTPayload {
@@ -86,11 +85,6 @@ export async function getCurrentUser(): Promise<JWTPayload | null> {
     }
 }
 
-
-export async function getAuthToken(): Promise<string | null> {
-    const cookieStore = await cookies()
-    return cookieStore.get(COOKIE_NAME)?.value || null
-}
 
 export function isAdmin(user: JWTPayload | null): boolean {
     return user?.role === 'Administrator'

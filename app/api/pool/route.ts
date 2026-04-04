@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { getCurrentUser } from '@/lib/auth'
+import type { Prisma } from '@prisma/client'
 
 export async function GET(req: NextRequest) {
     const user = await getCurrentUser()
@@ -13,7 +14,7 @@ export async function GET(req: NextRequest) {
     const status = searchParams.get('status') || ''
 
     const skip = (page - 1) * limit
-    const where: any = { ownerId: null, isDeleted: false }
+    const where: Prisma.LeadWhereInput = { ownerId: null, isDeleted: false }
 
     if (search) {
         where.OR = [

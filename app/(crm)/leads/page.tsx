@@ -1,5 +1,5 @@
 'use client'
-import React, { useState, useDeferredValue } from 'react'
+import React, { useState, useDeferredValue, useCallback } from 'react'
 import NotificationCenter from '@/components/NotificationCenter'
 import Link from 'next/link'
 import dynamic from 'next/dynamic'
@@ -141,6 +141,76 @@ export default function LeadsPage() {
         setDeleting(null)
     }
 
+    const LeadRow = useCallback(({ index, style }: { index: number; style: React.CSSProperties }) => {
+        const lead = leads[index]
+        const CALL_LABELS: Record<string, string> = { connected_interested: 'Interested', no_answer: 'No Answer', voicemail: 'Voicemail Left', call_back_later: 'Call Back Later', connected_not_interested: 'Not Interested' }
+        const MAIL_LABELS: Record<string, string> = { sent: 'Mail Sent', follow_up: 'Follow-up Sent', response_interested: 'Replied — Interested', response_not_interested: 'Replied — Not Interested' }
+        return (
+            <div style={{
+                ...style,
+                display: 'flex', alignItems: 'center',
+                padding: '0 18px', borderBottom: '1px solid var(--border)',
+                background: index % 2 === 0 ? 'transparent' : 'rgba(0,0,0,0.01)'
+            }} className="lead-row-container">
+                <div style={{ width: '20%', display: 'flex', alignItems: 'center', gap: 10 }}>
+                    <div style={{ flexShrink: 0, scale: '0.85', transformOrigin: 'left center' }}>
+                        <Avatar name={lead.company || lead.name} />
+                    </div>
+                    <div style={{ overflow: 'hidden' }}>
+                        <Link href={`/leads/${lead.id}`} style={{ fontWeight: 600, color: 'var(--text-primary)', textDecoration: 'none', fontSize: 12, display: 'block', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{lead.company || lead.name}</Link>
+                        {lead.name && lead.name !== lead.company && <div style={{ fontSize: 10, color: 'var(--text-muted)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{lead.name}</div>}
+                    </div>
+                </div>
+                <div style={{ width: '18%', paddingRight: 10 }}>
+                    <div style={{ color: 'var(--text-secondary)', fontSize: 12, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{lead.website || '—'}</div>
+                    {lead.email && <div style={{ fontSize: 11, color: 'var(--text-muted)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{lead.email}</div>}
+                </div>
+                <div style={{ width: '10%', color: 'var(--text-secondary)', fontSize: 12, fontWeight: 500 }}>{lead.industry || '—'}</div>
+                <div style={{ width: '8%' }}>
+                    {lead.priority ? (
+                        <span style={{
+                            fontSize: 10, padding: '3px 8px', borderRadius: 4, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.5px',
+                            background: lead.priority === 'High' ? 'rgba(239, 68, 68, 0.1)' : lead.priority === 'Medium' ? 'rgba(245, 158, 11, 0.1)' : 'rgba(16, 185, 129, 0.1)',
+                            color: lead.priority === 'High' ? '#ef4444' : lead.priority === 'Medium' ? '#f59e0b' : '#10b981',
+                            border: `1px solid ${lead.priority === 'High' ? 'rgba(239, 68, 68, 0.2)' : lead.priority === 'Medium' ? 'rgba(245, 158, 11, 0.2)' : 'rgba(16, 185, 129, 0.2)'}`
+                        }}>{lead.priority}</span>
+                    ) : '—'}
+                </div>
+                <div style={{ width: '14%' }}>
+                    {lead.lastCallOutcome ? (
+                        <div style={{ fontSize: 11, color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: 6, fontWeight: 500 }}>
+                            <div style={{ width: 22, height: 22, borderRadius: '50%', background: 'rgba(245, 158, 11, 0.1)', color: '#f59e0b', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                <PhoneCall size={10} />
+                            </div>
+                            <span>{CALL_LABELS[lead.lastCallOutcome] || lead.lastCallOutcome.replace(/_/g, ' ')}</span>
+                        </div>
+                    ) : <span style={{ color: 'var(--text-muted)', fontSize: 11 }}>No calls yet</span>}
+                </div>
+                <div style={{ width: '14%' }}>
+                    {lead.lastMailOutcome ? (
+                        <div style={{ fontSize: 11, color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: 6, fontWeight: 500 }}>
+                            <div style={{ width: 22, height: 22, borderRadius: '50%', background: 'rgba(16, 185, 129, 0.1)', color: '#10b981', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                <Mail size={10} />
+                            </div>
+                            <span>{MAIL_LABELS[lead.lastMailOutcome] || lead.lastMailOutcome.replace(/_/g, ' ')}</span>
+                        </div>
+                    ) : <span style={{ color: 'var(--text-muted)', fontSize: 11 }}>No emails yet</span>}
+                </div>
+                <div style={{ width: '8%' }}>
+                    <StatusBadge status={lead.status} />
+                </div>
+                <div style={{ width: '8%', display: 'flex', gap: 6, justifyContent: 'flex-end' }}>
+                    <button className="btn-ghost" style={{ padding: '5px 8px' }} onClick={() => setEditLeadId(lead.id)}>
+                        <Pencil size={13} />
+                    </button>
+                    <button className="btn-ghost" style={{ padding: '5px 8px', color: '#ef4444' }} onClick={() => setDeleteConfirmId(lead.id)} disabled={deleting === lead.id}>
+                        {deleting === lead.id ? <div className="spinner" style={{ width: 13, height: 13 }} /> : <Trash2 size={13} />}
+                    </button>
+                </div>
+            </div>
+        )
+    }, [leads, deleting, setEditLeadId, setDeleteConfirmId])
+
     // Build a window of up to 5 page numbers centred on the current page
     const pageNums = (() => {
         if (totalPages <= 5) return Array.from({ length: totalPages }, (_, i) => i + 1)
@@ -275,83 +345,11 @@ export default function LeadsPage() {
                             <AutoSizer renderProp={({ height, width }: any) => (
                                 <List
                                     rowCount={leads.length}
-                                    rowHeight={56} 
+                                    rowHeight={56}
                                     onScroll={(e: any) => setIsScrolled(e.currentTarget.scrollTop > 50)}
                                     style={{ height: height as any, width: width as any, overflowY: 'auto' as any }}
-                                    rowProps={{}}
-                                    rowComponent={({ index, style }: any) => {
-                                        const lead = leads[index]
-                                        return (
-                                            <div style={{ 
-                                                ...style, 
-                                                display: 'flex', alignItems: 'center', 
-                                                padding: '0 18px', borderBottom: '1px solid var(--border)',
-                                                background: index % 2 === 0 ? 'transparent' : 'rgba(0,0,0,0.01)'
-                                            }} className="lead-row-container">
-                                                <div style={{ width: '20%', display: 'flex', alignItems: 'center', gap: 10 }}>
-                                                    <div style={{ flexShrink: 0, scale: '0.85', transformOrigin: 'left center' }}>
-                                                        <Avatar name={lead.company || lead.name} />
-                                                    </div>
-                                                    <div style={{ overflow: 'hidden' }}>
-                                                        <Link href={`/leads/${lead.id}`} style={{ fontWeight: 600, color: 'var(--text-primary)', textDecoration: 'none', fontSize: 12, display: 'block', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{lead.company || lead.name}</Link>
-                                                        {lead.name && lead.name !== lead.company && <div style={{ fontSize: 10, color: 'var(--text-muted)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{lead.name}</div>}
-                                                    </div>
-                                                </div>
-                                                <div style={{ width: '18%', paddingRight: 10 }}>
-                                                    <div style={{ color: 'var(--text-secondary)', fontSize: 12, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{lead.website || '—'}</div>
-                                                    {lead.email && <div style={{ fontSize: 11, color: 'var(--text-muted)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{lead.email}</div>}
-                                                </div>
-                                                <div style={{ width: '10%', color: 'var(--text-secondary)', fontSize: 12, fontWeight: 500 }}>{lead.industry || '—'}</div>
-                                                <div style={{ width: '8%' }}>
-                                                    {lead.priority ? (
-                                                        <span style={{
-                                                            fontSize: 10, padding: '3px 8px', borderRadius: 4, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.5px',
-                                                            background: lead.priority === 'High' ? 'rgba(239, 68, 68, 0.1)' : lead.priority === 'Medium' ? 'rgba(245, 158, 11, 0.1)' : 'rgba(16, 185, 129, 0.1)',
-                                                            color: lead.priority === 'High' ? '#ef4444' : lead.priority === 'Medium' ? '#f59e0b' : '#10b981',
-                                                            border: `1px solid ${lead.priority === 'High' ? 'rgba(239, 68, 68, 0.2)' : lead.priority === 'Medium' ? 'rgba(245, 158, 11, 0.2)' : 'rgba(16, 185, 129, 0.2)'}`
-                                                        }}>{lead.priority}</span>
-                                                    ) : '—'}
-                                                </div>
-                                                <div style={{ width: '14%' }}>
-                                                    {lead.lastCallOutcome ? (() => {
-                                                        const CALL_LABELS: Record<string,string> = { connected_interested: 'Interested', no_answer: 'No Answer', voicemail: 'Voicemail Left', call_back_later: 'Call Back Later', connected_not_interested: 'Not Interested' }
-                                                        return (
-                                                            <div style={{ fontSize: 11, color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: 6, fontWeight: 500 }}>
-                                                                <div style={{ width: 22, height: 22, borderRadius: '50%', background: 'rgba(245, 158, 11, 0.1)', color: '#f59e0b', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                                                                    <PhoneCall size={10} />
-                                                                </div>
-                                                                <span>{CALL_LABELS[lead.lastCallOutcome] || lead.lastCallOutcome.replace(/_/g, ' ')}</span>
-                                                            </div>
-                                                        )
-                                                    })() : <span style={{ color: 'var(--text-muted)', fontSize: 11 }}>No calls yet</span>}
-                                                </div>
-                                                <div style={{ width: '14%' }}>
-                                                    {lead.lastMailOutcome ? (() => {
-                                                        const MAIL_LABELS: Record<string,string> = { sent: 'Mail Sent', follow_up: 'Follow-up Sent', response_interested: 'Replied — Interested', response_not_interested: 'Replied — Not Interested' }
-                                                        return (
-                                                            <div style={{ fontSize: 11, color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: 6, fontWeight: 500 }}>
-                                                                <div style={{ width: 22, height: 22, borderRadius: '50%', background: 'rgba(16, 185, 129, 0.1)', color: '#10b981', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                                                                    <Mail size={10} />
-                                                                </div>
-                                                                <span>{MAIL_LABELS[lead.lastMailOutcome] || lead.lastMailOutcome.replace(/_/g, ' ')}</span>
-                                                            </div>
-                                                        )
-                                                    })() : <span style={{ color: 'var(--text-muted)', fontSize: 11 }}>No emails yet</span>}
-                                                </div>
-                                                <div style={{ width: '8%' }}>
-                                                    <StatusBadge status={lead.status} />
-                                                </div>
-                                                <div style={{ width: '8%', display: 'flex', gap: 6, justifyContent: 'flex-end' }}>
-                                                    <button className="btn-ghost" style={{ padding: '5px 8px' }} onClick={() => setEditLeadId(lead.id)}>
-                                                        <Pencil size={13} />
-                                                    </button>
-                                                    <button className="btn-ghost" style={{ padding: '5px 8px', color: '#ef4444' }} onClick={() => setDeleteConfirmId(lead.id)} disabled={deleting === lead.id}>
-                                                        {deleting === lead.id ? <div className="spinner" style={{ width: 13, height: 13 }} /> : <Trash2 size={13} />}
-                                                    </button>
-                                                </div>
-                                            </div>
-                                        )
-                                    }}
+                                    rowProps={{} as any}
+                                    rowComponent={LeadRow}
                                 />
                             )} />
                         )}

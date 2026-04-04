@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { getCurrentUser } from '@/lib/auth'
 import { sanitize } from '@/lib/sanitize'
+import type { Prisma } from '@prisma/client'
 
 export const dynamic = 'force-dynamic'
 
@@ -80,13 +81,14 @@ export async function GET(req: NextRequest) {
     const ownerFilter = searchParams.get('ownerId') || ''
     const isExport = searchParams.get('export') === 'true'
 
+    const EXPORT_MAX = 5000
     const page = Math.max(1, parseInt(searchParams.get('page') || '1') || 1)
-    const limit = isExport ? 10000 : Math.min(100, Math.max(1, parseInt(searchParams.get('limit') || '20') || 20))
+    const limit = isExport ? EXPORT_MAX : Math.min(100, Math.max(1, parseInt(searchParams.get('limit') || '20') || 20))
     const skip = isExport ? 0 : (page - 1) * limit
     const sortBy = searchParams.get('sortBy') || 'updatedAt'
     const sortOrder = searchParams.get('sortOrder') || 'desc'
 
-    const where: any = { isDeleted: false }
+    const where: Prisma.LeadWhereInput = { isDeleted: false }
     if (search) {
         where.OR = [
             { name: { contains: search } },
@@ -101,8 +103,21 @@ export async function GET(req: NextRequest) {
 
     const validSortFields = ['name', 'company', 'status', 'updatedAt', 'owner', 'country']
     const finalSortBy = validSortFields.includes(sortBy) ? sortBy : 'updatedAt'
-    const finalSortOrder = sortOrder === 'asc' ? 'asc' : 'desc'
-    const orderBy: any = finalSortBy === 'owner' ? { owner: { name: finalSortOrder } } : { [finalSortBy]: finalSortOrder }
+    const finalSortOrder: Prisma.SortOrder = sortOrder === 'asc' ? 'asc' : 'desc'
+    const orderBy: Prisma.LeadOrderByWithRelationInput = finalSortBy === 'owner'
+        ? { owner: { name: finalSortOrder } }
+        : { [finalSortBy]: finalSortOrder }
+
+    // For exports: only fetch leads — skip all the stats/filter queries
+    if (isExport) {
+        const leads = await prisma.lead.findMany({
+            where,
+            include: { owner: { select: { id: true, name: true } } },
+            orderBy,
+            take: EXPORT_MAX,
+        })
+        return NextResponse.json({ leads, total: leads.length })
+    }
 
     const now = new Date()
     const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1)

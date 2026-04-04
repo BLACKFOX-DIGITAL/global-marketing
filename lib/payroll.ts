@@ -26,7 +26,7 @@ export interface SalaryReport {
     projectedSalary: number
 }
 
-export async function calculateMonthlySalary(userId: string, date: Date): Promise<SalaryReport> {
+export async function calculateMonthlySalary(userId: string, date: Date, prefetchedHolidays?: { date: Date }[]): Promise<SalaryReport> {
     const user = await prisma.user.findUnique({
         where: { id: userId },
         include: {
@@ -72,13 +72,8 @@ export async function calculateMonthlySalary(userId: string, date: Date): Promis
     const monthStart = startOfMonth(date)
     const monthEnd = endOfMonth(date)
 
-    const holidays = await prisma.holiday.findMany({
-        where: {
-            date: {
-                gte: monthStart,
-                lte: monthEnd
-            }
-        }
+    const holidays = prefetchedHolidays ?? await prisma.holiday.findMany({
+        where: { date: { gte: monthStart, lte: monthEnd } }
     })
 
     const allDays = eachDayOfInterval({ start: monthStart, end: monthEnd })

@@ -5,6 +5,7 @@ import { awardXP } from '@/lib/gamification'
 import { rateLimit, getClientIp } from '@/lib/rateLimit'
 import { sanitizeObject } from '@/lib/sanitize'
 import { logger } from '@/lib/logger'
+import type { Prisma } from '@prisma/client'
 
 export const dynamic = 'force-dynamic'
 
@@ -21,23 +22,18 @@ export async function GET(req: NextRequest) {
         const limit = Math.max(1, Math.min(100, parseInt(searchParams.get('limit') || '10') || 10))
         const skip = (page - 1) * limit
 
-        const where: any = { isDeleted: false }
+        const where: Prisma.LeadWhereInput = { isDeleted: false }
 
         if (!isManager(user)) {
             where.ownerId = user.userId
         }
 
         if (search) {
-            const searchConditions = [
+            where.OR = [
                 { name: { contains: search } },
                 { email: { contains: search } },
                 { company: { contains: search } },
             ]
-            if (where.AND) {
-                where.AND.push({ OR: searchConditions })
-            } else {
-                where.OR = searchConditions
-            }
         }
 
         if (status) {

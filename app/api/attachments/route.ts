@@ -53,6 +53,9 @@ export async function DELETE(req: NextRequest) {
     if (!id) return NextResponse.json({ error: 'ID required' }, { status: 400 })
 
     try {
+        // TODO: Delete the actual file from the storage provider (e.g. S3, Supabase Storage)
+        // before removing the DB record. Fetch the attachment first to get fileUrl, then
+        // call the provider's delete API.
         await prisma.attachment.delete({ where: { id, userId: user.userId } })
         return NextResponse.json({ success: true })
     } catch (err: unknown) {

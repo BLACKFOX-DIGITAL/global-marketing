@@ -39,10 +39,6 @@ export function calculateLevel(totalXp: number): number {
     return Math.floor(totalXp / 100) + 1
 }
 
-export function xpForNextLevel(currentLevel: number): number {
-    return currentLevel * 100
-}
-
 export function xpProgressInLevel(totalXp: number): number {
     return totalXp % 100
 }

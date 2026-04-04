@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { getCurrentUser, isManager } from '@/lib/auth'
 import { awardXP } from '@/lib/gamification'
+import type { Prisma } from '@prisma/client'
 
 export async function GET(req: NextRequest) {
     const user = await getCurrentUser()
@@ -12,7 +13,7 @@ export async function GET(req: NextRequest) {
     const priority = searchParams.get('priority') || ''
     const leadId = searchParams.get('leadId') || ''
 
-    const where: any = {}
+    const where: Prisma.TaskWhereInput = {}
     
     if (!isManager(user)) {
         where.ownerId = user.userId

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { getCurrentUser } from '@/lib/auth'
 import { calculateMonthlySalary } from '@/lib/payroll'
+import { startOfMonth, endOfMonth } from 'date-fns'
 
 export async function GET(req: NextRequest) {
     const user = await getCurrentUser()
@@ -16,13 +17,18 @@ export async function GET(req: NextRequest) {
     }
 
     try {
-        const users = await prisma.user.findMany({
-            where: { role: { not: 'Administrator' }, isSuspended: false },
-            select: { id: true }
-        })
+        const [users, holidays] = await Promise.all([
+            prisma.user.findMany({
+                where: { role: { not: 'Administrator' }, isSuspended: false },
+                select: { id: true }
+            }),
+            prisma.holiday.findMany({
+                where: { date: { gte: startOfMonth(date), lte: endOfMonth(date) } }
+            }),
+        ])
 
         const reports = await Promise.all(
-            users.map(u => calculateMonthlySalary(u.id, date))
+            users.map(u => calculateMonthlySalary(u.id, date, holidays))
         )
 
         return NextResponse.json({ reports })

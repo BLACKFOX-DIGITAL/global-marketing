@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { getCurrentUser } from '@/lib/auth'
 import { format } from 'date-fns'
+import type { Prisma } from '@prisma/client'
 
 export const dynamic = 'force-dynamic'
 
@@ -22,12 +23,12 @@ export async function GET(req: NextRequest) {
     const now = new Date()
     const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate())
 
-    let dateFilter: any = undefined
+    let dateFilter: Prisma.DateTimeFilter | undefined = undefined
     if (period === 'today') dateFilter = { gte: todayStart }
     else if (period === 'week') { const d = new Date(todayStart); d.setDate(d.getDate() - 6); dateFilter = { gte: d } }
     else if (period === 'month') { const d = new Date(now.getFullYear(), now.getMonth(), 1); dateFilter = { gte: d } }
 
-    const where: any = {}
+    const where: Prisma.ActivityLogWhereInput = {}
     if (action) where.action = action
     if (userId) where.userId = userId
     if (dateFilter) where.createdAt = dateFilter

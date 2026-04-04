@@ -5,6 +5,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { getCurrentUser } from '@/lib/auth'
 import { startOfDay, startOfWeek, startOfMonth } from 'date-fns'
+import type { Prisma } from '@prisma/client'
 
 export async function GET(req: NextRequest) {
     const user = await getCurrentUser()
@@ -31,7 +32,7 @@ export async function GET(req: NextRequest) {
         }
     }
 
-    const where: any = {
+    const where: Prisma.AttendanceRecordWhereInput = {
         userId: user.userId,
         punchIn: { gte: since },
     }
@@ -40,7 +41,7 @@ export async function GET(req: NextRequest) {
         const toDate = new Date(to)
         if (!isNaN(toDate.getTime())) {
             toDate.setDate(toDate.getDate() + 1)
-            where.punchIn = { ...where.punchIn, lt: toDate }
+            where.punchIn = { gte: since, lt: toDate }
         }
     }
 

@@ -73,7 +73,7 @@ model Lead {
   activityLogs  ActivityLog[]
   attachments   Attachment[]
   contacts      Contact[]
-  owner         User?         @relation(fields: [ownerId], references: [id])
+  owner         User?         @relation(fields: [ownerId], references: [id], onDelete: SetNull)
   opportunities Opportunity[]
   tasks         Task[]
   callAttempts  CallAttempt[]
@@ -151,7 +151,7 @@ model Opportunity {
   activityLogs ActivityLog[]
   attachments  Attachment[]
   lead         Lead?          @relation(fields: [leadId], references: [id])
-  owner        User?          @relation(fields: [ownerId], references: [id])
+  owner        User?          @relation(fields: [ownerId], references: [id], onDelete: SetNull)
   stageHistory StageHistory[]
   tasks        Task[]
 
@@ -174,7 +174,7 @@ model ActivityLog {
   createdAt     DateTime     @default(now())
   opportunity   Opportunity? @relation(fields: [opportunityId], references: [id], onDelete: Cascade)
   lead          Lead?        @relation(fields: [leadId], references: [id], onDelete: Cascade)
-  user          User         @relation(fields: [userId], references: [id])
+  user          User         @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId, createdAt])
   @@index([leadId, createdAt])
@@ -189,7 +189,7 @@ model Notification {
   isRead    Boolean  @default(false)
   link      String?
   createdAt DateTime @default(now())
-  user      User     @relation(fields: [userId], references: [id])
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model Attachment {
@@ -204,7 +204,7 @@ model Attachment {
   createdAt     DateTime     @default(now())
   opportunity   Opportunity? @relation(fields: [opportunityId], references: [id], onDelete: Cascade)
   lead          Lead?        @relation(fields: [leadId], references: [id], onDelete: Cascade)
-  user          User         @relation(fields: [userId], references: [id])
+  user          User         @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model UserGoal {
@@ -215,7 +215,7 @@ model UserGoal {
   period      String
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
-  user        User     @relation(fields: [userId], references: [id])
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([userId, category, period])
 }
@@ -246,7 +246,7 @@ model Task {
   updatedAt     DateTime     @updatedAt
   opportunity   Opportunity? @relation(fields: [opportunityId], references: [id], onDelete: Cascade)
   lead          Lead?        @relation(fields: [leadId], references: [id], onDelete: Cascade)
-  owner         User?        @relation(fields: [ownerId], references: [id])
+  owner         User?        @relation(fields: [ownerId], references: [id], onDelete: SetNull)
 
   @@index([ownerId, completed, dueDate])
   @@index([leadId])
@@ -261,7 +261,7 @@ model AttendanceRecord {
   duration  Int?
   notes     String?
   createdAt DateTime  @default(now())
-  user      User      @relation(fields: [userId], references: [id])
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId, punchIn])
 }
@@ -275,7 +275,7 @@ model LeaveRequest {
   reason    String?
   status    String   @default("Pending")
   createdAt DateTime @default(now())
-  user      User     @relation(fields: [userId], references: [id])
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model SystemOption {
@@ -339,7 +339,7 @@ model Holiday {
   description String?
   date        DateTime @unique
   createdBy   String?
-  creator     User?    @relation("HolidayCreator", fields: [createdBy], references: [id])
+  creator     User?    @relation("HolidayCreator", fields: [createdBy], references: [id], onDelete: SetNull)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 

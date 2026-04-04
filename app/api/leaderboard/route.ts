@@ -19,79 +19,58 @@ export async function GET(req: NextRequest) {
         default: since = startOfMonth(now); break
     }
 
-    // Get all users with gamification data
-    const users = await prisma.user.findMany({
-        where: {
-            role: { not: 'Administrator' },
-            isSuspended: false,
-        },
-        select: {
-            id: true,
-            name: true,
-            role: true,
-            xp: true,
-            level: true,
-            currentStreak: true,
-            longestStreak: true,
-            _count: { select: { achievements: true } },
-        },
-    })
-
-    // Get leads per user in period
-    const leadsData = await prisma.lead.groupBy({
-        by: ['ownerId'],
-        where: { createdAt: { gte: since }, ownerId: { not: null } },
-        _count: true,
-    })
-
-    // Get opportunities (Closed Won) per user in period
-    const closedWonData = await prisma.opportunity.groupBy({
-        by: ['ownerId'],
-        where: {
-            stage: 'Closed Won',
-            updatedAt: { gte: since },
-            ownerId: { not: null },
-        },
-        _count: true,
-    })
-
-    // Get all opportunities per user (for win rate calc)
-    const allOppsData = await prisma.opportunity.groupBy({
-        by: ['ownerId'],
-        where: {
-            createdAt: { gte: since },
-            ownerId: { not: null },
-        },
-        _count: true,
-    })
-
-    // Get completed tasks per user in period
-    const tasksData = await prisma.task.groupBy({
-        by: ['ownerId'],
-        where: {
-            completed: true,
-            completedAt: { gte: since },
-            ownerId: { not: null },
-        },
-        _count: true,
-    })
-
-    // Get XP earned per user in period (for period-aware ranking)
-    const xpInPeriodData = await prisma.xPHistory.groupBy({
-        by: ['userId'],
-        where: { createdAt: { gte: since } },
-        _sum: { xpAwarded: true },
-    })
-
-    // Get attendance hours per user in period
-    const attendanceData = await prisma.attendanceRecord.groupBy({
-        by: ['userId'],
-        where: {
-            punchIn: { gte: since },
-            duration: { not: null },
-        },
-        _sum: { duration: true },
-    })
+    const [users, leadsData, closedWonData, allOppsData, tasksData, xpInPeriodData, attendanceData] = await Promise.all([
+        // All users with gamification data
+        prisma.user.findMany({
+            where: { role: { not: 'Administrator' }, isSuspended: false },
+            select: {
+                id: true,
+                name: true,
+                role: true,
+                xp: true,
+                level: true,
+                currentStreak: true,
+                longestStreak: true,
+                _count: { select: { achievements: true } },
+            },
+        }),
+        // Leads per user in period
+        prisma.lead.groupBy({
+            by: ['ownerId'],
+            where: { createdAt: { gte: since }, ownerId: { not: null } },
+            _count: true,
+        }),
+        // Closed Won opportunities per user in period
+        prisma.opportunity.groupBy({
+            by: ['ownerId'],
+            where: { stage: 'Closed Won', updatedAt: { gte: since }, ownerId: { not: null } },
+            _count: true,
+        }),
+        // All opportunities per user in period (for win rate calc)
+        prisma.opportunity.groupBy({
+            by: ['ownerId'],
+            where: { createdAt: { gte: since }, ownerId: { not: null } },
+            _count: true,
+        }),
+        // Completed tasks per user in period
+        prisma.task.groupBy({
+            by: ['ownerId'],
+            where: { completed: true, completedAt: { gte: since }, ownerId: { not: null } },
+            _count: true,
+        }),
+        // XP earned per user in period
+        prisma.xPHistory.groupBy({
+            by: ['userId'],
+            where: { createdAt: { gte: since } },
+            _sum: { xpAwarded: true },
+        }),
+        // Attendance hours per user in period
+        prisma.attendanceRecord.groupBy({
+            by: ['userId'],
+            where: { punchIn: { gte: since }, duration: { not: null } },
+            _sum: { duration: true },
+        }),
+    ])
 
     // Build leaderboard entries
     const leaderboard = users.map((u) => {

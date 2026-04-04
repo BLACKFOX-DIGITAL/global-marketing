@@ -5,6 +5,7 @@ import {
     startOfDay, startOfWeek, startOfMonth, startOfQuarter, startOfYear,
     subMonths
 } from 'date-fns'
+import type { Prisma } from '@prisma/client'
 
 function getStartDate(period: string): Date {
     const now = new Date()
@@ -28,7 +29,7 @@ export async function GET(req: NextRequest) {
 
     const since = getStartDate(period)
 
-    const statsWhere: any = {
+    const statsWhere: Prisma.LeadWhereInput = {
         isDeleted: false,
     }
 
