@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
-import { getCurrentUser } from '@/lib/auth'
+import { getCurrentUser, isManager } from '@/lib/auth'
 import { awardXP } from '@/lib/gamification'
 
 export async function GET(req: NextRequest) {
@@ -14,7 +14,7 @@ export async function GET(req: NextRequest) {
 
     const where: any = {}
     
-    if (user.role !== 'Administrator' && user.role !== 'Manager') {
+    if (!isManager(user)) {
         where.ownerId = user.userId
     }
 
@@ -44,8 +44,8 @@ export async function GET(req: NextRequest) {
     }
     if (leadId) where.leadId = leadId
 
-    const page = parseInt(searchParams.get('page') || '1')
-    const limit = parseInt(searchParams.get('limit') || '10')
+    const page = Math.max(1, parseInt(searchParams.get('page') || '1') || 1)
+    const limit = Math.min(100, Math.max(1, parseInt(searchParams.get('limit') || '10') || 10))
     const skip = (page - 1) * limit
 
     const [tasks, total, countsData] = await Promise.all([
@@ -63,7 +63,7 @@ export async function GET(req: NextRequest) {
         // Get counts for all tabs in one go
         prisma.task.groupBy({
             by: ['completed'],
-            where: user.role !== 'Administrator' && user.role !== 'Manager' ? { ownerId: user.userId } : {},
+            where: user.role !== 'Administrator' ? { ownerId: user.userId } : {},
             _count: true
         })
     ])
@@ -71,7 +71,7 @@ export async function GET(req: NextRequest) {
     // Get overdue count specifically
     const overdueCount = await prisma.task.count({
         where: {
-            ...(user.role !== 'Administrator' && user.role !== 'Manager' ? { ownerId: user.userId } : {}),
+            ...(user.role !== 'Administrator' ? { ownerId: user.userId } : {}),
             completed: false,
             dueDate: { lt: new Date() }
         }
@@ -106,6 +106,16 @@ export async function POST(req: NextRequest) {
         if (!body.leadId) {
             return NextResponse.json({ error: 'leadId is required. Every task must be linked to a lead.' }, { status: 400 })
         }
+        if (!body.title?.trim()) {
+            return NextResponse.json({ error: 'Task title is required.' }, { status: 400 })
+        }
+
+        // Sales reps can only link tasks to their own leads
+        if (user.role !== 'Administrator') {
+            const lead = await prisma.lead.findUnique({ where: { id: body.leadId }, select: { ownerId: true } })
+            if (!lead) return NextResponse.json({ error: 'Lead not found' }, { status: 404 })
+            if (lead.ownerId !== user.userId) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+        }
 
         const task = await prisma.task.create({
             data: {
@@ -115,7 +125,7 @@ export async function POST(req: NextRequest) {
                 priority: body.priority || 'Medium',
                 dueDate: body.dueDate ? new Date(body.dueDate) : null,
                 recurrence: body.recurrence || 'None',
-                ownerId: body.ownerId || user.userId,
+                ownerId: user.role === 'Administrator' ? (body.ownerId || user.userId) : user.userId,
                 leadId: body.leadId,
             },
             include: {

@@ -44,7 +44,7 @@ function StatusBadge({ active }: { active: boolean }) {
     return (
         <div style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'rgba(245,158,11,0.1)', color: '#f59e0b', padding: '4px 10px', borderRadius: 100, fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.5px' }}>
             <div style={{ width: 6, height: 6, borderRadius: '50%', background: '#f59e0b' }} />
-            Off Duty
+            Not Clocked In
         </div>
     )
 }
@@ -57,7 +57,9 @@ export default function AttendancePage() {
     const [punching, setPunching] = useState(false)
     const [recentRecords, setRecentRecords] = useState<AttendanceRecord[]>([])
     const [todayMinutes, setTodayMinutes] = useState(0)
+    const [now, setNow] = useState(new Date())
     const timerRef = useRef<NodeJS.Timeout | null>(null)
+    const clockRef = useRef<NodeJS.Timeout | null>(null)
 
     // Fetch status on load
     useEffect(() => {
@@ -87,6 +89,12 @@ export default function AttendancePage() {
         return () => { if (timerRef.current) clearInterval(timerRef.current) }
     }, [punchedIn])
 
+    // Live clock
+    useEffect(() => {
+        clockRef.current = setInterval(() => setNow(new Date()), 1000)
+        return () => { if (clockRef.current) clearInterval(clockRef.current) }
+    }, [])
+
     async function handlePunch() {
         setPunching(true)
         const res = await fetch('/api/attendance/punch', { method: 'POST' })
@@ -107,8 +115,6 @@ export default function AttendancePage() {
         setPunching(false)
     }
 
-    const now = new Date()
-
     if (loading) return (
             <div className="crm-content" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: 400, paddingTop: 16 }}>
                 <div className="spinner" style={{ width: 32, height: 32 }} />
@@ -123,7 +129,7 @@ export default function AttendancePage() {
                             <h2>Attendance</h2>
                             <StatusBadge active={punchedIn} />
                         </div>
-                        <p>Track your daily work hours with punch in and out.</p>
+                        <p>Track your daily work hours by clocking in and out.</p>
                     </div>
                     <NotificationCenter />
                 </div>
@@ -160,7 +166,7 @@ export default function AttendancePage() {
                                 {formatDuration(elapsed)}
                             </div>
                             <div style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 4 }}>
-                                {punchedIn ? 'Time Elapsed' : 'Not Punched In'}
+                                {punchedIn ? 'Time Elapsed' : 'Not Started'}
                             </div>
                         </div>
 
@@ -186,15 +192,15 @@ export default function AttendancePage() {
                             {punching ? (
                                 <div className="spinner" />
                             ) : punchedIn ? (
-                                <><Square size={18} fill="white" /> Punch Out</>
+                                <><Square size={18} fill="white" /> Clock Out</>
                             ) : (
-                                <><Play size={18} fill="white" /> Punch In</>
+                                <><Play size={18} fill="white" /> Clock In</>
                             )}
                         </button>
 
                         {punchedIn && currentRecord && (
                             <div style={{ marginTop: 16, fontSize: 12, color: 'var(--text-muted)' }}>
-                                Punched in at {format(new Date(currentRecord.punchIn), 'hh:mm a')}
+                                Clocked in at {format(new Date(currentRecord.punchIn), 'hh:mm a')}
                             </div>
                         )}
                     </div>
@@ -231,7 +237,7 @@ export default function AttendancePage() {
                         <div className="card" style={{ padding: 0 }}>
                             <div style={{ padding: '14px 18px', borderBottom: '1px solid var(--border)', fontWeight: 600, fontSize: 14 }}>Recent Activity</div>
                             {recentRecords.length === 0 && (
-                                <div style={{ padding: 20, color: 'var(--text-muted)', textAlign: 'center', fontSize: 13 }}>No records today</div>
+                                <div style={{ padding: 20, color: 'var(--text-muted)', textAlign: 'center', fontSize: 13 }}>No sessions recorded today</div>
                             )}
                             {recentRecords.map(rec => (
                                 <div key={rec.id} style={{ padding: '10px 18px', borderBottom: '1px solid var(--border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -242,7 +248,7 @@ export default function AttendancePage() {
                                         </div>
                                     </div>
                                     <div style={{ fontSize: 12, fontWeight: 600, color: rec.punchOut ? '#10b981' : '#f59e0b' }}>
-                                        {rec.duration ? formatMinutes(rec.duration) : 'Active'}
+                                        {rec.duration ? formatMinutes(rec.duration) : 'In Progress'}
                                     </div>
                                 </div>
                             ))}

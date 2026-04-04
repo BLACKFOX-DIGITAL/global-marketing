@@ -113,11 +113,7 @@ export default function GoalsPage() {
                         <Target size={20} strokeWidth={2.5} />
                     </div>
                     <div>
-                        <h1 style={{ fontSize: 18, fontWeight: 900, letterSpacing: '-0.5px', margin: 0, color: '#f8fafc' }}>Fleet Performance Goals</h1>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 11, color: '#94a3b8', fontWeight: 600 }}>
-                            <div style={{ width: 8, height: 8, borderRadius: '50%', background: '#10b981', boxShadow: '0 0 8px #10b98160' }} />
-                            System Active • Live Sync Enabled
-                        </div>
+                        <h1 style={{ fontSize: 18, fontWeight: 900, letterSpacing: '-0.5px', margin: 0, color: '#f8fafc' }}>Team Performance Goals</h1>
                     </div>
                 </div>
 
@@ -277,8 +273,6 @@ export default function GoalsPage() {
             {/* MINI METHODOLOGY FOOTER */}
             <div style={{ marginTop: 20, display: 'flex', gap: 16, overflowX: 'auto', paddingBottom: 10 }}>
                 <div className="mini-card"><Trophy size={14} color="#f59e0b" /> <span>Targets influence quarterly tier bonuses</span></div>
-                <div className="mini-card"><AlertCircle size={14} color="#f43f5e" /> <span>System lock triggers every Friday 17:00</span></div>
-                <div className="mini-card"><TrendingUp size={14} color="#10b981" /> <span>Real-time fleet sync active</span></div>
             </div>
 
             <style jsx global>{`

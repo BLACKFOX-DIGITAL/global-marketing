@@ -10,17 +10,10 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     const { id } = await params
 
     try {
-        const lead = await prisma.lead.findUnique({ where: { id } })
-        if (!lead || lead.ownerId) {
-            return NextResponse.json({ error: 'Lead not available' }, { status: 400 })
-        }
+        // Fetch claim limit before entering transaction
+        const claimLimitSetting = await prisma.systemSetting.findUnique({ where: { key: 'CLAIM_LIMIT' } })
+        const CLAIM_LIMIT = parseInt(claimLimitSetting?.value || '50')
 
-        // Check if user is the previous owner (fresh eyes rule)
-        if (lead.previousOwnerId === user.userId) {
-            return NextResponse.json({ error: 'You cannot reclaim a lead you previously owned. This is reserved for fresh eyes.' }, { status: 403 })
-        }
-
-        // Check 50 lead limit from pool
         const currentPoolLeadsCount = await prisma.lead.count({
             where: {
                 ownerId: user.userId,
@@ -29,24 +22,33 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
             }
         })
 
-        // Check dynamic claim limit from settings
-        const claimLimitSetting = await prisma.systemSetting.findUnique({
-            where: { key: 'CLAIM_LIMIT' }
-        })
-        const CLAIM_LIMIT = parseInt(claimLimitSetting?.value || '50')
-
         if (currentPoolLeadsCount >= CLAIM_LIMIT) {
-            return NextResponse.json({ error: `You have reached the limit of ${CLAIM_LIMIT} active leads claimed from the pool. Close some leads before claiming more.` }, { status: 403 })
+            return NextResponse.json({
+                error: `You have reached the limit of ${CLAIM_LIMIT} active leads claimed from the pool. Close some leads before claiming more.`
+            }, { status: 403 })
         }
 
-        const updatedLead = await prisma.lead.update({
-            where: { id },
-            data: {
-                ownerId: user.userId,
-                status: 'New',
-                isClaimedFromPool: true,
-                lastActivityAt: new Date()
+        // Use a transaction to prevent two users claiming the same lead simultaneously
+        const updatedLead = await prisma.$transaction(async (tx) => {
+            const lead = await tx.lead.findUnique({ where: { id } })
+
+            if (!lead || lead.ownerId !== null) {
+                throw new Error('LEAD_NOT_AVAILABLE')
             }
+
+            if (lead.previousOwnerId === user.userId) {
+                throw new Error('FRESH_EYES')
+            }
+
+            return tx.lead.update({
+                where: { id },
+                data: {
+                    ownerId: user.userId,
+                    status: 'New',
+                    isClaimedFromPool: true,
+                    lastActivityAt: new Date(),
+                }
+            })
         })
 
         await logActivity({
@@ -57,12 +59,17 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
             leadId: id
         })
 
-        // Award XP for claiming from pool
-        const gamification = await awardXP(user.userId, 'POOL_CLAIM')
+        const gamification = await awardXP(user.userId, 'POOL_CLAIM', 'POOL_CLAIM', id)
 
         return NextResponse.json({ ...updatedLead, gamification })
-    } catch (err) {
-        console.error('Claim error', err)
+    } catch (err: unknown) {
+        const msg = (err as Error).message
+        if (msg === 'LEAD_NOT_AVAILABLE') {
+            return NextResponse.json({ error: 'Lead not available' }, { status: 400 })
+        }
+        if (msg === 'FRESH_EYES') {
+            return NextResponse.json({ error: 'You cannot reclaim a lead you previously owned. This is reserved for fresh eyes.' }, { status: 403 })
+        }
         return NextResponse.json({ error: 'Failed to claim lead' }, { status: 500 })
     }
 }

@@ -109,8 +109,8 @@ export function AttendanceWidget() {
                         <Timer size={22} />
                     </div>
                     <div>
-                        <h3 style={{ fontSize: 16, fontWeight: 700, margin: 0 }}>Work Session</h3>
-                        <p style={{ fontSize: 11, color: 'var(--text-muted)', margin: 0 }}>{punchedIn ? 'In Progress' : 'Pending'}</p>
+                        <h3 style={{ fontSize: 16, fontWeight: 700, margin: 0 }}>Today&apos;s Attendance</h3>
+                        <p style={{ fontSize: 11, color: 'var(--text-muted)', margin: 0 }}>{punchedIn ? 'In Progress' : 'Not started'}</p>
                     </div>
                 </div>
                 <div style={{ textAlign: 'right' }}>
@@ -144,14 +144,14 @@ export function AttendanceWidget() {
                         transition: 'all 0.2s'
                     }}
                 >
-                    {punching ? '...' : punchedIn ? <><Square size={16} fill="white" /> Finish Shift</> : <><Play size={16} fill="white" /> Start Shift</>}
+                    {punching ? '...' : punchedIn ? <><Square size={16} fill="white" /> Stop</> : <><Play size={16} fill="white" /> Start</>}
                 </button>
             </div>
 
             {/* Last Sessions mini-list */}
             <div style={{ marginTop: 4 }}>
                 <div style={{ fontSize: 10, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.5px', fontWeight: 700, marginBottom: 8, display: 'flex', alignItems: 'center', gap: 6 }}>
-                    <History size={12} /> Recent Sessions
+                    <History size={12} /> Recent Activity
                 </div>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
                     {lastRecords.length === 0 ? (

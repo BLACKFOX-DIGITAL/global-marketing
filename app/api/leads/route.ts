@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
-import { getCurrentUser } from '@/lib/auth'
+import { getCurrentUser, isManager } from '@/lib/auth'
 import { awardXP } from '@/lib/gamification'
 import { rateLimit, getClientIp } from '@/lib/rateLimit'
 import { sanitizeObject } from '@/lib/sanitize'
@@ -23,7 +23,7 @@ export async function GET(req: NextRequest) {
 
         const where: any = { isDeleted: false }
 
-        if (user.role !== 'Administrator' && user.role !== 'Manager') {
+        if (!isManager(user)) {
             where.ownerId = user.userId
         }
 
@@ -151,7 +151,7 @@ export async function POST(req: NextRequest) {
             include: { owner: { select: { id: true, name: true, email: true } }, contacts: true },
         })
         // Award XP for Manual Lead Creation
-        const gamificationResult = await awardXP(user.userId, 'LEAD_CREATED')
+        const gamificationResult = await awardXP(user.userId, 'LEAD_CREATED', 'LEAD_CREATED', lead.id)
 
         return NextResponse.json({ ...lead, gamificationResult }, { status: 201 })
     } catch (err) {

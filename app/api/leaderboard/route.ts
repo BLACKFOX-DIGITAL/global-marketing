@@ -22,7 +22,8 @@ export async function GET(req: NextRequest) {
     // Get all users with gamification data
     const users = await prisma.user.findMany({
         where: {
-            role: { not: 'Administrator' }
+            role: { not: 'Administrator' },
+            isSuspended: false,
         },
         select: {
             id: true,
@@ -32,9 +33,7 @@ export async function GET(req: NextRequest) {
             level: true,
             currentStreak: true,
             longestStreak: true,
-            achievements: {
-                include: { achievement: true }
-            }
+            _count: { select: { achievements: true } },
         },
     })
 
@@ -77,6 +76,13 @@ export async function GET(req: NextRequest) {
         _count: true,
     })
 
+    // Get XP earned per user in period (for period-aware ranking)
+    const xpInPeriodData = await prisma.xPHistory.groupBy({
+        by: ['userId'],
+        where: { createdAt: { gte: since } },
+        _sum: { xpAwarded: true },
+    })
+
     // Get attendance hours per user in period
     const attendanceData = await prisma.attendanceRecord.groupBy({
         by: ['userId'],
@@ -95,17 +101,19 @@ export async function GET(req: NextRequest) {
         const winRate = totalOpps > 0 ? Math.round((closedWon / totalOpps) * 100) : 0
         const tasksCompleted = tasksData.find((t: { ownerId: string | null }) => t.ownerId === u.id)?._count || 0
         const hoursWorked = Math.round((attendanceData.find((a: { userId: string }) => a.userId === u.id)?._sum?.duration || 0) / 60)
+        const periodXp = xpInPeriodData.find((x: { userId: string }) => x.userId === u.id)?._sum?.xpAwarded || 0
 
         return {
             id: u.id,
             name: u.name,
             role: u.role,
             xp: u.xp,
+            periodXp,
             level: u.level,
             title: getTitleForLevel(u.level),
             currentStreak: u.currentStreak,
             longestStreak: u.longestStreak,
-            badgeCount: u.achievements.length,
+            badgeCount: u._count.achievements,
             leads,
             closedWon,
             winRate,
@@ -115,8 +123,8 @@ export async function GET(req: NextRequest) {
         }
     })
 
-    // Sort by XP descending (primary ranking metric)
-    leaderboard.sort((a, b) => b.xp - a.xp)
+    // Sort by XP earned in the selected period (period-aware ranking)
+    leaderboard.sort((a, b) => b.periodXp - a.periodXp)
 
     // Add rank
     const ranked = leaderboard.map((entry, i: number) => ({ ...entry, rank: i + 1 }))

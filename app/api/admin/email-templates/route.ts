@@ -3,8 +3,9 @@ import { prisma } from '@/lib/prisma'
 import { getCurrentUser, isAdmin } from '@/lib/auth'
 
 export async function GET() {
+    // Any authenticated user can read templates (needed by Sales Reps to use the email modal)
     const user = await getCurrentUser()
-    if (!isAdmin(user)) {
+    if (!user) {
         return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
@@ -13,8 +14,8 @@ export async function GET() {
             orderBy: { name: 'asc' }
         })
         return NextResponse.json({ templates })
-    } catch (err: any) {
-        return NextResponse.json({ error: err.message }, { status: 500 })
+    } catch {
+        return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
     }
 }
 
@@ -36,10 +37,10 @@ export async function POST(req: NextRequest) {
         })
 
         return NextResponse.json(template)
-    } catch (err: any) {
-        if (err.code === 'P2002') {
+    } catch (err: unknown) {
+        if ((err as { code?: string }).code === 'P2002') {
             return NextResponse.json({ error: 'Template name already exists' }, { status: 400 })
         }
-        return NextResponse.json({ error: err.message }, { status: 500 })
+        return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
     }
 }

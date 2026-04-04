@@ -602,7 +602,7 @@ export default function LeadDetailPage({ params }: { params: Promise<{ id: strin
         <div style={{ padding: '24px 32px' }}>
             {/* Breadcrumb */}
             <div style={{ color: 'var(--text-muted)', fontSize: 13, marginBottom: 24, display: 'flex', alignItems: 'center', gap: 8 }}>
-                <Link href="/leads" style={{ color: 'var(--text-muted)', textDecoration: 'none' }}>Leads</Link>
+                <Link href="/customers" style={{ color: 'var(--text-muted)', textDecoration: 'none' }}>Customers</Link>
                 <span>›</span>
                 <span style={{ color: 'var(--text-primary)', fontWeight: 600 }}>{lead.name}</span>
             </div>
@@ -995,7 +995,7 @@ export default function LeadDetailPage({ params }: { params: Promise<{ id: strin
                             </div>
                             <div>
                                 <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-primary)' }}>{lead.owner?.name || 'Unassigned'}</div>
-                                <div style={{ fontSize: 11, color: 'var(--text-muted)' }}>Account Executive</div>
+                                <div style={{ fontSize: 11, color: 'var(--text-muted)' }}>Sales Rep</div>
                             </div>
                         </div>
                     </div>

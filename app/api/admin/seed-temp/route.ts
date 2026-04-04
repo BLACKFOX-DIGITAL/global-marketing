@@ -1,9 +1,15 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
+import { getCurrentUser } from '@/lib/auth'
 
 export const dynamic = 'force-dynamic'
 
 export async function GET() {
+    const user = await getCurrentUser()
+    if (!user || user.role !== 'Administrator') {
+        return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+    }
+
     try {
         const options = [
 {"category":"LEAD_STATUS","value":"New","color":"#6366f1","order":0},
@@ -28,20 +34,18 @@ export async function GET() {
 {"category":"OPPORTUNITY_STAGE","value":"Closed Won","color":"#10b981","order":5},
 {"category":"OPPORTUNITY_STAGE","value":"Closed Lost","color":"#ef4444","order":6}
         ]
-        
-        // This acts as a soft sync to ensure all standard definitions exist
-        await prisma.systemOption.deleteMany({
-            where: {
-                category: { in: ['LEAD_STATUS', 'LEAD_INDUSTRY', 'OPPORTUNITY_STAGE', 'TASK_PRIORITY', 'LEAVE_TYPE'] }
-            }
-        })
 
-        await prisma.systemOption.createMany({
-            data: options
-        })
+        // Use upsert to safely sync without destroying existing custom options
+        for (const opt of options) {
+            await prisma.systemOption.upsert({
+                where: { category_value: { category: opt.category, value: opt.value } },
+                update: { color: opt.color, order: opt.order },
+                create: opt
+            })
+        }
 
-        return NextResponse.json({ success: true, message: "Standard settings successfully migrated to Live database!" })
+        return NextResponse.json({ success: true, message: "Standard settings synced." })
     } catch(e) {
-        return NextResponse.json({ error: String(e) }, { status: 500 })
+        return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 })
     }
 }

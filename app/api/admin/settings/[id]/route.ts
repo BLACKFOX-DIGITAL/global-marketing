@@ -19,9 +19,8 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
 
         return NextResponse.json(updated)
     } catch (err: unknown) {
-        const error = err as { code?: string; message: string }
-        if (error.code === 'P2002') return NextResponse.json({ error: 'Option already exists' }, { status: 400 })
-        return NextResponse.json({ error: error.message }, { status: 500 })
+        if ((err as { code?: string }).code === 'P2002') return NextResponse.json({ error: 'Option already exists' }, { status: 400 })
+        return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
     }
 }
 
@@ -35,7 +34,7 @@ export async function DELETE(_req: NextRequest, { params }: { params: Promise<{ 
         const { id } = await params
         await prisma.systemOption.delete({ where: { id } })
         return NextResponse.json({ success: true })
-    } catch (err: unknown) {
-        return NextResponse.json({ error: (err as Error).message }, { status: 500 })
+    } catch {
+        return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
     }
 }

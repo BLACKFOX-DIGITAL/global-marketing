@@ -7,8 +7,8 @@ export async function GET(req: NextRequest) {
     if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
     const { searchParams } = new URL(req.url)
-    const page = parseInt(searchParams.get('page') || '1')
-    const limit = parseInt(searchParams.get('limit') || '10')
+    const page = Math.max(1, parseInt(searchParams.get('page') || '1') || 1)
+    const limit = Math.min(100, Math.max(1, parseInt(searchParams.get('limit') || '10') || 10))
     const search = searchParams.get('search') || ''
     const status = searchParams.get('status') || ''
 
@@ -30,11 +30,17 @@ export async function GET(req: NextRequest) {
     const [leads, total] = await Promise.all([
         prisma.lead.findMany({
             where,
-            include: {
-                // Include whatever is useful
-                owner: { select: { name: true } }
+            select: {
+                id: true,
+                name: true,
+                company: true,
+                email: true,
+                website: true,
+                industry: true,
+                status: true,
+                lastActivityAt: true,
             },
-            orderBy: { lastActivityAt: 'asc' }, // The ones waiting the longest
+            orderBy: { lastActivityAt: 'asc' },
             skip,
             take: limit,
         }),

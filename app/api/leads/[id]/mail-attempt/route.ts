@@ -4,12 +4,23 @@ import { getCurrentUser } from '@/lib/auth'
 import { logActivity } from '@/lib/activity'
 import { awardXP } from '@/lib/gamification'
 
+async function checkOwnership(leadId: string, userId: string, role: string): Promise<boolean> {
+    const lead = await prisma.lead.findUnique({ where: { id: leadId }, select: { ownerId: true } })
+    if (!lead) return false
+    if (role === 'Administrator') return true
+    return lead.ownerId === userId
+}
+
 export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
     const user = await getCurrentUser()
     if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     const { id } = await params
-    const body = await req.json()
 
+    if (!await checkOwnership(id, user.userId, user.role)) {
+        return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+    }
+
+    const body = await req.json()
     const { outcome, note } = body
     if (!outcome) return NextResponse.json({ error: 'Outcome required' }, { status: 400 })
 
@@ -24,10 +35,10 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
         })
 
         const statusOptions = await prisma.systemOption.findMany({ where: { category: 'LEAD_STATUS' } })
-        
+
         const mailStatusOpt = statusOptions.find(o => o.value.toLowerCase().includes('mail') || o.value.toLowerCase().includes('email'))
         const mailStatus = mailStatusOpt ? mailStatusOpt.value : 'Mail Sent'
-        
+
         const lostStatusOpt = statusOptions.find(o => o.value.toLowerCase() === 'lost' || o.value.toLowerCase().includes('lost'))
         const lostStatus = lostStatusOpt ? lostStatusOpt.value : 'Lost'
 
@@ -40,7 +51,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
                 ...(outcome === 'response_interested' ? { status: mailStatus } : {}),
                 ...(outcome === 'response_not_interested' ? { status: lostStatus } : {}),
                 lastActivityAt: new Date(),
-                lastMeaningfulActivityAt: new Date(), // Real sales action — resets reclaim clock
+                lastMeaningfulActivityAt: new Date(),
             }
         })
 
@@ -63,12 +74,10 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
             leadId: id,
         })
 
-        // Award XP for logging a mail
-        const gamification = await awardXP(user.userId, 'MAIL_ATTEMPT')
+        const gamification = await awardXP(user.userId, 'MAIL_ATTEMPT', 'MAIL_ATTEMPT', id)
 
         return NextResponse.json({ attempt, lead, gamification })
-    } catch (err) {
-        console.error('Mail attempt error:', err)
+    } catch {
         return NextResponse.json({ error: 'Failed to log mail attempt' }, { status: 500 })
     }
 }
@@ -77,6 +86,10 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
     const user = await getCurrentUser()
     if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     const { id } = await params
+
+    if (!await checkOwnership(id, user.userId, user.role)) {
+        return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+    }
 
     const attempts = await prisma.mailAttempt.findMany({
         where: { leadId: id },

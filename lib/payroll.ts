@@ -18,6 +18,8 @@ export interface SalaryReport {
     attendedDays: number
     approvedLeaveDays: number
     absentDays: number
+    makeupMinutes: number
+    coveredAbsentDays: number
     totalMinutesWorked: number
     hourlyRate: number
     finalSalary: number
@@ -40,17 +42,24 @@ export async function calculateMonthlySalary(userId: string, date: Date): Promis
                 where: {
                     status: 'Approved',
                     OR: [
+                        // Leave starts within the month
                         {
                             startDate: {
                                 gte: startOfMonth(date),
                                 lte: endOfMonth(date)
                             }
                         },
+                        // Leave ends within the month
                         {
                             endDate: {
                                 gte: startOfMonth(date),
                                 lte: endOfMonth(date)
                             }
+                        },
+                        // Leave fully spans the entire month (e.g. March 25 → May 5)
+                        {
+                            startDate: { lte: startOfMonth(date) },
+                            endDate:   { gte: endOfMonth(date) }
                         }
                     ]
                 }
@@ -89,18 +98,29 @@ export async function calculateMonthlySalary(userId: string, date: Date): Promis
     let approvedLeaveDaysCount = 0
     let absentDaysCount = 0
     let totalMinutesWorked = 0
+    let makeupMinutes = 0
 
-    // Sum up actual minutes worked from attendance records
+    // Sum up actual minutes worked from attendance records, excluding holidays
+    // (holidays are credited a flat 480 min below — actual hours worked that day must not stack on top)
+    // Weekend records are tracked separately as makeup minutes
     for (const record of user.attendance) {
-        totalMinutesWorked += (record.duration || 0)
+        const punchDate = new Date(record.punchIn)
+        const isOnHoliday = holidays.some(h => isSameDay(new Date(h.date), punchDate))
+        if (isOnHoliday) continue
+
+        if (isWeekend(punchDate)) {
+            makeupMinutes += (record.duration || 0)
+        } else {
+            totalMinutesWorked += (record.duration || 0)
+        }
     }
 
-    // Add 8 hours for each weekday holiday (Office-announced vacation)
+    // Credit 8 hours for each weekday holiday (paid day off)
     totalMinutesWorked += (weekdayHolidaysCount * 480)
 
     for (const day of workingDays) {
         // Check if user attended on this day
-        const hasAttendance = user.attendance.some(record => 
+        const hasAttendance = user.attendance.some(record =>
             isSameDay(new Date(record.punchIn), day)
         )
 
@@ -126,6 +146,14 @@ export async function calculateMonthlySalary(userId: string, date: Date): Promis
         // If neither, they are absent
         absentDaysCount++
     }
+
+    // Add makeup minutes to the salary calculation (capped later at target)
+    totalMinutesWorked += makeupMinutes
+
+    // How many absent days are fully covered by weekend makeup time
+    const coveredAbsentDays = Math.min(absentDaysCount, Math.floor(makeupMinutes / 480))
+    // Adjust reported absent days to reflect makeup — salary already accounts for the hours
+    absentDaysCount = Math.max(0, absentDaysCount - coveredAbsentDays)
 
     // Calculation based on Hourly Rate
     // Target Days = Actual working days + Weekday Holidays
@@ -175,6 +203,8 @@ export async function calculateMonthlySalary(userId: string, date: Date): Promis
         attendedDays: attendedDaysCount,
         approvedLeaveDays: approvedLeaveDaysCount,
         absentDays: absentDaysCount,
+        makeupMinutes,
+        coveredAbsentDays,
         totalMinutesWorked,
         hourlyRate: Math.round(hourlyRate * 100) / 100,
         finalSalary: Math.round(finalSalary * 100) / 100,

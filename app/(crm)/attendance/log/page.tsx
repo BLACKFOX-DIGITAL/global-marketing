@@ -75,8 +75,8 @@ export default function AttendanceLogPage() {
 
 
     const currentPeriodObj = PERIODS.find(p => p.key === period)
-    const targetMinutes = currentPeriodObj ? currentPeriodObj.target : 0
-    const progressPercent = Math.min(100, Math.round((totalMinutes / targetMinutes) * 100))
+    const targetMinutes = currentPeriodObj?.target || 0
+    const progressPercent = targetMinutes > 0 ? Math.min(100, Math.round((totalMinutes / targetMinutes) * 100)) : 0
     const diffMinutes = totalMinutes - targetMinutes
     const isOvertime = diffMinutes > 0
 

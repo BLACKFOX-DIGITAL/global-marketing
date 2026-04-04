@@ -29,20 +29,25 @@ export async function POST(req: NextRequest) {
             return NextResponse.json({ error: 'Name and date are required' }, { status: 400 })
         }
 
+        const parsedDate = new Date(date)
+        if (isNaN(parsedDate.getTime())) {
+            return NextResponse.json({ error: 'Invalid date' }, { status: 400 })
+        }
+
         const holiday = await prisma.holiday.create({
             data: {
                 name,
                 description,
-                date: new Date(date),
+                date: parsedDate,
                 createdBy: user.userId
             }
         })
 
         return NextResponse.json(holiday, { status: 201 })
-    } catch (err: any) {
-        if (err.code === 'P2002') {
+    } catch (err: unknown) {
+        if ((err as { code?: string }).code === 'P2002') {
             return NextResponse.json({ error: 'A holiday already exists on this date' }, { status: 400 })
         }
-        return NextResponse.json({ error: err.message }, { status: 500 })
+        return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
     }
 }

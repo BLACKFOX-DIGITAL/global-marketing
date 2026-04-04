@@ -42,6 +42,6 @@ export async function POST(req: NextRequest) {
         if (error.code === 'P2002') {
             return NextResponse.json({ error: 'Option already exists in this category' }, { status: 400 })
         }
-        return NextResponse.json({ error: error.message }, { status: 500 })
+        return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 })
     }
 }

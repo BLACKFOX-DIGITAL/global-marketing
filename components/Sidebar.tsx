@@ -11,14 +11,14 @@ const NAV_ITEMS = [
     { href: '/opportunities', label: 'Opportunities', icon: Target },
     { href: '/pool', label: 'Lead Pool', icon: Waves },
     { href: '/customers', label: 'Customers', icon: Briefcase },
-    { href: '/tasks', label: 'Follow-Ups', icon: CheckSquare },
+    { href: '/tasks', label: 'Tasks', icon: CheckSquare },
     { href: '/leaderboard', label: 'Leaderboard', icon: Trophy },
 ]
 
 const HR_ITEMS = [
     { href: '/attendance', label: 'Attendance', icon: Clock },
-    { href: '/attendance/log', label: 'Attendance Log', icon: ClipboardList },
-    { href: '/leave', label: 'Leave Requests', icon: CalendarOff },
+    { href: '/attendance/log', label: 'My Log', icon: ClipboardList },
+    { href: '/leave', label: 'Leave', icon: CalendarOff },
 ]
 
 const ADMIN_PERFORMANCE = [
@@ -29,7 +29,7 @@ const ADMIN_PERFORMANCE = [
 
 const ADMIN_SYSTEM = [
     { href: '/admin/leads', label: 'Global Leads', icon: Users },
-    { href: '/admin/audit', label: 'Leads Activity', icon: ClipboardList },
+    { href: '/admin/audit', label: 'Activity Log', icon: ClipboardList },
     { href: '/admin/workforce', label: 'Attendance', icon: Clock },
     { href: '/admin/payroll', label: 'Payroll', icon: Banknote },
     { href: '/admin/settings', label: 'Settings', icon: Settings },
@@ -129,7 +129,7 @@ export default function Sidebar({ user }: SidebarProps) {
                 {user?.role !== 'Administrator' ? (
                     <>
                         <div className="nav-section">
-                            {!isCollapsed && <div className="nav-section-label">Operations Control</div>}
+                            {!isCollapsed && <div className="nav-section-label">Sales</div>}
                             {NAV_ITEMS.map(({ href, label, icon }) => {
                                 const active = pathname === href || (pathname.startsWith(href + '/') && href !== '/attendance')
                                 return <NavLink key={href} href={href} label={label} icon={icon} active={active} />
@@ -137,7 +137,7 @@ export default function Sidebar({ user }: SidebarProps) {
                         </div>
 
                         <div className="nav-section">
-                            {!isCollapsed && <div className="nav-section-label">Performance & HR</div>}
+                            {!isCollapsed && <div className="nav-section-label">HR</div>}
                             {HR_ITEMS.map(({ href, label, icon }) => {
                                 const active = pathname === href
                                 return <NavLink key={href} href={href} label={label} icon={icon} active={active} />

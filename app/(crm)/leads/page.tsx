@@ -1,6 +1,6 @@
 'use client'
 import React, { useState, useDeferredValue } from 'react'
-import Header from '@/components/Header' // Will remove after relocations
+import Header from '@/components/Header'
 import NotificationCenter from '@/components/NotificationCenter'
 import Link from 'next/link'
 import dynamic from 'next/dynamic'
@@ -146,7 +146,12 @@ export default function LeadsPage() {
         setDeleting(null)
     }
 
-    const pageNums = Array.from({ length: Math.min(totalPages, 5) }, (_, i) => i + 1)
+    // Build a window of up to 5 page numbers centred on the current page
+    const pageNums = (() => {
+        if (totalPages <= 5) return Array.from({ length: totalPages }, (_, i) => i + 1)
+        const start = Math.max(1, Math.min(page - 2, totalPages - 4))
+        return Array.from({ length: 5 }, (_, i) => start + i)
+    })()
 
     return (
         <div style={{ display: 'flex', flexDirection: 'column', height: '100%', overflow: 'hidden' }}>
@@ -156,7 +161,7 @@ export default function LeadsPage() {
                 }}>
                     <div style={{ display: 'flex', alignItems: 'baseline', gap: 12 }}>
                         <h2 style={{ marginBottom: 0 }}>Leads</h2>
-                        <span style={{ fontSize: 13, color: 'var(--text-muted)' }}>{total} total prospects</span>
+                        <span style={{ fontSize: 13, color: 'var(--text-muted)' }}>{total} leads</span>
                     </div>
 
                     <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
@@ -238,7 +243,7 @@ export default function LeadsPage() {
                         </div>
                     </div>
 
-                    <button className="btn-ghost" style={{ width: 32, height: 32, padding: 0 }}><Filter size={14} /></button>
+
                 </div>
 
                 <div className="card" style={{ padding: 0, display: 'flex', flexDirection: 'column', flex: 1, overflow: 'hidden' }}>
@@ -248,12 +253,12 @@ export default function LeadsPage() {
                         padding: '12px 18px', fontWeight: 600, fontSize: 13, color: 'var(--text-muted)',
                         textTransform: 'uppercase', letterSpacing: '0.05em', height: 44, alignItems: 'center'
                     }}>
-                        <div style={{ width: '20%' }}>Name & Company</div>
+                        <div style={{ width: '20%' }}>Company / Contact</div>
                         <div style={{ width: '18%' }}>Website & Email</div>
                         <div style={{ width: '10%' }}>Industry</div>
                         <div style={{ width: '8%' }}>Priority</div>
-                        <div style={{ width: '14%' }}>Call Activity</div>
-                        <div style={{ width: '14%' }}>Mail Activity</div>
+                        <div style={{ width: '14%' }}>Last Call</div>
+                        <div style={{ width: '14%' }}>Last Email</div>
                         <div style={{ width: '8%' }}>Status</div>
                         <div style={{ width: '8%', textAlign: 'right' }}>Actions</div>
                     </div>
@@ -309,24 +314,30 @@ export default function LeadsPage() {
                                                     ) : '—'}
                                                 </div>
                                                 <div style={{ width: '14%' }}>
-                                                    {lead.lastCallOutcome ? (
-                                                        <div style={{ fontSize: 11, color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: 6, fontWeight: 500 }}>
-                                                            <div style={{ width: 22, height: 22, borderRadius: '50%', background: 'rgba(245, 158, 11, 0.1)', color: '#f59e0b', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                                                                <PhoneCall size={10} />
+                                                    {lead.lastCallOutcome ? (() => {
+                                                        const CALL_LABELS: Record<string,string> = { connected_interested: 'Interested', no_answer: 'No Answer', voicemail: 'Voicemail Left', call_back_later: 'Call Back Later', connected_not_interested: 'Not Interested' }
+                                                        return (
+                                                            <div style={{ fontSize: 11, color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: 6, fontWeight: 500 }}>
+                                                                <div style={{ width: 22, height: 22, borderRadius: '50%', background: 'rgba(245, 158, 11, 0.1)', color: '#f59e0b', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                                                    <PhoneCall size={10} />
+                                                                </div>
+                                                                <span>{CALL_LABELS[lead.lastCallOutcome] || lead.lastCallOutcome.replace(/_/g, ' ')}</span>
                                                             </div>
-                                                            <span style={{ textTransform: 'capitalize' }}>{lead.lastCallOutcome.replace(/_/g, ' ')}</span>
-                                                        </div>
-                                                    ) : <span style={{ color: 'var(--text-muted)', fontSize: 11 }}>No Calls</span>}
+                                                        )
+                                                    })() : <span style={{ color: 'var(--text-muted)', fontSize: 11 }}>No calls yet</span>}
                                                 </div>
                                                 <div style={{ width: '14%' }}>
-                                                    {lead.lastMailOutcome ? (
-                                                        <div style={{ fontSize: 11, color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: 6, fontWeight: 500 }}>
-                                                            <div style={{ width: 22, height: 22, borderRadius: '50%', background: 'rgba(16, 185, 129, 0.1)', color: '#10b981', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                                                                <Mail size={10} />
+                                                    {lead.lastMailOutcome ? (() => {
+                                                        const MAIL_LABELS: Record<string,string> = { sent: 'Mail Sent', follow_up: 'Follow-up Sent', response_interested: 'Replied — Interested', response_not_interested: 'Replied — Not Interested' }
+                                                        return (
+                                                            <div style={{ fontSize: 11, color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: 6, fontWeight: 500 }}>
+                                                                <div style={{ width: 22, height: 22, borderRadius: '50%', background: 'rgba(16, 185, 129, 0.1)', color: '#10b981', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                                                    <Mail size={10} />
+                                                                </div>
+                                                                <span>{MAIL_LABELS[lead.lastMailOutcome] || lead.lastMailOutcome.replace(/_/g, ' ')}</span>
                                                             </div>
-                                                            <span style={{ textTransform: 'capitalize' }}>{lead.lastMailOutcome.replace(/_/g, ' ')}</span>
-                                                        </div>
-                                                    ) : <span style={{ color: 'var(--text-muted)', fontSize: 11 }}>No Emails</span>}
+                                                        )
+                                                    })() : <span style={{ color: 'var(--text-muted)', fontSize: 11 }}>No emails yet</span>}
                                                 </div>
                                                 <div style={{ width: '8%' }}>
                                                     <StatusBadge status={lead.status} />
@@ -349,17 +360,26 @@ export default function LeadsPage() {
 
                     <div style={{ padding: '12px 16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: '1px solid var(--border)', background: 'var(--bg-card)' }}>
                         <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>
-                            Showing {((page - 1) * 50) + 1}–{Math.min(page * 50, total)} of <strong style={{ color: 'var(--text-primary)' }}>{total}</strong> leads
+                            {total === 0
+                                ? 'No leads found'
+                                : <>Showing {((page - 1) * 50) + 1}–{Math.min(page * 50, total)} of <strong style={{ color: 'var(--text-primary)' }}>{total}</strong> leads</>
+                            }
                         </span>
                         <div className="pagination">
                             <button className="page-btn" onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page === 1}>
                                 <ChevronLeft size={14} />
                             </button>
+                            {pageNums[0] > 1 && <>
+                                <button className="page-btn" onClick={() => setPage(1)}>1</button>
+                                {pageNums[0] > 2 && <span style={{ color: 'var(--text-muted)', padding: '0 4px' }}>…</span>}
+                            </>}
                             {pageNums.map(n => (
                                 <button key={n} className={`page-btn ${n === page ? 'active' : ''}`} onClick={() => setPage(n)}>{n}</button>
                             ))}
-                            {totalPages > 5 && <span style={{ color: 'var(--text-muted)', padding: '0 4px' }}>...</span>}
-                            {totalPages > 5 && <button className={`page-btn ${totalPages === page ? 'active' : ''}`} onClick={() => setPage(totalPages)}>{totalPages}</button>}
+                            {pageNums[pageNums.length - 1] < totalPages && <>
+                                {pageNums[pageNums.length - 1] < totalPages - 1 && <span style={{ color: 'var(--text-muted)', padding: '0 4px' }}>…</span>}
+                                <button className={`page-btn ${totalPages === page ? 'active' : ''}`} onClick={() => setPage(totalPages)}>{totalPages}</button>
+                            </>}
                             <button className="page-btn" onClick={() => setPage(p => Math.min(totalPages, p + 1))} disabled={page === totalPages}>
                                 <ChevronRight size={14} />
                             </button>
@@ -394,7 +414,7 @@ export default function LeadsPage() {
                             </div>
                             <h3 style={{ fontSize: 22, fontWeight: 700, marginBottom: 8, color: 'var(--text-primary)' }}>Delete Lead</h3>
                             <p style={{ color: 'var(--text-secondary)', fontSize: 14, lineHeight: 1.6 }}>
-                                Are you sure you want to delete this lead? This action cannot be undone and will permanently remove all associated tasks, timelines, and files.
+                                This lead will be sent to the admin review queue for approval. Associated tasks and history will remain accessible to admins until permanently removed.
                             </p>
                         </div>
                         <div style={{ display: 'flex', gap: 12, justifyContent: 'center' }}>

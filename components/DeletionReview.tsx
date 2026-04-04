@@ -17,6 +17,7 @@ export default function DeletionReview() {
     const [loading, setLoading] = useState(true)
     const [deletedLeads, setDeletedLeads] = useState<DeletedLead[]>([])
     const [processingId, setProcessingId] = useState<string | null>(null)
+    const [purgeConfirmId, setPurgeConfirmId] = useState<string | null>(null)
 
     const fetchDeletions = useCallback(async () => {
         setLoading(true)
@@ -39,9 +40,13 @@ export default function DeletionReview() {
         setProcessingId(null)
     }
 
-    const handlePermanentDelete = async (id: string) => {
-        if (!confirm('This action cannot be undone. Purge this data permanently?')) return
+    const handlePermanentDelete = (id: string) => {
+        setPurgeConfirmId(id)
+    }
+
+    const executePermanentDelete = async (id: string) => {
         setProcessingId(id)
+        setPurgeConfirmId(null)
         const res = await fetch(`/api/admin/deletions/${id}`, { method: 'DELETE' })
         if (res.ok) fetchDeletions()
         setProcessingId(null)
@@ -54,8 +59,8 @@ export default function DeletionReview() {
                     <AlertTriangle size={18} strokeWidth={2.5} />
                 </div>
                 <div>
-                    <h3 style={{ fontSize: 13, fontWeight: 900, margin: 0, color: '#f43f5e', textTransform: 'uppercase', letterSpacing: '1px' }}>Critical Action Queue</h3>
-                    <div style={{ fontSize: 10, fontWeight: 700, color: '#64748b' }}>Awaiting terminal data purge authorization</div>
+                    <h3 style={{ fontSize: 13, fontWeight: 900, margin: 0, color: '#f43f5e', textTransform: 'uppercase', letterSpacing: '1px' }}>Deletion Review</h3>
+                    <div style={{ fontSize: 10, fontWeight: 700, color: '#64748b' }}>Restore or permanently delete soft-deleted records</div>
                 </div>
                 <div style={{ marginLeft: 'auto', background: 'rgba(244, 63, 94, 0.1)', color: '#f43f5e', padding: '4px 12px', borderRadius: 8, fontSize: 10, fontWeight: 900, letterSpacing: '0.5px', border: '1px solid rgba(244, 63, 94, 0.2)' }}>
                     {deletedLeads.length} PENDING REVIEW
@@ -66,18 +71,18 @@ export default function DeletionReview() {
                 <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', minWidth: 800 }}>
                     <thead style={{ background: 'rgba(255,255,255,0.02)', borderBottom: '1px solid var(--border)' }}>
                         <tr style={{ color: 'var(--text-muted)', fontSize: 10, textTransform: 'uppercase', letterSpacing: '1px' }}>
-                            <th style={{ padding: '12px 20px', fontWeight: 800, width: 320 }}>Entity Identity</th>
+                            <th style={{ padding: '12px 20px', fontWeight: 800, width: 320 }}>Name</th>
                             <th style={{ padding: '12px 20px', fontWeight: 800, width: 120 }}>Type</th>
-                            <th style={{ padding: '12px 20px', fontWeight: 800, width: 180 }}>Associated Org</th>
-                            <th style={{ padding: '12px 20px', fontWeight: 800, width: 180 }}>Termination Log</th>
-                            <th style={{ padding: '12px 20px', fontWeight: 800 }}>Strategic Action</th>
+                            <th style={{ padding: '12px 20px', fontWeight: 800, width: 180 }}>Company</th>
+                            <th style={{ padding: '12px 20px', fontWeight: 800, width: 180 }}>Deleted At</th>
+                            <th style={{ padding: '12px 20px', fontWeight: 800 }}>Actions</th>
                         </tr>
                     </thead>
                     <tbody>
                         {loading ? (
                             <tr><td colSpan={4} style={{ textAlign: 'center', padding: 80 }}><div className="spinner" /></td></tr>
                         ) : deletedLeads.length === 0 ? (
-                            <tr><td colSpan={4} style={{ textAlign: 'center', padding: 80, color: '#475569', fontSize: 12, fontWeight: 700 }}>SYSTEM NOMINAL • DELETION QUEUE CLEAR</td></tr>
+                            <tr><td colSpan={5} style={{ textAlign: 'center', padding: 80, color: '#475569', fontSize: 12, fontWeight: 700 }}>No items pending deletion</td></tr>
                         ) : (
                             deletedLeads.map((lead) => (
                                 <tr key={lead.id} style={{ borderBottom: '1px solid var(--border)', transition: 'all 0.2s', background: 'transparent' }}>
@@ -86,7 +91,7 @@ export default function DeletionReview() {
                                             <div style={{ width: 28, height: 28, borderRadius: 8, background: 'linear-gradient(135deg, #451a1a, #1a0505)', border: '1px solid rgba(244, 63, 94, 0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 10, fontWeight: 900, color: '#f43f5e', flexShrink: 0 }}>{(lead.company || 'L')[0].toUpperCase()}</div>
                                             <div>
                                                 <div style={{ fontWeight: 800, fontSize: 12, color: '#f8fafc' }}>{lead.name}</div>
-                                                <div style={{ fontSize: 9, color: '#f43f5e', fontWeight: 900, textTransform: 'uppercase', letterSpacing: '0.4px', marginTop: 2 }}>Queued for Deprecation</div>
+                                                <div style={{ fontSize: 9, color: '#f43f5e', fontWeight: 900, textTransform: 'uppercase', letterSpacing: '0.4px', marginTop: 2 }}>Pending deletion</div>
                                             </div>
                                         </div>
                                     </td>
@@ -116,7 +121,7 @@ export default function DeletionReview() {
                                                 disabled={processingId === lead.id}
                                                 style={{ padding: '4px 12px', fontSize: 10, borderRadius: 6, background: '#f43f5e', border: 'none', color: '#fff', fontWeight: 800, display: 'flex', alignItems: 'center', gap: 4, cursor: processingId === lead.id ? 'not-allowed' : 'pointer', transition: 'all 0.2s', boxShadow: '0 4px 12px rgba(244, 63, 94, 0.1)' }}
                                             >
-                                                <Trash2 size={11} strokeWidth={2.5} /> Purge
+                                                <Trash2 size={11} strokeWidth={2.5} /> Delete Forever
                                             </button>
                                         </div>
                                     </td>
@@ -126,6 +131,28 @@ export default function DeletionReview() {
                     </tbody>
                 </table>
             </div>
+
+            {purgeConfirmId && (
+                <div className="modal-overlay" onClick={e => e.target === e.currentTarget && setPurgeConfirmId(null)}>
+                    <div className="modal" style={{ maxWidth: 440, padding: 32 }}>
+                        <div style={{ textAlign: 'center', marginBottom: 24 }}>
+                            <div style={{ width: 64, height: 64, background: 'rgba(239, 68, 68, 0.1)', color: '#ef4444', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px' }}>
+                                <Trash2 size={32} />
+                            </div>
+                            <h3 style={{ fontSize: 22, fontWeight: 700, marginBottom: 8, color: 'var(--text-primary)' }}>Purge Record Permanently</h3>
+                            <p style={{ color: 'var(--text-secondary)', fontSize: 14, lineHeight: 1.6 }}>
+                                This action <strong style={{ color: '#ef4444' }}>cannot be undone</strong>. Are you sure you want to permanently delete this lead and all associated data from the system?
+                            </p>
+                        </div>
+                        <div style={{ display: 'flex', gap: 12, justifyContent: 'center' }}>
+                            <button className="btn-secondary" onClick={() => setPurgeConfirmId(null)} style={{ flex: 1, padding: '12px 0' }}>Cancel</button>
+                            <button className="btn-primary" onClick={() => executePermanentDelete(purgeConfirmId)} style={{ flex: 1, padding: '12px 0', background: '#ef4444', borderColor: '#ef4444' }}>
+                                Yes, Purge Data
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     )
 }

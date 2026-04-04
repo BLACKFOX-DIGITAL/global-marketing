@@ -11,7 +11,7 @@ export async function GET() {
     const endOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1)
     const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1)
 
-    const isTeamView = user.role === 'Administrator' || user.role === 'Manager'
+    const isTeamView = user.role === 'Administrator'
     const filter = isTeamView ? {} : { ownerId: user.userId }
 
     const [

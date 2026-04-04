@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
-import { getCurrentUser } from '@/lib/auth'
+import { getCurrentUser, isManager } from '@/lib/auth'
 
 export async function DELETE(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
     const user = await getCurrentUser()
@@ -24,8 +24,7 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
     const user = await getCurrentUser()
     if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
-    const isManager = user.role === 'Administrator'
-    if (!isManager) {
+    if (!isManager(user)) {
         return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
 

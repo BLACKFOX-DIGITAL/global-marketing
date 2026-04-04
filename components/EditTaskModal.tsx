@@ -118,7 +118,7 @@ export default function EditTaskModal({ taskId, onClose, onSuccess, leads, prior
                         description: data.description || '',
                         taskType: data.taskType || 'Follow-up',
                         priority: data.priority || 'Medium',
-                        dueDate: data.dueDate ? data.dueDate.split('T')[0] : '',
+                        dueDate: data.dueDate ? new Date(data.dueDate).toISOString().slice(0, 16) : '',
                         leadId: data.leadId || '',
                     })
                 }
@@ -221,8 +221,8 @@ export default function EditTaskModal({ taskId, onClose, onSuccess, leads, prior
 
                     <div className="grid-2">
                         <div className="form-group">
-                            <label className="form-label">Due Date</label>
-                            <input type="date" value={form.dueDate} onChange={e => setForm(f => ({ ...f, dueDate: e.target.value }))} />
+                            <label className="form-label">Due Date & Time</label>
+                            <input type="datetime-local" value={form.dueDate} onChange={e => setForm(f => ({ ...f, dueDate: e.target.value }))} />
                         </div>
                         <div className="form-group">
                             <label className="form-label">Priority</label>

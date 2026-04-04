@@ -15,6 +15,9 @@ export async function GET(req: NextRequest) {
     let where = {}
     if (dateStr) {
         const targetDate = parseISO(dateStr)
+        if (isNaN(targetDate.getTime())) {
+            return NextResponse.json({ error: 'Invalid date format' }, { status: 400 })
+        }
         where = {
             punchIn: {
                 gte: startOfDay(targetDate),
@@ -23,11 +26,18 @@ export async function GET(req: NextRequest) {
         }
     }
 
-    const records = await prisma.attendanceRecord.findMany({
-        where,
-        include: { user: { select: { id: true, name: true, email: true, role: true } } },
-        orderBy: [{ punchIn: 'desc' }]
-    })
+    const [records, allUsers] = await Promise.all([
+        prisma.attendanceRecord.findMany({
+            where,
+            include: { user: { select: { id: true, name: true, email: true, role: true } } },
+            orderBy: [{ punchIn: 'desc' }]
+        }),
+        prisma.user.findMany({
+            where: { role: 'Sales Rep', isSuspended: false },
+            select: { id: true, name: true, email: true, role: true },
+            orderBy: { name: 'asc' }
+        })
+    ])
 
-    return NextResponse.json({ records })
+    return NextResponse.json({ records, allUsers })
 }

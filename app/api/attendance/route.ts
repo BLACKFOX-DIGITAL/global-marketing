@@ -12,8 +12,8 @@ export async function GET(req: NextRequest) {
 
     const { searchParams } = new URL(req.url)
     const period = searchParams.get('period') || 'today'
-    const page = parseInt(searchParams.get('page') || '1')
-    const limit = parseInt(searchParams.get('limit') || '20')
+    const page = Math.max(1, parseInt(searchParams.get('page') || '1') || 1)
+    const limit = Math.min(500, Math.max(1, parseInt(searchParams.get('limit') || '20') || 20))
     const from = searchParams.get('from')
     const to = searchParams.get('to')
 
@@ -21,7 +21,8 @@ export async function GET(req: NextRequest) {
     let since: Date
 
     if (period === 'custom' && from) {
-        since = startOfDay(new Date(from))
+        const parsed = new Date(from)
+        since = isNaN(parsed.getTime()) ? startOfDay(now) : startOfDay(parsed)
     } else {
         switch (period) {
             case 'week': since = startOfWeek(now, { weekStartsOn: 1 }); break
@@ -37,11 +38,13 @@ export async function GET(req: NextRequest) {
 
     if (period === 'custom' && to) {
         const toDate = new Date(to)
-        toDate.setDate(toDate.getDate() + 1)
-        where.punchIn = { ...where.punchIn, lt: toDate }
+        if (!isNaN(toDate.getTime())) {
+            toDate.setDate(toDate.getDate() + 1)
+            where.punchIn = { ...where.punchIn, lt: toDate }
+        }
     }
 
-    const [records, total] = await Promise.all([
+    const [records, total, durationAgg] = await Promise.all([
         prisma.attendanceRecord.findMany({
             where,
             orderBy: { punchIn: 'desc' },
@@ -49,14 +52,13 @@ export async function GET(req: NextRequest) {
             take: limit,
         }),
         prisma.attendanceRecord.count({ where }),
+        prisma.attendanceRecord.aggregate({
+            where: { userId: user.userId, punchIn: { gte: since } },
+            _sum: { duration: true },
+        }),
     ])
 
-    // Calculate total hours for the period
-    const allRecords = await prisma.attendanceRecord.findMany({
-        where: { userId: user.userId, punchIn: { gte: since } },
-        select: { duration: true },
-    })
-    const totalMinutes = allRecords.reduce((sum: number, r: { duration: number | null }) => sum + (r.duration || 0), 0)
+    const totalMinutes = durationAgg._sum.duration || 0
 
     return NextResponse.json({
         records,

@@ -11,13 +11,9 @@ export async function GET(req: NextRequest) {
     const { searchParams } = new URL(req.url)
     const period = searchParams.get('period') || `${new Date().getFullYear()}-${String(new Date().getMonth() + 1).padStart(2, '0')}`
 
-    // Get all non-admin users who might have goals
+    // Get all non-admin, non-suspended users who might have goals
     const users = await prisma.user.findMany({
-        where: {
-            role: {
-                not: 'Administrator'
-            }
-        },
+        where: { role: { not: 'Administrator' }, isSuspended: false },
         select: { id: true, name: true, role: true }
     })
 
@@ -36,21 +32,33 @@ export async function GET(req: NextRequest) {
     const lyStartDate = new Date(year - 1, month - 1, 1)
     const lyEndDate = new Date(year - 1, month, 0, 23, 59, 59)
 
-    const [actuals, lyDeals, lyTestJobs, allWins, allLosses] = await Promise.all([
-        Promise.all(users.map(async (u) => {
-            const closedDeals = await prisma.opportunity.count({
-                where: { ownerId: u.id, stage: 'Closed Won', isDeleted: false, updatedAt: { gte: startDate, lte: endDate } }
-            })
-            const testJobs = await prisma.opportunity.count({
-                where: { ownerId: u.id, stage: 'Test Job Received', isDeleted: false, createdAt: { gte: startDate, lte: endDate } }
-            })
-            return { userId: u.id, DEALS: closedDeals, TEST_JOBS: testJobs }
-        })),
+    const userIds = users.map(u => u.id)
+
+    const [dealsGrouped, testJobsGrouped, lyDeals, lyTestJobs, allWins, allLosses] = await Promise.all([
+        prisma.opportunity.groupBy({
+            by: ['ownerId'],
+            where: { ownerId: { in: userIds }, stage: 'Closed Won', isDeleted: false, updatedAt: { gte: startDate, lte: endDate } },
+            _count: true,
+        }),
+        prisma.opportunity.groupBy({
+            by: ['ownerId'],
+            where: { ownerId: { in: userIds }, stage: 'Test Job Received', isDeleted: false, createdAt: { gte: startDate, lte: endDate } },
+            _count: true,
+        }),
         prisma.opportunity.count({ where: { stage: 'Closed Won', isDeleted: false, updatedAt: { gte: lyStartDate, lte: lyEndDate } } }),
         prisma.opportunity.count({ where: { stage: 'Test Job Received', isDeleted: false, createdAt: { gte: lyStartDate, lte: lyEndDate } } }),
         prisma.opportunity.count({ where: { stage: 'Closed Won', isDeleted: false } }),
         prisma.opportunity.count({ where: { stage: 'Closed Lost', isDeleted: false } })
     ])
+
+    const dealsMap = new Map(dealsGrouped.map(r => [r.ownerId, r._count]))
+    const testJobsMap = new Map(testJobsGrouped.map(r => [r.ownerId, r._count]))
+
+    const actuals = users.map(u => ({
+        userId: u.id,
+        DEALS: dealsMap.get(u.id) ?? 0,
+        TEST_JOBS: testJobsMap.get(u.id) ?? 0,
+    }))
 
     const totalActuals = {
         DEALS: actuals.reduce((sum, a) => sum + a.DEALS, 0),
@@ -83,8 +91,14 @@ export async function POST(req: NextRequest) {
         const { userId, category, targetValue, period, bulk } = body
 
         if (bulk && Array.isArray(bulk)) {
+            if (bulk.length > 500) {
+                return NextResponse.json({ error: 'Too many items in bulk request' }, { status: 400 })
+            }
             const results = []
             for (const item of bulk) {
+                if (!item.userId || !item.category || (!item.period && !period)) continue
+                const val = parseFloat(item.targetValue)
+                if (isNaN(val) || val < 0) continue
                 const goal = await prisma.userGoal.upsert({
                     where: {
                         userId_category_period: {
@@ -93,11 +107,11 @@ export async function POST(req: NextRequest) {
                             period: item.period || period
                         }
                     },
-                    update: { targetValue: parseFloat(item.targetValue) },
+                    update: { targetValue: val },
                     create: {
                         userId: item.userId,
                         category: item.category,
-                        targetValue: parseFloat(item.targetValue),
+                        targetValue: val,
                         period: item.period || period
                     }
                 })
@@ -110,25 +124,21 @@ export async function POST(req: NextRequest) {
             return NextResponse.json({ error: 'Missing required fields' }, { status: 400 })
         }
 
+        const parsedTarget = parseFloat(targetValue)
+        if (isNaN(parsedTarget) || parsedTarget < 0) {
+            return NextResponse.json({ error: 'Invalid target value' }, { status: 400 })
+        }
+
         const goal = await prisma.userGoal.upsert({
             where: {
-                userId_category_period: {
-                    userId,
-                    category,
-                    period
-                }
+                userId_category_period: { userId, category, period }
             },
-            update: { targetValue: parseFloat(targetValue) },
-            create: {
-                userId,
-                category,
-                targetValue: parseFloat(targetValue),
-                period
-            }
+            update: { targetValue: parsedTarget },
+            create: { userId, category, targetValue: parsedTarget, period }
         })
 
         return NextResponse.json(goal)
-    } catch (err: any) {
-        return NextResponse.json({ error: err.message }, { status: 500 })
+    } catch {
+        return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 })
     }
 }

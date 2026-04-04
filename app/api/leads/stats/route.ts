@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
-import { getCurrentUser } from '@/lib/auth'
+import { getCurrentUser, isManager } from '@/lib/auth'
 import {
     startOfDay, startOfWeek, startOfMonth, startOfQuarter, startOfYear,
     subMonths
@@ -32,7 +32,7 @@ export async function GET(req: NextRequest) {
         isDeleted: false,
     }
 
-    if (user.role !== 'Administrator' && user.role !== 'Manager') {
+    if (!isManager(user)) {
         statsWhere.ownerId = user.userId
     }
 

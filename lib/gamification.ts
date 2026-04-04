@@ -76,21 +76,30 @@ export interface AwardResult {
 export async function awardXP(userId: string, xpActionKey: keyof Awaited<ReturnType<typeof getXPValues>>, actionType: string = 'GENERIC', entityId?: string): Promise<AwardResult> {
     // --- Anti-Spam Cooldown Check ---
     if (actionType !== 'GENERIC') {
-        const cooldownMinutes = actionType.includes('UPDATED') ? 60 : 1 // 1 hour for updates, 1 min for creations
-        const cutoffTime = new Date(Date.now() - cooldownMinutes * 60 * 1000)
-
-        const recentAction = await prisma.xPHistory.findFirst({
-            where: {
-                userId,
-                actionType,
-                entityId,
-                createdAt: { gte: cutoffTime }
+        // OPPORTUNITY_WON is permanent per opportunity — can only earn XP once per deal
+        if (actionType === 'OPPORTUNITY_WON') {
+            const existing = await prisma.xPHistory.findFirst({ where: { userId, actionType, entityId } })
+            if (existing) {
+                console.log(`[Gamification] Blocked: User ${userId} already earned XP for ${actionType} on ${entityId}`)
+                return generateZeroXpResult(userId)
             }
-        })
+        } else {
+            const cooldownMinutes = actionType.includes('UPDATED') ? 60 : 1 // 1 hour for updates, 1 min for all other actions
+            const cutoffTime = new Date(Date.now() - cooldownMinutes * 60 * 1000)
 
-        if (recentAction) {
-            console.log(`[Gamification] Blocked by cooldown. User ${userId} spamming ${actionType} on ${entityId}`)
-            return generateZeroXpResult(userId) // Skip awarding XP but don't crash
+            const recentAction = await prisma.xPHistory.findFirst({
+                where: {
+                    userId,
+                    actionType,
+                    entityId,
+                    createdAt: { gte: cutoffTime }
+                }
+            })
+
+            if (recentAction) {
+                console.log(`[Gamification] Blocked by cooldown. User ${userId} spamming ${actionType} on ${entityId}`)
+                return generateZeroXpResult(userId) // Skip awarding XP but don't crash
+            }
         }
     }
 
@@ -211,15 +220,17 @@ async function checkAndUnlockAchievements(userId: string): Promise<string[]> {
 
     const unlockedIds = new Set(existingUnlocks.map(u => u.achievementId))
 
-    for (const achievement of achievements) {
-        if (unlockedIds.has(achievement.id)) continue
+    const toUnlock = achievements.filter(a => {
+        if (unlockedIds.has(a.id)) return false
+        return (userStats[a.category] || 0) >= a.threshold
+    })
 
-        const count = userStats[achievement.category] || 0
-        if (count >= achievement.threshold) {
-            await prisma.userAchievement.create({
-                data: { userId, achievementId: achievement.id }
-            })
-            unlocked.push(achievement.name)
+    for (const a of toUnlock) {
+        try {
+            await prisma.userAchievement.create({ data: { userId, achievementId: a.id } })
+            unlocked.push(a.name)
+        } catch {
+            // Duplicate — already unlocked, skip
         }
     }
 

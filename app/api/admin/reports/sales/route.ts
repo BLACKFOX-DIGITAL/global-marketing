@@ -65,9 +65,10 @@ export async function GET(req: NextRequest) {
 
     const [salesReps, allLeads, periodLeads, opportunities, allTasks, periodTasks, callAttempts, mailAttempts, attendanceRecords, trendLeads, trendCalls, trendMails, trendTasks, trendOpps] = await Promise.all([
         prisma.user.findMany({
-            where: { 
+            where: {
                 role: { not: 'Administrator' },
-                ...userFilter 
+                isSuspended: false,
+                ...userFilter
             },
             select: { id: true, name: true }
         }),
@@ -130,6 +131,7 @@ export async function GET(req: NextRequest) {
         })
     ])
 
+    try {
     const activityLogs = await prisma.activityLog.findMany({
         where: { createdAt: { gte: since, lte: until }, userId: repId ? repId : undefined },
         select: { id: true, action: true, type: true, createdAt: true, userId: true, description: true },
@@ -446,4 +448,7 @@ export async function GET(req: NextRequest) {
         periodStart: since.toISOString(),
         periodEnd: now.toISOString()
     })
+    } catch {
+        return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+    }
 }

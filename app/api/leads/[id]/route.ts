@@ -3,6 +3,7 @@ import { prisma } from '@/lib/prisma'
 import { getCurrentUser } from '@/lib/auth'
 import { logActivity } from '@/lib/activity'
 import { awardXP } from '@/lib/gamification'
+import { sanitizeObject } from '@/lib/sanitize'
 
 export async function GET(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
     const user = await getCurrentUser()
@@ -22,7 +23,8 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
     
     if (!lead) return NextResponse.json({ error: 'Not found' }, { status: 404 })
 
-    if (user.role !== 'Administrator' && lead.ownerId && lead.ownerId !== user.userId) {
+    // Block access if not admin and either: lead is owned by someone else, OR lead has no owner (pool)
+    if (user.role !== 'Administrator' && lead.ownerId !== user.userId) {
         return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
 
@@ -33,7 +35,8 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
     const user = await getCurrentUser()
     if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     const { id } = await params
-    const body = await req.json()
+    const rawBody = await req.json()
+    const body = sanitizeObject(rawBody, ['name', 'company', 'email', 'phone', 'website', 'country', 'notes', 'socials', 'industry'])
     try {
         const oldLead = await prisma.lead.findUnique({ where: { id } })
         if (!oldLead) return NextResponse.json({ error: 'Not found' }, { status: 404 })
@@ -61,7 +64,8 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
                 socials: body.socials,
                 callOutcome: body.status === 'Called' ? (body.callOutcome || null) : null,
                 notes: body.notes,
-                ownerId: body.ownerId || user.userId,
+                // Only admins can reassign leads (including returning to pool with null)
+                ownerId: user.role === 'Administrator' ? (body.ownerId !== undefined ? body.ownerId : user.userId) : user.userId,
                 lastActivityAt: new Date()
             },
             include: { owner: { select: { id: true, name: true, email: true } } },
@@ -86,29 +90,31 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
             })
         }
 
-        // Simple nested update: delete existing contacts and create new ones
+        // Atomically replace contacts — wrapped in transaction to prevent partial loss on crash
         if (body.contacts && Array.isArray(body.contacts)) {
-            await prisma.contact.deleteMany({ where: { leadId: id } })
-            if (body.contacts.length > 0) {
-                await prisma.contact.createMany({
-                    data: body.contacts.map((c: { name: string, email: string | null, phone: string | null, position: string | null, socials: string | null }, i: number) => ({
-                        leadId: id,
-                        name: c.name,
-                        email: c.email,
-                        phone: c.phone,
-                        position: c.position,
-                        socials: c.socials,
-                        isPrimary: i === 0,
-                    }))
-                })
-            }
+            await prisma.$transaction([
+                prisma.contact.deleteMany({ where: { leadId: id } }),
+                ...(body.contacts.length > 0 ? [
+                    prisma.contact.createMany({
+                        data: body.contacts.map((c: { name: string, email: string | null, phone: string | null, position: string | null, socials: string | null }, i: number) => ({
+                            leadId: id,
+                            name: c.name,
+                            email: c.email,
+                            phone: c.phone,
+                            position: c.position,
+                            socials: c.socials,
+                            isPrimary: i === 0,
+                        }))
+                    })
+                ] : [])
+            ])
         }
 
         const gamificationResult = await awardXP(user.userId, 'LEAD_UPDATED', 'LEAD_UPDATED', id)
 
         return NextResponse.json({ ...lead, gamificationResult })
     } catch {
-        return NextResponse.json({ error: 'Failed to update' }, { status: 500 })
+        return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 })
     }
 }
 
@@ -143,6 +149,6 @@ export async function DELETE(_req: NextRequest, { params }: { params: Promise<{ 
         }
         return NextResponse.json({ message: 'Soft Deleted (Pending Review)' })
     } catch {
-        return NextResponse.json({ error: 'Not found' }, { status: 404 })
+        return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 })
     }
 }

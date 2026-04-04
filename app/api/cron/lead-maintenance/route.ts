@@ -5,14 +5,13 @@ import { logActivity } from '@/lib/activity'
 import { logger } from '@/lib/logger'
 
 export async function GET(req: Request) {
-    const expectedSecret = process.env.CRON_SECRET || 'local_cron_secret'
-
-    if (process.env.NODE_ENV === 'production' && !process.env.CRON_SECRET) {
+    const cronSecret = process.env.CRON_SECRET
+    if (!cronSecret) {
         return new NextResponse('Internal Server Error: CRON_SECRET not configured', { status: 500 })
     }
 
     const authHeader = req.headers.get('authorization')
-    if (authHeader !== `Bearer ${expectedSecret}`) {
+    if (authHeader !== `Bearer ${cronSecret}`) {
         return new NextResponse('Unauthorized', { status: 401 })
     }
 

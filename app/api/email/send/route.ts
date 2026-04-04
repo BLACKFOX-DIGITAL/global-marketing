@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
-import { getCurrentUser } from '@/lib/auth'
+import { getCurrentUser, isManager } from '@/lib/auth'
 
 export async function POST(req: NextRequest) {
     const user = await getCurrentUser()
@@ -15,16 +15,17 @@ export async function POST(req: NextRequest) {
             return NextResponse.json({ error: 'Missing required fields' }, { status: 400 })
         }
 
-        // 1. Get Lead details
-        const lead = await prisma.lead.findUnique({
-            where: { id: leadId }
-        })
+        const lead = await prisma.lead.findUnique({ where: { id: leadId } })
 
         if (!lead || !lead.email) {
             return NextResponse.json({ error: 'Lead or lead email not found' }, { status: 404 })
         }
 
-        // 2. Get Resend API Key from system settings
+        // Verify the user owns this lead (admins/managers can send for any lead)
+        if (!isManager(user) && lead.ownerId !== user.userId) {
+            return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+        }
+
         const resendKeySetting = await prisma.systemSetting.findUnique({
             where: { key: 'RESEND_API_KEY' }
         })
@@ -33,7 +34,6 @@ export async function POST(req: NextRequest) {
             return NextResponse.json({ error: 'Resend API Key not configured' }, { status: 500 })
         }
 
-        // 3. Get User's sender email
         const fullUser = await prisma.user.findUnique({
             where: { id: user.userId },
             select: { resendSenderEmail: true }
@@ -43,7 +43,6 @@ export async function POST(req: NextRequest) {
             return NextResponse.json({ error: 'Your sender email is not configured. Please contact an administrator.' }, { status: 400 })
         }
 
-        // 4. Send via Resend
         const response = await fetch('https://api.resend.com/emails', {
             method: 'POST',
             headers: {
@@ -61,10 +60,9 @@ export async function POST(req: NextRequest) {
         const resendData = await response.json()
 
         if (!response.ok) {
-            return NextResponse.json({ error: resendData.message || 'Failed to send email' }, { status: response.status })
+            return NextResponse.json({ error: 'Failed to send email' }, { status: 502 })
         }
 
-        // 5. Create MailAttempt record with resendId
         const mailAttempt = await prisma.mailAttempt.create({
             data: {
                 leadId: lead.id,
@@ -76,7 +74,6 @@ export async function POST(req: NextRequest) {
             }
         })
 
-        // 6. Create ActivityLog entry
         await prisma.activityLog.create({
             data: {
                 leadId: lead.id,
@@ -88,7 +85,6 @@ export async function POST(req: NextRequest) {
             }
         })
 
-        // 7. Update lead's mail count and last mail outcome
         await prisma.lead.update({
             where: { id: lead.id },
             data: {
@@ -98,7 +94,7 @@ export async function POST(req: NextRequest) {
         })
 
         return NextResponse.json({ success: true, resendId: resendData.id })
-    } catch (err: any) {
-        return NextResponse.json({ error: err.message }, { status: 500 })
+    } catch {
+        return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 })
     }
 }

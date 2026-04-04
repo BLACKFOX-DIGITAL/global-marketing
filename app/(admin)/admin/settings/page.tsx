@@ -54,6 +54,7 @@ export default function AdminSettings() {
     const [error, setError] = useState<string | null>(null)
     const [processing, setProcessing] = useState<string | null>(null)
     const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null)
+    const [modalConfirm, setModalConfirm] = useState<{ title: string, message: string, onConfirm: () => void, type: 'danger' | 'info' } | null>(null)
     const [configs, setConfigs] = useState<Record<string, string>>({
         RECYCLE_DAYS: '60', CLAIM_LIMIT: '10', RESEND_API_KEY: '', RESEND_WEBHOOK_SECRET: '',
         RECLAIM_HIGH: '7', WARN_HIGH: '5',
@@ -202,31 +203,33 @@ export default function AdminSettings() {
     }
 
     async function handleUserDelete(id: string) {
-        if (!confirm('Are you sure you want to delete this team member? This action cannot be undone.')) return
-        setProcessing(id)
-        const res = await fetch(`/api/admin/users?id=${id}`, { method: 'DELETE' })
-        if (res.ok) {
-            setTeamMembers(teamMembers.filter(u => u.id !== id))
-        } else {
-            const data = await res.json()
-            alert(data.error || 'Failed to delete user')
-        }
-        setProcessing(null)
+        setModalConfirm({
+            title: 'Delete Team Member',
+            message: 'Are you sure you want to delete this team member? This action cannot be undone.',
+            type: 'danger',
+            onConfirm: async () => {
+                setProcessing(id)
+                const res = await fetch(`/api/admin/users?id=${id}`, { method: 'DELETE' })
+                if (res.ok) setTeamMembers(teamMembers.filter(u => u.id !== id))
+                setProcessing(null)
+                setModalConfirm(null)
+            }
+        })
     }
 
     async function handleUserSuspend(id: string, currentlySuspended: boolean) {
-        if (!confirm(`Are you sure you want to ${currentlySuspended ? 'unsuspend' : 'suspend'} this team member?`)) return
-        setProcessing(id)
-        const res = await fetch(`/api/admin/users`, { 
-            method: 'PUT', 
-            headers: { 'Content-Type': 'application/json' }, 
-            body: JSON.stringify({ id, isSuspended: !currentlySuspended }) 
+        setModalConfirm({
+            title: currentlySuspended ? 'Unsuspend Member' : 'Suspend Member',
+            message: `Are you sure you want to ${currentlySuspended ? 'unsuspend' : 'suspend'} this team member?`,
+            type: currentlySuspended ? 'info' : 'danger',
+            onConfirm: async () => {
+                setProcessing(id)
+                const res = await fetch(`/api/admin/users`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id, isSuspended: !currentlySuspended }) })
+                if (res.ok) setTeamMembers(teamMembers.map(u => u.id === id ? { ...u, isSuspended: !currentlySuspended } : u))
+                setProcessing(null)
+                setModalConfirm(null)
+            }
         })
-        if (res.ok) {
-            const updated = await res.json()
-            setTeamMembers(teamMembers.map(u => u.id === updated.id ? { ...u, isSuspended: updated.isSuspended } : u))
-        }
-        setProcessing(null)
     }
 
     async function handleAddHoliday(e: React.FormEvent) {
@@ -247,44 +250,61 @@ export default function AdminSettings() {
         setProcessing(null)
     }
 
-    async function handleDeleteTemplate(id: string) {
-        if(confirm('Delete template?')) { setProcessing(id); if((await fetch(`/api/admin/email-templates/${id}`, { method: 'DELETE' })).ok) setTemplates(templates.filter(t => t.id !== id)); setProcessing(null) }
+    async function handleDeleteEmailTemplate(id: string) {
+        setModalConfirm({
+            title: 'Delete Template',
+            message: 'Are you sure you want to delete this email template?',
+            type: 'danger',
+            onConfirm: async () => {
+                setProcessing(id)
+                if ((await fetch(`/api/admin/email-templates/${id}`, { method: 'DELETE' })).ok) setTemplates(templates.filter(t => t.id !== id))
+                setProcessing(null)
+                setModalConfirm(null)
+            }
+        })
     }
 
-    async function handleImportDefaults() {
-        if (!confirm('This will add all original standard job positions to your list. Continue?')) return
-        setProcessing('import-defaults')
-        
-        const POSITIONS = [
-            "Retoucher", "Senior Retoucher", "Image Editor", "Photo Editor", "E-commerce Retoucher", 
-            "High-End Retoucher", "Colorist", "Art Director", "Creative Director", "Studio Manager", 
-            "Production Manager", "Photography Assistant", "Quality Control Specialist", "Visual Merchandiser", 
-            "CEO", "Founder", "Co-Founder", "Owner", "President", "Managing Director", 
-            "Operations Manager", "General Manager", "Project Manager", "Account Manager", "Marketing Manager"
-        ]
+    async function handleRestoreDefaults() {
+        setModalConfirm({
+            title: 'Restore Defaults',
+            message: 'This will add all original standard job positions to your list. Continue?',
+            type: 'info',
+            onConfirm: async () => {
+                setProcessing('import-defaults')
+                const POSITIONS = [
+                    "Retoucher", "Senior Retoucher", "Image Editor", "Photo Editor", "E-commerce Retoucher", 
+                    "High-End Retoucher", "Colorist", "Art Director", "Creative Director", "Studio Manager", 
+                    "Production Manager", "Photography Assistant", "Quality Control Specialist", "Visual Merchandiser", 
+                    "CEO", "Founder", "Co-Founder", "Owner", "President", "Managing Director", 
+                    "Operations Manager", "General Manager", "Project Manager", "Account Manager", "Marketing Manager"
+                ]
 
-        const existingValues = filteredOptions.map(o => o.value.toLowerCase())
-        const toAdd = POSITIONS.filter(p => !existingValues.includes(p.toLowerCase()))
+                const existingValues = filteredOptions.map(o => o.value.toLowerCase())
+                const toAdd = POSITIONS.filter(p => !existingValues.includes(p.toLowerCase()))
 
-        if (toAdd.length === 0) {
-            alert('All standard positions are already present.')
-            setProcessing(null)
-            return
-        }
+                if (toAdd.length === 0) {
+                    alert('All standard positions are already present.')
+                    setProcessing(null)
+                    setModalConfirm(null)
+                    return
+                }
 
-        let addedCount = 0
-        for (const val of toAdd) {
-            const order = filteredOptions.length + addedCount
-            const res = await fetch('/api/admin/settings', {
-                method: 'POST', headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ category: 'LEAD_POSITION', value: val, color: '#6366f1', order })
-            })
-            if (res.ok) addedCount++
-        }
+                let addedCount = 0
+                for (const val of toAdd) {
+                    const order = filteredOptions.length + addedCount
+                    const res = await fetch('/api/admin/settings', {
+                        method: 'POST', headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ category: 'LEAD_POSITION', value: val, color: '#6366f1', order })
+                    })
+                    if (res.ok) addedCount++
+                }
 
-        await fetchData()
-        alert(`Successfully imported ${addedCount} standard positions.`)
-        setProcessing(null)
+                await fetchData()
+                alert(`Successfully imported ${addedCount} standard positions.`)
+                setProcessing(null)
+                setModalConfirm(null)
+            }
+        })
     }
 
     if (error) return <div style={{ padding: 40, textAlign: 'center' }}>{error}</div>
@@ -296,9 +316,9 @@ export default function AdminSettings() {
                     <div style={{ width: 36, height: 36, borderRadius: 12, background: 'linear-gradient(135deg, var(--accent-primary), #4338ca)', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 0 20px rgba(99, 102, 241, 0.3)' }}>
                         <Settings size={20} color="#fff" strokeWidth={2.5} />
                     </div>
-                    System Intelligence
+                    Settings
                 </h1>
-                <p style={{ margin: '6px 0 0 0', color: '#64748b', fontSize: 13, fontWeight: 600 }}>Global configurations, taxonomies, and high-level team governance protocols.</p>
+                <p style={{ margin: '6px 0 0 0', color: '#64748b', fontSize: 13, fontWeight: 600 }}>Global configurations, taxonomies, and team management settings.</p>
             </div>
 
             <div style={{ display: 'grid', gridTemplateColumns: '260px 1fr', gap: 32 }}>
@@ -344,12 +364,12 @@ export default function AdminSettings() {
                         <div style={{ display: 'flex', gap: 8 }}>
                             {activeCategory === 'LEAD_POSITION' && !adding && (
                                 <button 
-                                    onClick={handleImportDefaults} 
+                                    onClick={handleRestoreDefaults} 
                                     disabled={processing === 'import-defaults'}
                                     style={{ padding: '6px 12px', borderRadius: 8, fontSize: 11, fontWeight: 800, border: '1px solid var(--border)', background: 'transparent', color: '#94a3b8', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6, transition: 'all 0.2s', textTransform: 'uppercase' }}
                                 >
                                     {processing === 'import-defaults' ? <div className="spinner" style={{ width: 12, height: 12 }} /> : <Database size={12} strokeWidth={2.5} />}
-                                    Restore Registry
+                                    Restore Defaults
                                 </button>
                             )}
                             {activeCategory === 'TEAM_MEMBERS' ? (
@@ -372,7 +392,7 @@ export default function AdminSettings() {
                                 <div>
                                     <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 16 }}>
                                         <div style={{ width: 4, height: 16, background: 'var(--accent-primary)', borderRadius: 2 }} />
-                                        <h4 style={{ fontSize: 13, fontWeight: 800, color: '#f8fafc', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Temporal Reclaim Protocols</h4>
+                                        <h4 style={{ fontSize: 13, fontWeight: 800, color: '#f8fafc', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Auto-Reclaim Timers</h4>
                                     </div>
                                     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12 }}>
                                         {[
@@ -401,16 +421,16 @@ export default function AdminSettings() {
                                 </div>
                                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
                                     <div style={{ background: 'rgba(255,255,255,0.01)', border: '1px solid var(--border)', borderRadius: 12, padding: 16 }}>
-                                        <label style={{ display: 'block', fontSize: 11, fontWeight: 900, marginBottom: 4, color: '#f8fafc', textTransform: 'uppercase' }}>Recycle Interval</label>
-                                        <p style={{ fontSize: 10, color: '#64748b', marginBottom: 12, fontWeight: 600 }}>Cool-down before 'Lost' leads re-enter the pool.</p>
+                                        <label style={{ display: 'block', fontSize: 11, fontWeight: 900, marginBottom: 4, color: '#f8fafc', textTransform: 'uppercase' }}>Lost Lead Cooldown</label>
+                                        <p style={{ fontSize: 10, color: '#64748b', marginBottom: 12, fontWeight: 600 }}>Days before a 'Lost' lead re-enters the pool.</p>
                                         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                                             <input type="number" value={configs.RECYCLE_DAYS} onChange={e => handleUpdateConfig('RECYCLE_DAYS', e.target.value)} style={{ flex: 1, padding: '8px 12px', borderRadius: 8, border: '1px solid var(--border)', background: 'rgba(0,0,0,0.2)', color: '#f8fafc', fontSize: 13, fontWeight: 900, outline: 'none' }} />
                                             <span style={{ fontSize: 10, fontWeight: 900, color: '#475569' }}>DAYS</span>
                                         </div>
                                     </div>
                                     <div style={{ background: 'rgba(255,255,255,0.01)', border: '1px solid var(--border)', borderRadius: 12, padding: 16 }}>
-                                        <label style={{ display: 'block', fontSize: 11, fontWeight: 900, marginBottom: 4, color: '#f8fafc', textTransform: 'uppercase' }}>Claim Threshold</label>
-                                        <p style={{ fontSize: 10, color: '#64748b', marginBottom: 12, fontWeight: 600 }}>Maximum active lead tokens allowed per operator.</p>
+                                        <label style={{ display: 'block', fontSize: 11, fontWeight: 900, marginBottom: 4, color: '#f8fafc', textTransform: 'uppercase' }}>Max Active Leads</label>
+                                        <p style={{ fontSize: 10, color: '#64748b', marginBottom: 12, fontWeight: 600 }}>Maximum leads a rep can actively own at once.</p>
                                         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                                             <input type="number" value={configs.CLAIM_LIMIT} onChange={e => handleUpdateConfig('CLAIM_LIMIT', e.target.value)} style={{ flex: 1, padding: '8px 12px', borderRadius: 8, border: '1px solid var(--border)', background: 'rgba(0,0,0,0.2)', color: '#f8fafc', fontSize: 13, fontWeight: 900, outline: 'none' }} />
                                             <span style={{ fontSize: 10, fontWeight: 900, color: '#475569' }}>MAX</span>
@@ -422,18 +442,18 @@ export default function AdminSettings() {
                             <div style={{ maxWidth: 900 }}>
                                 <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 20 }}>
                                     <div style={{ width: 4, height: 16, background: 'var(--accent-primary)', borderRadius: 2 }} />
-                                    <h4 style={{ fontSize: 13, fontWeight: 800, color: '#f8fafc', textTransform: 'uppercase', letterSpacing: '0.5px' }}>XP Allocation Matrix</h4>
+                                    <h4 style={{ fontSize: 13, fontWeight: 800, color: '#f8fafc', textTransform: 'uppercase', letterSpacing: '0.5px' }}>XP Point Values</h4>
                                 </div>
                                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12 }}>
                                     {[
-                                        { key: 'CALL_ATTEMPT', label: 'Call Log', desc: 'Outbound voice contact' },
-                                        { key: 'MAIL_ATTEMPT', label: 'Mail Dispatch', desc: 'Outbound digital correspondence' },
-                                        { key: 'TASK_COMPLETED', label: 'Task Closure', desc: 'Objective fulfillment' },
-                                        { key: 'TASK_CREATED', label: 'Protocol Init', desc: 'New operational task' },
-                                        { key: 'LEAD_CREATED', label: 'Lead Discovery', desc: 'New system entity' },
-                                        { key: 'LEAD_CONVERTED', label: 'Conversion', desc: 'Entity stage advancement' },
-                                        { key: 'OPPORTUNITY_WON', label: 'Terminal Win', desc: 'Revenue milestone' },
-                                        { key: 'POOL_CLAIM', label: 'Token Claim', desc: 'Lead pool extraction' },
+                                        { key: 'CALL_ATTEMPT', label: 'Call Logged', desc: 'Phone call to a lead' },
+                                        { key: 'MAIL_ATTEMPT', label: 'Email Sent', desc: 'Email sent to a lead' },
+                                        { key: 'TASK_COMPLETED', label: 'Task Completed', desc: 'Task marked as done' },
+                                        { key: 'TASK_CREATED', label: 'Task Created', desc: 'New task added' },
+                                        { key: 'LEAD_CREATED', label: 'Lead Created', desc: 'New lead added' },
+                                        { key: 'LEAD_CONVERTED', label: 'Lead Converted', desc: 'Lead advanced in stage' },
+                                        { key: 'OPPORTUNITY_WON', label: 'Deal Won', desc: 'Opportunity closed as won' },
+                                        { key: 'POOL_CLAIM', label: 'Pool Claim', desc: 'Lead claimed from the pool' },
                                     ].map(({ key, label, desc }) => (
                                         <div key={key} style={{ background: 'rgba(255,255,255,0.02)', borderRadius: 10, padding: 12, border: '1px solid var(--border)', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
                                             <div>
@@ -453,13 +473,13 @@ export default function AdminSettings() {
                                 {adding && (
                                     <form onSubmit={handleAddUser} style={{ border: '1px solid var(--border)', borderRadius: 12, padding: 20, marginBottom: 12, background: 'rgba(255,255,255,0.02)', backdropFilter: 'blur(20px)' }}>
                                         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12, marginBottom: 16 }}>
-                                            <div><label style={{ display: 'block', fontSize: 9, fontWeight: 900, marginBottom: 6, color: '#475569', textTransform: 'uppercase' }}>Name</label><input value={newUserName} onChange={e => setNewUserName(e.target.value)} required style={{ width: '100%', padding: '8px 10px', borderRadius: 6, border: '1px solid var(--border)', background: 'rgba(0,0,0,0.2)', color: '#f8fafc', fontSize: 12, fontWeight: 800, outline: 'none' }} /></div>
-                                            <div><label style={{ display: 'block', fontSize: 9, fontWeight: 900, marginBottom: 6, color: '#475569', textTransform: 'uppercase' }}>Email</label><input type="email" value={newUserEmail} onChange={e => setNewUserEmail(e.target.value)} required style={{ width: '100%', padding: '8px 10px', borderRadius: 6, border: '1px solid var(--border)', background: 'rgba(0,0,0,0.2)', color: '#f8fafc', fontSize: 12, fontWeight: 800, outline: 'none' }} /></div>
-                                            <div><label style={{ display: 'block', fontSize: 9, fontWeight: 900, marginBottom: 6, color: '#475569', textTransform: 'uppercase' }}>Initial Pass</label><input type="password" value={newUserPassword} onChange={e => setNewUserPassword(e.target.value)} required style={{ width: '100%', padding: '8px 10px', borderRadius: 6, border: '1px solid var(--border)', background: 'rgba(0,0,0,0.2)', color: '#f8fafc', fontSize: 12, fontWeight: 800, outline: 'none' }} /></div>
+                                            <div><label style={{ display: 'block', fontSize: 9, fontWeight: 900, marginBottom: 6, color: '#475569', textTransform: 'uppercase' }}>Full Name</label><input value={newUserName} onChange={e => setNewUserName(e.target.value)} required style={{ width: '100%', padding: '8px 10px', borderRadius: 6, border: '1px solid var(--border)', background: 'rgba(0,0,0,0.2)', color: '#f8fafc', fontSize: 12, fontWeight: 800, outline: 'none' }} /></div>
+                                            <div><label style={{ display: 'block', fontSize: 9, fontWeight: 900, marginBottom: 6, color: '#475569', textTransform: 'uppercase' }}>Email Address</label><input type="email" value={newUserEmail} onChange={e => setNewUserEmail(e.target.value)} required style={{ width: '100%', padding: '8px 10px', borderRadius: 6, border: '1px solid var(--border)', background: 'rgba(0,0,0,0.2)', color: '#f8fafc', fontSize: 12, fontWeight: 800, outline: 'none' }} /></div>
+                                            <div><label style={{ display: 'block', fontSize: 9, fontWeight: 900, marginBottom: 6, color: '#475569', textTransform: 'uppercase' }}>Password</label><input type="password" value={newUserPassword} onChange={e => setNewUserPassword(e.target.value)} required style={{ width: '100%', padding: '8px 10px', borderRadius: 6, border: '1px solid var(--border)', background: 'rgba(0,0,0,0.2)', color: '#f8fafc', fontSize: 12, fontWeight: 800, outline: 'none' }} /></div>
                                         </div>
                                         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 16 }}>
                                             <div>
-                                                <label style={{ display: 'block', fontSize: 9, fontWeight: 900, marginBottom: 6, color: '#475569', textTransform: 'uppercase' }}>Role Alignment</label>
+                                                <label style={{ display: 'block', fontSize: 9, fontWeight: 900, marginBottom: 6, color: '#475569', textTransform: 'uppercase' }}>Role</label>
                                                 <select value={newUserRole} onChange={e => setNewUserRole(e.target.value)} style={{ width: '100%', padding: '8px 10px', borderRadius: 6, border: '1px solid var(--border)', background: 'rgba(0,0,0,0.2)', color: '#f8fafc', fontSize: 12, fontWeight: 800, outline: 'none' }}>
                                                     <option value="Sales Rep">Sales Rep</option>
                                                     <option value="Administrator">Administrator</option>
@@ -472,7 +492,7 @@ export default function AdminSettings() {
                                         </div>
                                         <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end' }}>
                                             <button type="button" onClick={() => setAdding(false)} style={{ padding: '6px 14px', borderRadius: 6, border: '1px solid var(--border)', background: 'transparent', color: '#64748b', cursor: 'pointer', fontWeight: 900, fontSize: 10, textTransform: 'uppercase' }}>Cancel</button>
-                                            <button type="submit" disabled={processing === 'add-user'} style={{ padding: '6px 14px', borderRadius: 6, border: 'none', background: 'var(--accent-primary)', color: 'white', cursor: 'pointer', fontWeight: 900, fontSize: 10, textTransform: 'uppercase' }}>Deploy Account</button>
+                                            <button type="submit" disabled={processing === 'add-user'} style={{ padding: '6px 14px', borderRadius: 6, border: 'none', background: 'var(--accent-primary)', color: 'white', cursor: 'pointer', fontWeight: 900, fontSize: 10, textTransform: 'uppercase' }}>Create Account</button>
                                         </div>
                                     </form>
                                 )}
@@ -509,7 +529,7 @@ export default function AdminSettings() {
                                                     textTransform: 'uppercase'
                                                 }}
                                             >
-                                                {member.isSuspended ? 'Operationalize' : 'Suspend'}
+                                                {member.isSuspended ? 'Reactivate' : 'Suspend'}
                                             </button>
                                             <button 
                                                 onClick={() => handleUserDelete(member.id)} 
@@ -540,7 +560,7 @@ export default function AdminSettings() {
                                 <div style={{ maxWidth: 800 }}>
                                     <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 16 }}>
                                         <div style={{ width: 4, height: 16, background: 'var(--accent-primary)', borderRadius: 2 }} />
-                                        <h4 style={{ fontSize: 13, fontWeight: 800, color: '#f8fafc', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Resend Communication Registry</h4>
+                                        <h4 style={{ fontSize: 13, fontWeight: 800, color: '#f8fafc', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Email Provider Settings</h4>
                                     </div>
                                     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
                                         <div>
@@ -548,7 +568,7 @@ export default function AdminSettings() {
                                             <input type="password" value={configs.RESEND_API_KEY} onChange={e => handleUpdateConfig('RESEND_API_KEY', e.target.value)} style={{ width: '100%', padding: '8px 12px', borderRadius: 8, border: '1px solid var(--border)', background: 'rgba(0,0,0,0.2)', color: '#f8fafc', fontSize: 12, fontWeight: 800, outline: 'none' }} />
                                         </div>
                                         <div>
-                                            <label style={{ display: 'block', fontSize: 9, fontWeight: 900, marginBottom: 6, color: '#475569', textTransform: 'uppercase' }}>Webhook Secret Protocol</label>
+                                            <label style={{ display: 'block', fontSize: 9, fontWeight: 900, marginBottom: 6, color: '#475569', textTransform: 'uppercase' }}>Webhook Secret</label>
                                             <input type="password" value={configs.RESEND_WEBHOOK_SECRET} onChange={e => handleUpdateConfig('RESEND_WEBHOOK_SECRET', e.target.value)} style={{ width: '100%', padding: '8px 12px', borderRadius: 8, border: '1px solid var(--border)', background: 'rgba(0,0,0,0.2)', color: '#f8fafc', fontSize: 12, fontWeight: 800, outline: 'none' }} />
                                         </div>
                                     </div>
@@ -556,23 +576,23 @@ export default function AdminSettings() {
                                 <div style={{ borderTop: '1px solid var(--border)', paddingTop: 24 }}>
                                     <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 16 }}>
                                         <div style={{ width: 4, height: 16, background: '#10b981', borderRadius: 2 }} />
-                                        <h4 style={{ fontSize: 13, fontWeight: 800, color: '#f8fafc', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Operational Templates</h4>
+                                        <h4 style={{ fontSize: 13, fontWeight: 800, color: '#f8fafc', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Email Templates</h4>
                                     </div>
                                     {adding && (
                                         <form onSubmit={handleSaveTemplate} style={{ border: '1px solid var(--border)', borderRadius: 12, padding: 20, marginBottom: 16, background: 'rgba(255,255,255,0.02)', backdropFilter: 'blur(24px)' }}>
                                             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 12 }}>
-                                                <div><label style={{ display: 'block', fontSize: 9, fontWeight: 900, marginBottom: 6, color: '#475569', textTransform: 'uppercase' }}>Identifier</label><input value={templateName} onChange={e => setTemplateName(e.target.value)} required style={{ width: '100%', padding: '8px 10px', borderRadius: 6, border: '1px solid var(--border)', background: 'rgba(0,0,0,0.2)', color: '#f8fafc', fontSize: 12, fontWeight: 800, outline: 'none' }} /></div>
-                                                <div><label style={{ display: 'block', fontSize: 9, fontWeight: 900, marginBottom: 6, color: '#475569', textTransform: 'uppercase' }}>Dispatched Subject</label><input value={templateSubject} onChange={e => setTemplateSubject(e.target.value)} required style={{ width: '100%', padding: '8px 10px', borderRadius: 6, border: '1px solid var(--border)', background: 'rgba(0,0,0,0.2)', color: '#f8fafc', fontSize: 12, fontWeight: 800, outline: 'none' }} /></div>
+                                                <div><label style={{ display: 'block', fontSize: 9, fontWeight: 900, marginBottom: 6, color: '#475569', textTransform: 'uppercase' }}>Template Name</label><input value={templateName} onChange={e => setTemplateName(e.target.value)} required style={{ width: '100%', padding: '8px 10px', borderRadius: 6, border: '1px solid var(--border)', background: 'rgba(0,0,0,0.2)', color: '#f8fafc', fontSize: 12, fontWeight: 800, outline: 'none' }} /></div>
+                                                <div><label style={{ display: 'block', fontSize: 9, fontWeight: 900, marginBottom: 6, color: '#475569', textTransform: 'uppercase' }}>Email Subject</label><input value={templateSubject} onChange={e => setTemplateSubject(e.target.value)} required style={{ width: '100%', padding: '8px 10px', borderRadius: 6, border: '1px solid var(--border)', background: 'rgba(0,0,0,0.2)', color: '#f8fafc', fontSize: 12, fontWeight: 800, outline: 'none' }} /></div>
                                             </div>
-                                            <div style={{ marginBottom: 12 }}><label style={{ display: 'block', fontSize: 9, fontWeight: 900, marginBottom: 6, color: '#475569', textTransform: 'uppercase' }}>HTML Content Body</label><textarea value={templateBody} onChange={e => setTemplateBody(e.target.value)} required rows={4} style={{ width: '100%', padding: '8px 10px', borderRadius: 6, border: '1px solid var(--border)', background: 'rgba(0,0,0,0.2)', color: '#f8fafc', fontSize: 11, fontWeight: 700, outline: 'none', resize: 'none', lineHeight: 1.5 }} /></div>
+                                            <div style={{ marginBottom: 12 }}><label style={{ display: 'block', fontSize: 9, fontWeight: 900, marginBottom: 6, color: '#475569', textTransform: 'uppercase' }}>Email Body (HTML)</label><textarea value={templateBody} onChange={e => setTemplateBody(e.target.value)} required rows={4} style={{ width: '100%', padding: '8px 10px', borderRadius: 6, border: '1px solid var(--border)', background: 'rgba(0,0,0,0.2)', color: '#f8fafc', fontSize: 11, fontWeight: 700, outline: 'none', resize: 'none', lineHeight: 1.5 }} /></div>
                                             <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end' }}>
                                                 <button type="button" onClick={() => setAdding(false)} style={{ padding: '6px 14px', borderRadius: 6, border: '1px solid var(--border)', background: 'transparent', color: '#64748b', cursor: 'pointer', fontWeight: 900, fontSize: 10, textTransform: 'uppercase' }}>Cancel</button>
-                                                <button type="submit" disabled={processing === 'template'} style={{ padding: '6px 14px', borderRadius: 6, border: 'none', background: '#10b981', color: 'white', cursor: 'pointer', fontWeight: 900, fontSize: 10, textTransform: 'uppercase' }}>Commit Template</button>
+                                                <button type="submit" disabled={processing === 'template'} style={{ padding: '6px 14px', borderRadius: 6, border: 'none', background: '#10b981', color: 'white', cursor: 'pointer', fontWeight: 900, fontSize: 10, textTransform: 'uppercase' }}>Save Template</button>
                                             </div>
                                         </form>
                                     )}
                                     <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-                                        {templates.length === 0 ? <div style={{ color: '#475569', fontSize: 11, fontWeight: 700, padding: 20, textAlign: 'center' }}>ZERO COMMUNICATION TEMPLATES RECOVERED</div> : templates.map(t => (
+                                        {templates.length === 0 ? <div style={{ color: '#475569', fontSize: 11, fontWeight: 700, padding: 20, textAlign: 'center' }}>No templates yet</div> : templates.map(t => (
                                             <div key={t.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 16px', borderRadius: 10, border: '1px solid var(--border)', background: 'rgba(255,255,255,0.01)' }}>
                                                 <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
                                                     <div style={{ width: 30, height: 30, borderRadius: 8, background: 'linear-gradient(135deg, #1e293b, #0f172a)', border: '1px solid rgba(255,255,255,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#10b981' }}><Mail size={14} strokeWidth={2.5} /></div>
@@ -583,7 +603,7 @@ export default function AdminSettings() {
                                                 </div>
                                                 <div style={{ display: 'flex', gap: 4 }}>
                                                     <button onClick={() => { setAdding(true); setTemplateId(t.id); setTemplateName(t.name); setTemplateSubject(t.subject); setTemplateBody(t.body) }} style={{ padding: 6, background: 'transparent', border: 'none', color: '#475569', cursor: 'pointer' }}><Edit2 size={13} strokeWidth={2.5} /></button>
-                                                    <button onClick={() => handleDeleteTemplate(t.id)} style={{ padding: 6, background: 'transparent', border: 'none', color: '#f43f5e', cursor: 'pointer' }}><Trash2 size={13} strokeWidth={2.5} /></button>
+                                                    <button onClick={() => handleDeleteEmailTemplate(t.id)} style={{ padding: 6, background: 'transparent', border: 'none', color: '#f43f5e', cursor: 'pointer' }}><Trash2 size={13} strokeWidth={2.5} /></button>
                                                 </div>
                                             </div>
                                         ))}
@@ -595,13 +615,13 @@ export default function AdminSettings() {
                                 {adding && (
                                      <form onSubmit={handleAddHoliday} style={{ border: '1px solid var(--border)', borderRadius: 12, padding: 20, marginBottom: 8, background: 'rgba(255,255,255,0.02)', backdropFilter: 'blur(10px)' }}>
                                         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12, marginBottom: 16 }}>
-                                            <div><label style={{ display: 'block', fontSize: 9, fontWeight: 900, marginBottom: 6, color: '#475569', textTransform: 'uppercase' }}>Protocol Name</label><input value={holidayName} onChange={e => setHolidayName(e.target.value)} required style={{ width: '100%', padding: '8px 10px', borderRadius: 6, border: '1px solid var(--border)', background: 'rgba(0,0,0,0.2)', color: '#f8fafc', fontSize: 12, fontWeight: 800, outline: 'none' }} /></div>
-                                            <div><label style={{ display: 'block', fontSize: 9, fontWeight: 900, marginBottom: 6, color: '#475569', textTransform: 'uppercase' }}>Temporal Date</label><input type="date" value={holidayDate} onChange={e => setHolidayDate(e.target.value)} required style={{ width: '100%', padding: '8px 10px', borderRadius: 6, border: '1px solid var(--border)', background: 'rgba(0,0,0,0.2)', color: '#f8fafc', fontSize: 12, fontWeight: 800, outline: 'none' }} /></div>
+                                            <div><label style={{ display: 'block', fontSize: 9, fontWeight: 900, marginBottom: 6, color: '#475569', textTransform: 'uppercase' }}>Holiday Name</label><input value={holidayName} onChange={e => setHolidayName(e.target.value)} required style={{ width: '100%', padding: '8px 10px', borderRadius: 6, border: '1px solid var(--border)', background: 'rgba(0,0,0,0.2)', color: '#f8fafc', fontSize: 12, fontWeight: 800, outline: 'none' }} /></div>
+                                            <div><label style={{ display: 'block', fontSize: 9, fontWeight: 900, marginBottom: 6, color: '#475569', textTransform: 'uppercase' }}>Date</label><input type="date" value={holidayDate} onChange={e => setHolidayDate(e.target.value)} required style={{ width: '100%', padding: '8px 10px', borderRadius: 6, border: '1px solid var(--border)', background: 'rgba(0,0,0,0.2)', color: '#f8fafc', fontSize: 12, fontWeight: 800, outline: 'none' }} /></div>
                                             <div><label style={{ display: 'block', fontSize: 9, fontWeight: 900, marginBottom: 6, color: '#475569', textTransform: 'uppercase' }}>Description</label><input value={holidayDesc} onChange={e => setHolidayDesc(e.target.value)} style={{ width: '100%', padding: '8px 10px', borderRadius: 6, border: '1px solid var(--border)', background: 'rgba(0,0,0,0.2)', color: '#f8fafc', fontSize: 12, fontWeight: 800, outline: 'none' }} /></div>
                                         </div>
                                         <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end' }}>
                                             <button type="button" onClick={() => setAdding(false)} style={{ padding: '6px 14px', borderRadius: 6, border: '1px solid var(--border)', background: 'transparent', color: '#64748b', cursor: 'pointer', fontWeight: 900, fontSize: 10, textTransform: 'uppercase' }}>Cancel</button>
-                                            <button type="submit" disabled={processing === 'add-holiday'} style={{ padding: '6px 14px', borderRadius: 6, border: 'none', background: 'var(--accent-primary)', color: 'white', cursor: 'pointer', fontWeight: 900, fontSize: 10, textTransform: 'uppercase' }}>Commit Holiday</button>
+                                            <button type="submit" disabled={processing === 'add-holiday'} style={{ padding: '6px 14px', borderRadius: 6, border: 'none', background: 'var(--accent-primary)', color: 'white', cursor: 'pointer', fontWeight: 900, fontSize: 10, textTransform: 'uppercase' }}>Save Holiday</button>
                                         </div>
                                      </form>
                                 )}
@@ -621,15 +641,15 @@ export default function AdminSettings() {
                             <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
                                 {adding && (
                                     <form onSubmit={handleAdd} style={{ display: 'flex', gap: 10, alignItems: 'center', padding: '10px 16px', borderRadius: 10, border: '1px solid var(--border)', background: 'rgba(255,255,255,0.02)', marginBottom: 12 }}>
-                                        <input value={newValue} onChange={e => setNewValue(e.target.value)} placeholder="PROTOCOL NAME" required style={{ flex: 1, padding: '8px 12px', borderRadius: 8, border: '1px solid var(--border)', background: 'rgba(0,0,0,0.2)', color: '#f8fafc', fontSize: 12, fontWeight: 800, outline: 'none' }} />
+                                        <input value={newValue} onChange={e => setNewValue(e.target.value)} placeholder="Option name" required style={{ flex: 1, padding: '8px 12px', borderRadius: 8, border: '1px solid var(--border)', background: 'rgba(0,0,0,0.2)', color: '#f8fafc', fontSize: 12, fontWeight: 800, outline: 'none' }} />
                                         <input type="color" value={newColor} onChange={e => setNewColor(e.target.value)} style={{ padding: 0, width: 36, height: 32, border: '1px solid var(--border)', borderRadius: 6, cursor: 'pointer', background: 'transparent' }} />
                                         <div style={{ display: 'flex', gap: 6 }}>
                                             <button type="button" onClick={() => setAdding(false)} style={{ padding: '6px 12px', borderRadius: 6, border: '1px solid var(--border)', background: 'transparent', color: '#64748b', cursor: 'pointer', fontWeight: 900, fontSize: 10, textTransform: 'uppercase' }}>Cancel</button>
-                                            <button type="submit" disabled={processing === 'add'} style={{ padding: '6px 12px', borderRadius: 6, border: 'none', background: 'var(--accent-primary)', color: 'white', cursor: 'pointer', fontWeight: 900, fontSize: 10, textTransform: 'uppercase' }}>Commit</button>
+                                            <button type="submit" disabled={processing === 'add'} style={{ padding: '6px 12px', borderRadius: 6, border: 'none', background: 'var(--accent-primary)', color: 'white', cursor: 'pointer', fontWeight: 900, fontSize: 10, textTransform: 'uppercase' }}>Add</button>
                                         </div>
                                     </form>
                                 )}
-                                {filteredOptions.length === 0 ? <div style={{ color: '#475569', fontSize: 11, fontWeight: 700, padding: 20, textAlign: 'center' }}>ZERO SYSTEM DEFINITIONS RECOVERED</div> : filteredOptions.map(opt => (
+                                {filteredOptions.length === 0 ? <div style={{ color: '#475569', fontSize: 11, fontWeight: 700, padding: 20, textAlign: 'center' }}>No options added yet</div> : filteredOptions.map(opt => (
                                     <div key={opt.id} style={{ display: 'flex', alignItems: 'center', padding: '6px 16px', borderRadius: 8, border: '1px solid var(--border)', background: 'rgba(255,255,255,0.01)', transition: 'all 0.2s' }}>
                                         {editingId === opt.id ? (
                                             <div style={{ display: 'flex', gap: 8, flex: 1, alignItems: 'center' }}>
@@ -658,6 +678,15 @@ export default function AdminSettings() {
                 </div>
             </div>
 
+            <Modal 
+                isOpen={!!modalConfirm}
+                onClose={() => setModalConfirm(null)}
+                title={modalConfirm?.title || ''}
+                message={modalConfirm?.message || ''}
+                onConfirm={modalConfirm?.onConfirm || (() => {})}
+                type={modalConfirm?.type || 'info'}
+            />
+
             {/* Edit Executive Identity Modal */}
             {editingUser && (
                 <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(8px)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }} onClick={e => e.target === e.currentTarget && setEditingUser(null)}>
@@ -668,17 +697,17 @@ export default function AdminSettings() {
                             <div style={{ width: 32, height: 32, borderRadius: 10, background: 'rgba(99, 102, 241, 0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--accent-primary)' }}>
                                 <User size={18} strokeWidth={2.5} />
                             </div>
-                            <h3 style={{ fontSize: 16, fontWeight: 900, margin: 0, color: '#f8fafc', letterSpacing: '-0.5px' }}>Account Protocol Update</h3>
+                            <h3 style={{ fontSize: 16, fontWeight: 900, margin: 0, color: '#f8fafc', letterSpacing: '-0.5px' }}>Update Account</h3>
                         </div>
 
                         <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
                             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
-                                <div><label style={{ display: 'block', fontSize: 9, fontWeight: 900, marginBottom: 6, color: '#475569', textTransform: 'uppercase' }}>Executive Name</label><input value={editUserName} onChange={e => setEditUserName(e.target.value)} style={{ width: '100%', padding: '10px 12px', borderRadius: 8, border: '1px solid var(--border)', background: 'rgba(0,0,0,0.2)', color: '#f8fafc', fontSize: 12, fontWeight: 800, outline: 'none' }} /></div>
-                                <div><label style={{ display: 'block', fontSize: 9, fontWeight: 900, marginBottom: 6, color: '#475569', textTransform: 'uppercase' }}>Account Primary Email</label><input value={editUserEmail} onChange={e => setEditUserEmail(e.target.value)} style={{ width: '100%', padding: '10px 12px', borderRadius: 8, border: '1px solid var(--border)', background: 'rgba(0,0,0,0.2)', color: '#f8fafc', fontSize: 12, fontWeight: 800, outline: 'none' }} /></div>
+                                <div><label style={{ display: 'block', fontSize: 9, fontWeight: 900, marginBottom: 6, color: '#475569', textTransform: 'uppercase' }}>Full Name</label><input value={editUserName} onChange={e => setEditUserName(e.target.value)} style={{ width: '100%', padding: '10px 12px', borderRadius: 8, border: '1px solid var(--border)', background: 'rgba(0,0,0,0.2)', color: '#f8fafc', fontSize: 12, fontWeight: 800, outline: 'none' }} /></div>
+                                <div><label style={{ display: 'block', fontSize: 9, fontWeight: 900, marginBottom: 6, color: '#475569', textTransform: 'uppercase' }}>Email Address</label><input value={editUserEmail} onChange={e => setEditUserEmail(e.target.value)} style={{ width: '100%', padding: '10px 12px', borderRadius: 8, border: '1px solid var(--border)', background: 'rgba(0,0,0,0.2)', color: '#f8fafc', fontSize: 12, fontWeight: 800, outline: 'none' }} /></div>
                             </div>
                             
                             <div>
-                                <label style={{ display: 'block', fontSize: 9, fontWeight: 900, marginBottom: 6, color: '#475569', textTransform: 'uppercase' }}>Role Alignment</label>
+                                <label style={{ display: 'block', fontSize: 9, fontWeight: 900, marginBottom: 6, color: '#475569', textTransform: 'uppercase' }}>Role</label>
                                 <select value={editUserRole} onChange={e => setEditUserRole(e.target.value)} style={{ width: '100%', padding: '10px 12px', borderRadius: 8, border: '1px solid var(--border)', background: 'rgba(0,0,0,0.2)', color: '#f8fafc', fontSize: 12, fontWeight: 800, outline: 'none' }}>
                                     <option value="Sales Rep">Sales Rep</option>
                                     <option value="Administrator">Administrator</option>
@@ -687,23 +716,59 @@ export default function AdminSettings() {
 
                             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
                                 <div>
-                                    <label style={{ display: 'block', fontSize: 9, fontWeight: 900, marginBottom: 6, color: '#475569', textTransform: 'uppercase' }}>Salary Basis (৳)</label>
+                                    <label style={{ display: 'block', fontSize: 9, fontWeight: 900, marginBottom: 6, color: '#475569', textTransform: 'uppercase' }}>Base Salary (৳)</label>
                                     <input type="number" value={editUserSalary} onChange={e => setEditUserSalary(parseFloat(e.target.value) || 0)} style={{ width: '100%', padding: '10px 12px', borderRadius: 8, border: '1px solid var(--border)', background: 'rgba(0,0,0,0.2)', color: '#f8fafc', fontSize: 12, fontWeight: 800, outline: 'none' }} />
                                 </div>
                                 <div>
-                                    <label style={{ display: 'block', fontSize: 9, fontWeight: 900, marginBottom: 6, color: '#475569', textTransform: 'uppercase' }}>Credential Reset</label>
-                                    <input type="password" value={editUserPassword} onChange={e => setEditUserPassword(e.target.value)} placeholder="NO CHANGE" style={{ width: '100%', padding: '10px 12px', borderRadius: 8, border: '1px solid var(--border)', background: 'rgba(0,0,0,0.2)', color: '#f8fafc', fontSize: 12, fontWeight: 800, outline: 'none' }} />
+                                    <label style={{ display: 'block', fontSize: 9, fontWeight: 900, marginBottom: 6, color: '#475569', textTransform: 'uppercase' }}>New Password</label>
+                                    <input type="password" value={editUserPassword} onChange={e => setEditUserPassword(e.target.value)} placeholder="Leave blank to keep unchanged" style={{ width: '100%', padding: '10px 12px', borderRadius: 8, border: '1px solid var(--border)', background: 'rgba(0,0,0,0.2)', color: '#f8fafc', fontSize: 12, fontWeight: 800, outline: 'none' }} />
                                 </div>
                             </div>
 
                             <div style={{ display: 'flex', gap: 10, marginTop: 12 }}>
-                                <button onClick={() => setEditingUser(null)} style={{ flex: 1, padding: '10px', borderRadius: 8, border: '1px solid var(--border)', background: 'transparent', color: '#64748b', fontWeight: 900, fontSize: 11, cursor: 'pointer', textTransform: 'uppercase' }}>Abort</button>
-                                <button onClick={handleUserUpdate} disabled={processing === editingUser.id} style={{ flex: 1, padding: '10px', borderRadius: 8, border: 'none', background: 'var(--accent-primary)', color: 'white', fontWeight: 900, fontSize: 11, cursor: 'pointer', textTransform: 'uppercase' }}>Push Changes</button>
+                                <button onClick={() => setEditingUser(null)} style={{ flex: 1, padding: '10px', borderRadius: 8, border: '1px solid var(--border)', background: 'transparent', color: '#64748b', fontWeight: 900, fontSize: 11, cursor: 'pointer', textTransform: 'uppercase' }}>Cancel</button>
+                                <button onClick={handleUserUpdate} disabled={processing === editingUser.id} style={{ flex: 1, padding: '10px', borderRadius: 8, border: 'none', background: 'var(--accent-primary)', color: 'white', fontWeight: 900, fontSize: 11, cursor: 'pointer', textTransform: 'uppercase' }}>Save Changes</button>
                             </div>
                         </div>
                     </div>
                 </div>
             )}
+        </div>
+    )
+}
+
+function Modal({ isOpen, onClose, title, message, onConfirm, type }: { isOpen: boolean, onClose: () => void, title: string, message: string, onConfirm: () => void, type: 'danger' | 'info' }) {
+    if (!isOpen) return null
+    return (
+        <div className="modal-overlay" onClick={e => e.target === e.currentTarget && onClose()} style={{ zIndex: 1000 }}>
+            <div className="modal glass" style={{ maxWidth: 440, padding: 32, border: '1px solid rgba(255,255,255,0.1)' }}>
+                <div style={{ textAlign: 'center', marginBottom: 24 }}>
+                    <div style={{ 
+                        width: 64, height: 64, 
+                        background: type === 'danger' ? 'rgba(239, 68, 68, 0.1)' : 'rgba(99, 102, 241, 0.1)', 
+                        color: type === 'danger' ? '#ef4444' : 'var(--accent-primary)', 
+                        borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px' 
+                    }}>
+                        {type === 'danger' ? <ShieldAlert size={32} /> : <Database size={32} />}
+                    </div>
+                    <h3 style={{ fontSize: 22, fontWeight: 700, marginBottom: 8, color: 'var(--text-primary)' }}>{title}</h3>
+                    <p style={{ color: 'var(--text-secondary)', fontSize: 14, lineHeight: 1.6 }}>{message}</p>
+                </div>
+                <div style={{ display: 'flex', gap: 12, justifyContent: 'center' }}>
+                    <button className="btn-secondary" onClick={onClose} style={{ flex: 1, padding: '12px 0', borderRadius: 10 }}>Cancel</button>
+                    <button 
+                        className="btn-primary" 
+                        onClick={onConfirm} 
+                        style={{ 
+                            flex: 1, padding: '12px 0', borderRadius: 10,
+                            background: type === 'danger' ? '#ef4444' : 'var(--accent-primary)', 
+                            borderColor: type === 'danger' ? '#ef4444' : 'var(--accent-primary)' 
+                        }}
+                    >
+                        Confirm
+                    </button>
+                </div>
+            </div>
         </div>
     )
 }

@@ -17,7 +17,19 @@ export async function POST(_req: NextRequest, { params }: { params: Promise<{ id
 
         if (!lead) return NextResponse.json({ error: 'Lead not found' }, { status: 404 })
 
-        // Fetch the first available stage from settings
+        // Only the lead owner or an admin can convert
+        if (user.role !== 'Administrator' && lead.ownerId !== user.userId) {
+            return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+        }
+
+        // Prevent duplicate conversion — check if an active opportunity already exists for this lead
+        const existingOpportunity = await prisma.opportunity.findFirst({
+            where: { leadId: id, isDeleted: false }
+        })
+        if (existingOpportunity) {
+            return NextResponse.json({ error: 'This lead has already been converted to an opportunity.' }, { status: 409 })
+        }
+
         const stageSettings = await prisma.systemOption.findMany({
             where: { category: 'OPPORTUNITY_STAGE' },
             orderBy: { order: 'asc' },
@@ -25,7 +37,6 @@ export async function POST(_req: NextRequest, { params }: { params: Promise<{ id
         })
         const initialStage = stageSettings.length > 0 ? stageSettings[0].value : 'Test Job Received'
 
-        // Create the opportunity
         const opportunity = await prisma.opportunity.create({
             data: {
                 title: `${lead.company || lead.name} - Opportunity`,
@@ -38,7 +49,6 @@ export async function POST(_req: NextRequest, { params }: { params: Promise<{ id
             }
         })
 
-        // Also create initial stage history for the opportunity
         await prisma.stageHistory.create({
             data: {
                 stage: initialStage,
@@ -46,18 +56,15 @@ export async function POST(_req: NextRequest, { params }: { params: Promise<{ id
             }
         })
 
-        // We mark the lead as "Converted"
         await prisma.lead.update({
             where: { id },
             data: { status: 'Converted' }
         })
 
-        // Award XP for converting a lead
-        const gamification = await awardXP(user.userId, 'LEAD_CONVERTED')
+        const gamification = await awardXP(user.userId, 'LEAD_CONVERTED', 'LEAD_CONVERTED', id)
 
         return NextResponse.json({ ...opportunity, gamification })
-    } catch (err) {
-        console.error(err)
+    } catch {
         return NextResponse.json({ error: 'Failed to convert lead' }, { status: 500 })
     }
 }

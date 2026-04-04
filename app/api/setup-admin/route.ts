@@ -10,8 +10,8 @@ export async function GET() {
         const adminCount = await prisma.user.count({ where: { role: 'Administrator' } })
         
         return NextResponse.json({ setupNeeded: adminCount === 0 })
-    } catch (err: unknown) {
-        return NextResponse.json({ error: (err as Error).message }, { status: 500 })
+    } catch {
+        return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 })
     }
 }
 
@@ -42,7 +42,7 @@ export async function POST(req: Request) {
         })
 
         return NextResponse.json({ success: true, email: admin.email })
-    } catch (err: unknown) {
-        return NextResponse.json({ error: (err as Error).message }, { status: 500 })
+    } catch {
+        return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 })
     }
 }

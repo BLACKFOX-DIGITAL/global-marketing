@@ -19,11 +19,11 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
         })
 
         return NextResponse.json(updated)
-    } catch (err: any) {
-        if (err.code === 'P2002') {
+    } catch (err: unknown) {
+        if ((err as { code?: string }).code === 'P2002') {
             return NextResponse.json({ error: 'Template name already exists' }, { status: 400 })
         }
-        return NextResponse.json({ error: err.message }, { status: 500 })
+        return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
     }
 }
 
@@ -40,7 +40,7 @@ export async function DELETE(req: NextRequest, { params }: { params: Promise<{ i
             where: { id }
         })
         return NextResponse.json({ success: true })
-    } catch (err: any) {
-        return NextResponse.json({ error: err.message }, { status: 500 })
+    } catch {
+        return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
     }
 }

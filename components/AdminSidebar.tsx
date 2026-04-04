@@ -8,7 +8,8 @@ import ThemeSwitcher from './ThemeSwitcher'
 const ADMIN_LINKS = [
     { section: 'Overview', items: [
         { href: '/admin/dashboard', label: 'Dashboard', icon: LayoutDashboard },
-        { href: '/admin/reports/sales', label: 'Analytics', icon: BarChart3 },
+        { href: '/admin/reports/sales', label: 'Sales Report', icon: BarChart3 },
+        { href: '/admin/reports/attendance', label: 'Attendance Report', icon: CheckSquare },
         { href: '/admin/goals', label: 'Targets & Quotas', icon: Target },
     ]},
     { section: 'Management', items: [

@@ -26,6 +26,7 @@ export default function OpportunityDetailPage({ params }: { params: Promise<{ id
     const [uploading, setUploading] = useState(false)
     const [stages, setStages] = useState<{ value: string, color: string | null }[]>([])
     const [stageConfirm, setStageConfirm] = useState<{ newStage: string } | null>(null)
+    const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null)
     const [savingNotes, setSavingNotes] = useState<'idle' | 'saving' | 'saved'>('idle')
     const initialNotesRef = useRef<string | null>(null)
 
@@ -75,7 +76,7 @@ export default function OpportunityDetailPage({ params }: { params: Promise<{ id
                     await fetch(`/api/opportunities/${id}`, {
                         method: 'PUT',
                         headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ ...opp, notes: currentNotes })
+                        body: JSON.stringify({ notes: currentNotes })
                     })
                     initialNotesRef.current = currentNotes
                     setSavingNotes('saved')
@@ -107,7 +108,7 @@ export default function OpportunityDetailPage({ params }: { params: Promise<{ id
             await fetch(`/api/opportunities/${id}`, {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ ...opp, stage: newStage })
+                body: JSON.stringify({ stage: newStage })
             })
             setStageConfirm(null)
 
@@ -122,26 +123,18 @@ export default function OpportunityDetailPage({ params }: { params: Promise<{ id
     }
 
     const handleDeleteAttachment = async (attachId: string) => {
-        if (!confirm('Are you sure you want to delete this file?')) return
+        setDeleteConfirmId(attachId)
+    }
+
+    const executeDeleteAttachment = async (attachId: string) => {
         await fetch(`/api/attachments?id=${attachId}`, { method: 'DELETE' })
+        setDeleteConfirmId(null)
         fetchOppAndOptions()
     }
 
-    const handleUpload = async (name: string) => {
-        setUploading(true)
-        await fetch('/api/attachments', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                name,
-                fileUrl: '#',
-                fileType: 'application/pdf',
-                fileSize: 1024 * 850,
-                opportunityId: id
-            })
-        })
-        fetchOppAndOptions()
-        setUploading(false)
+    // File upload requires a storage backend (e.g. S3/R2). Not yet implemented.
+    const handleUpload = async (_name: string) => {
+        alert('File upload is not yet configured. Please contact your administrator.')
     }
 
     if (loading) return <div style={{ display: 'flex', justifyContent: 'center', padding: 100 }}><div className="spinner" style={{ width: 32, height: 32 }} /></div>
@@ -168,12 +161,12 @@ export default function OpportunityDetailPage({ params }: { params: Promise<{ id
                                 <div>
                                     <h1 style={{ fontSize: 22, fontWeight: 700, margin: '0 0 4px 0' }}>{displayTitle}</h1>
                                     <div style={{ display: 'flex', alignItems: 'center', gap: 8, color: 'var(--text-secondary)', fontSize: 13 }}>
-                                        <Building size={14} /> {opp.company || 'Private Entity'}
+                                        <Building size={14} /> {opp.company || 'No company'}
                                     </div>
                                 </div>
                             </div>
                             <div style={{ display: 'flex', gap: 10 }}>
-                                <button className="btn-secondary"><Pencil size={14} /> Edit</button>
+                                <button className="btn-secondary" disabled title="Edit coming soon" style={{ opacity: 0.5, cursor: 'not-allowed' }}><Pencil size={14} /> Edit</button>
                                 {opp.stage !== 'Closed Won' ? (
                                     <button onClick={() => updateStage('Closed Won')} className="btn-primary" style={{ background: '#10b981', borderColor: '#10b981' }}>Won</button>
                                 ) : (
@@ -287,6 +280,28 @@ export default function OpportunityDetailPage({ params }: { params: Promise<{ id
                             <button className="btn-secondary" onClick={() => setStageConfirm(null)} style={{ flex: 1, padding: '12px 0' }}>Cancel</button>
                             <button className="btn-primary" onClick={() => executeStageUpdate(stageConfirm.newStage)} style={{ flex: 1, padding: '12px 0', background: stageConfirm.newStage === 'Closed Won' ? '#10b981' : '#ef4444', borderColor: stageConfirm.newStage === 'Closed Won' ? '#10b981' : '#ef4444' }}>
                                 Yes, Mark as {stageConfirm.newStage === 'Closed Won' ? 'Won' : 'Lost'}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {deleteConfirmId && (
+                <div className="modal-overlay" onClick={e => e.target === e.currentTarget && setDeleteConfirmId(null)}>
+                    <div className="modal" style={{ maxWidth: 440, padding: 32 }}>
+                        <div style={{ textAlign: 'center', marginBottom: 24 }}>
+                            <div style={{ width: 64, height: 64, background: 'rgba(239, 68, 68, 0.1)', color: '#ef4444', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px' }}>
+                                <Loader2 size={32} />
+                            </div>
+                            <h3 style={{ fontSize: 22, fontWeight: 700, marginBottom: 8, color: 'var(--text-primary)' }}>Delete Attachment</h3>
+                            <p style={{ color: 'var(--text-secondary)', fontSize: 14, lineHeight: 1.6 }}>
+                                Are you sure you want to permanently delete this file? This action cannot be undone.
+                            </p>
+                        </div>
+                        <div style={{ display: 'flex', gap: 12, justifyContent: 'center' }}>
+                            <button className="btn-secondary" onClick={() => setDeleteConfirmId(null)} style={{ flex: 1, padding: '12px 0' }}>Cancel</button>
+                            <button className="btn-primary" onClick={() => executeDeleteAttachment(deleteConfirmId)} style={{ flex: 1, padding: '12px 0', background: '#ef4444', borderColor: '#ef4444' }}>
+                                Yes, Delete File
                             </button>
                         </div>
                     </div>

@@ -2,8 +2,7 @@
 import { useEffect, useState, useCallback } from 'react'
 import Header from '@/components/Header'
 import Link from 'next/link'
-import { Plus, Search, Filter, Trash2, Pencil, ChevronLeft, ChevronRight, UserPlus, PhoneCall, Mail } from 'lucide-react'
-import { } from 'date-fns'
+import { Search, Trash2, Pencil, ChevronLeft, ChevronRight } from 'lucide-react'
 import NotificationCenter from '@/components/NotificationCenter'
 import NewLeadModal from '@/components/NewLeadModal'
 import EditLeadModal from '@/components/EditLeadModal'
@@ -132,7 +131,9 @@ export default function CustomersPage() {
         setDeleting(null)
     }
 
-    const pageNums = Array.from({ length: Math.min(totalPages, 5) }, (_, i) => i + 1)
+    const pageNums = totalPages <= 5
+        ? Array.from({ length: totalPages }, (_, i) => i + 1)
+        : Array.from({ length: 5 }, (_, i) => Math.max(1, Math.min(page - 2, totalPages - 4)) + i)
 
     return (
         <>
@@ -162,8 +163,8 @@ export default function CustomersPage() {
                     <table className="data-table">
                         <thead>
                             <tr>
-                                <th>Name & Company</th>
-                                <th>Website & Email</th>
+                                <th>Company / Contact</th>
+                                <th>Website / Email</th>
                                 <th>Phone</th>
                                 <th>Industry</th>
                                 <th>Priority</th>
@@ -222,17 +223,26 @@ export default function CustomersPage() {
                     {/* Pagination */}
                     <div style={{ padding: '12px 16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: '1px solid var(--border)' }}>
                         <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>
-                            Showing {((page - 1) * 10) + 1}–{Math.min(page * 10, total)} of <strong style={{ color: 'var(--text-primary)' }}>{total}</strong> leads
+                            {total === 0
+                                ? 'No customers found'
+                                : <>Showing {((page - 1) * 10) + 1}–{Math.min(page * 10, total)} of <strong style={{ color: 'var(--text-primary)' }}>{total}</strong> customers</>
+                            }
                         </span>
                         <div className="pagination">
                             <button className="page-btn" onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page === 1}>
                                 <ChevronLeft size={14} />
                             </button>
+                            {pageNums[0] > 1 && <>
+                                <button className="page-btn" onClick={() => setPage(1)}>1</button>
+                                {pageNums[0] > 2 && <span style={{ color: 'var(--text-muted)', padding: '0 4px' }}>…</span>}
+                            </>}
                             {pageNums.map(n => (
                                 <button key={n} className={`page-btn ${n === page ? 'active' : ''}`} onClick={() => setPage(n)}>{n}</button>
                             ))}
-                            {totalPages > 5 && <span style={{ color: 'var(--text-muted)', padding: '0 4px' }}>...</span>}
-                            {totalPages > 5 && <button className={`page-btn ${totalPages === page ? 'active' : ''}`} onClick={() => setPage(totalPages)}>{totalPages}</button>}
+                            {pageNums[pageNums.length - 1] < totalPages && <>
+                                {pageNums[pageNums.length - 1] < totalPages - 1 && <span style={{ color: 'var(--text-muted)', padding: '0 4px' }}>…</span>}
+                                <button className={`page-btn ${totalPages === page ? 'active' : ''}`} onClick={() => setPage(totalPages)}>{totalPages}</button>
+                            </>}
                             <button className="page-btn" onClick={() => setPage(p => Math.min(totalPages, p + 1))} disabled={page === totalPages}>
                                 <ChevronRight size={14} />
                             </button>
@@ -265,7 +275,7 @@ export default function CustomersPage() {
                         <div style={{ display: 'flex', gap: 12, justifyContent: 'center' }}>
                             <button className="btn-secondary" onClick={() => setDeleteConfirmId(null)} style={{ flex: 1, padding: '12px 0' }}>Cancel</button>
                             <button className="btn-primary" onClick={executeDelete} style={{ flex: 1, padding: '12px 0', background: '#ef4444', borderColor: '#ef4444' }}>
-                                Yes, Delete Customer
+                                Yes, Delete
                             </button>
                         </div>
                     </div>

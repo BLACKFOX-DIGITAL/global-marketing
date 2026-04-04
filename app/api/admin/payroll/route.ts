@@ -2,7 +2,6 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { getCurrentUser } from '@/lib/auth'
 import { calculateMonthlySalary } from '@/lib/payroll'
-import { parseISO } from 'date-fns'
 
 export async function GET(req: NextRequest) {
     const user = await getCurrentUser()
@@ -12,11 +11,14 @@ export async function GET(req: NextRequest) {
 
     const { searchParams } = new URL(req.url)
     const dateStr = searchParams.get('date') || new Date().toISOString()
-    const date = parseISO(dateStr)
+    const date = new Date(dateStr)
+    if (isNaN(date.getTime())) {
+        return NextResponse.json({ error: 'Invalid date' }, { status: 400 })
+    }
 
     try {
         const users = await prisma.user.findMany({
-            where: { role: { not: 'Administrator' } }, // Usually admin salary is handled differently or not at all in this logic
+            where: { role: { not: 'Administrator' }, isSuspended: false },
             select: { id: true }
         })
 
@@ -25,7 +27,7 @@ export async function GET(req: NextRequest) {
         )
 
         return NextResponse.json({ reports })
-    } catch (error: any) {
-        return NextResponse.json({ error: error.message }, { status: 500 })
+    } catch {
+        return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
     }
 }

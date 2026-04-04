@@ -1,39 +1,42 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
-import { getCurrentUser } from '@/lib/auth'
+import { getCurrentUser, isManager } from '@/lib/auth'
 import { startOfDay, subDays, format } from 'date-fns'
 
 export async function GET() {
     const user = await getCurrentUser()
     if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
-    // 1. Funnel Data — run all counts in parallel
+    const elevated = isManager(user)
+
+    // Non-managers only see their own data
+    const ownerFilter = elevated ? {} : { ownerId: user.userId }
+
     const [totalLeads, opportunities, wonOpportunities] = await Promise.all([
-        prisma.lead.count({ where: { isDeleted: false } }),
-        prisma.opportunity.count(),
-        prisma.opportunity.count({ where: { stage: 'Closed Won' } }),
+        prisma.lead.count({ where: { isDeleted: false, ...ownerFilter } }),
+        prisma.opportunity.count({ where: { isDeleted: false, ...ownerFilter } }),
+        prisma.opportunity.count({ where: { stage: 'Closed Won', isDeleted: false, ...ownerFilter } }),
     ])
 
     const funnelData = [
-        { name: 'Leads generated', value: totalLeads || 1 }, // Default to 1 to avoid empty chart glitch if 0
+        { name: 'Leads generated', value: totalLeads || 1 },
         { name: 'Opportunities created', value: opportunities },
         { name: 'Deals Won', value: wonOpportunities }
     ]
-    if (totalLeads === 0) funnelData[0].value = 0 
+    if (totalLeads === 0) funnelData[0].value = 0
 
-    // 2. Performance (Deals Won over last 30 days)
     const thirtyDaysAgo = subDays(startOfDay(new Date()), 30)
-    
+
     const recentWins = await prisma.opportunity.findMany({
         where: {
             stage: 'Closed Won',
-            updatedAt: { gte: thirtyDaysAgo }
+            updatedAt: { gte: thirtyDaysAgo },
+            ...ownerFilter,
         },
         select: { updatedAt: true }
     })
 
     const performanceMap = new Map<string, number>()
-    // Initialize last 30 days with 0
     for (let i = 29; i >= 0; i--) {
         const d = subDays(new Date(), i)
         performanceMap.set(format(d, 'MMM dd'), 0)
@@ -51,7 +54,7 @@ export async function GET() {
         deals: count
     }))
 
-    // 3. Activity Heatmap Data (Last 90 days for current user)
+    // Activity heatmap is always scoped to the current user
     const ninetyDaysAgo = subDays(startOfDay(new Date()), 90)
     const activities = await prisma.activityLog.findMany({
         where: {
@@ -67,10 +70,7 @@ export async function GET() {
         heatmapMap.set(dateStr, (heatmapMap.get(dateStr) || 0) + 1)
     })
 
-    const heatmapData = Array.from(heatmapMap.entries()).map(([date, count]) => ({
-        date,
-        count
-    }))
+    const heatmapData = Array.from(heatmapMap.entries()).map(([date, count]) => ({ date, count }))
 
     const res = NextResponse.json({
         funnel: funnelData,

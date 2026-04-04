@@ -123,12 +123,15 @@ export default function LeadOperationsHub() {
     const handleMassDistribution = async () => {
         if (selectedIds.size === 0 || !newOwnerId) return
         setDistributing(true)
-        const res = await fetch('/api/admin/reassign', {
-            method: 'PUT', headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ leadIds: Array.from(selectedIds), newOwnerId })
-        })
-        if (res.ok) { setSelectedIds(new Set()); setNewOwnerId(''); fetchData() }
-        setDistributing(false)
+        try {
+            const res = await fetch('/api/admin/reassign', {
+                method: 'PUT', headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ leadIds: Array.from(selectedIds), newOwnerId })
+            })
+            if (res.ok) { setSelectedIds(new Set()); setNewOwnerId(''); fetchData() }
+        } finally {
+            setDistributing(false)
+        }
     }
 
     const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -174,7 +177,7 @@ export default function LeadOperationsHub() {
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
                     <div>
                         <h1 style={{ fontSize: 22, fontWeight: 800, letterSpacing: '-0.4px', margin: 0, color: 'var(--text-primary)' }}>Global Leads</h1>
-                        <p style={{ margin: '4px 0 0 0', color: 'var(--text-secondary)', fontSize: 13 }}>System-wide lead lifecycle management and distribution.</p>
+                        <p style={{ margin: '4px 0 0 0', color: 'var(--text-secondary)', fontSize: 13 }}>View, filter, and manage all leads across the team.</p>
                     </div>
                     {activeTab === 'leads' && (
                         <div style={{ display: 'flex', gap: 12 }}>
@@ -197,7 +200,7 @@ export default function LeadOperationsHub() {
                         onClick={() => setActiveTab('leads')}
                         style={{ padding: '8px 12px', background: 'transparent', border: 'none', borderBottom: activeTab === 'leads' ? '2px solid var(--accent-primary)' : '2px solid transparent', color: activeTab === 'leads' ? 'var(--text-primary)' : 'var(--text-secondary)', fontWeight: 700, fontSize: 13, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6, transition: 'all 0.2s' }}
                     >
-                        <LayoutGrid size={14} /> Lead Operations
+                        <LayoutGrid size={14} /> All Leads
                     </button>
                     <button
                         onClick={() => setActiveTab('deletions')}
@@ -211,7 +214,7 @@ export default function LeadOperationsHub() {
                     <div style={{ display: 'flex', gap: 12, marginBottom: 16, alignItems: 'center' }}>
                         <div style={{ display: 'flex', alignItems: 'center', background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 8, padding: '7px 12px', flex: 1, maxWidth: 320 }}>
                             <Search size={16} color="var(--text-muted)" style={{ marginRight: 8 }} />
-                            <input placeholder="Search records..." value={search} onChange={e => { setSearch(e.target.value); setPage(1) }} style={{ background: 'transparent', border: 'none', color: 'var(--text-primary)', outline: 'none', width: '100%', fontSize: 13 }} />
+                            <input placeholder="Search leads..." value={search} onChange={e => { setSearch(e.target.value); setPage(1) }} style={{ background: 'transparent', border: 'none', color: 'var(--text-primary)', outline: 'none', width: '100%', fontSize: 13 }} />
                         </div>
                         
                         {/* Advanced Filter Dropdown */}
@@ -258,7 +261,7 @@ export default function LeadOperationsHub() {
                                         <div>
                                             <label style={{ display: 'block', fontSize: 11, fontWeight: 700, textTransform: 'uppercase', color: 'var(--text-muted)', marginBottom: 6, letterSpacing: '0.5px' }}>Assigned Owner</label>
                                             <select value={filterOwnerId} onChange={e => { setFilterOwnerId(e.target.value); setPage(1) }} style={{ width: '100%', padding: '8px 12px', borderRadius: 8, background: 'rgba(0,0,0,0.2)', color: 'var(--text-primary)', border: '1px solid var(--border)', outline: 'none', cursor: 'pointer', fontSize: 13 }}>
-                                                <option value="">All Personnel</option>
+                                                <option value="">All Members</option>
                                                 <option value="pool">Unassigned (Pool)</option>
                                                 {salesReps.map(rep => <option key={rep.id} value={rep.id}>{rep.name}</option>)}
                                             </select>
@@ -268,7 +271,7 @@ export default function LeadOperationsHub() {
                             )}
                         </div>
 
-                        <div style={{ fontSize: 13, color: 'var(--text-muted)', fontWeight: 600 }}>{total.toLocaleString()} records found</div>
+                        <div style={{ fontSize: 13, color: 'var(--text-muted)', fontWeight: 600 }}>{total.toLocaleString()} leads found</div>
                         
                         <div style={{ flex: 1 }} />
                         
@@ -296,9 +299,9 @@ export default function LeadOperationsHub() {
                         <thead style={{ background: 'rgba(255,255,255,0.02)', borderBottom: '1px solid var(--border)', position: 'sticky', top: 0, zIndex: 10 }}>
                             <tr style={{ color: 'var(--text-muted)', fontSize: 10, textTransform: 'uppercase', letterSpacing: '1px' }}>
                                 <th style={{ padding: '12px 20px', width: 60, textAlign: 'center' }}><input type="checkbox" checked={leads.length > 0 && selectedIds.size === leads.length} onChange={toggleSelectAll} style={{ width: 15, height: 15, cursor: 'pointer', accentColor: 'var(--accent-primary)' }} /></th>
-                                <th onClick={() => handleSort('company')} style={{ padding: '12px 16px', fontWeight: 800, cursor: 'pointer', width: 320 }}><div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>Corporate Entity <SortIcon field="company" /></div></th>
-                                <th onClick={() => handleSort('status')} style={{ padding: '12px 16px', fontWeight: 800, cursor: 'pointer', width: 150 }}><div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>Lifecycle Status <SortIcon field="status" /></div></th>
-                                <th onClick={() => handleSort('owner')} style={{ padding: '12px 16px', fontWeight: 800, cursor: 'pointer', width: 220 }}><div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>Asset Ownership <SortIcon field="owner" /></div></th>
+                                <th onClick={() => handleSort('company')} style={{ padding: '12px 16px', fontWeight: 800, cursor: 'pointer', width: 320 }}><div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>Company / Lead <SortIcon field="company" /></div></th>
+                                <th onClick={() => handleSort('status')} style={{ padding: '12px 16px', fontWeight: 800, cursor: 'pointer', width: 150 }}><div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>Status <SortIcon field="status" /></div></th>
+                                <th onClick={() => handleSort('owner')} style={{ padding: '12px 16px', fontWeight: 800, cursor: 'pointer', width: 220 }}><div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>Owner <SortIcon field="owner" /></div></th>
                                 <th onClick={() => handleSort('updatedAt')} style={{ padding: '12px 16px', fontWeight: 800, cursor: 'pointer', width: 140 }}><div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>Last Activity <SortIcon field="updatedAt" /></div></th>
                                 <th style={{ padding: '12px 16px' }}></th>
                             </tr>
@@ -317,7 +320,7 @@ export default function LeadOperationsHub() {
                                             <td style={{ padding: '8px 20px', textAlign: 'center', verticalAlign: 'middle', width: 60 }}><input type="checkbox" checked={isSelected} onChange={() => toggleSelect(l.id)} style={{ width: 14, height: 14, cursor: 'pointer', accentColor: 'var(--accent-primary)' }} /></td>
                                             <td style={{ padding: '8px 16px', verticalAlign: 'middle', width: 320 }}><div style={{ display: 'flex', alignItems: 'center', gap: 10 }}><div style={{ width: 28, height: 28, borderRadius: 8, background: 'linear-gradient(135deg, #1e293b, #0f172a)', border: '1px solid rgba(255,255,255,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 10, fontWeight: 900, color: '#f8fafc', flexShrink: 0 }}>{(l.company || 'L')[0].toUpperCase()}</div><Link href={`/admin/leads/${l.id}`} style={{ fontWeight: 800, color: '#f8fafc', textDecoration: 'none', fontSize: 12, display: 'block' }}>{l.company || l.name}</Link></div></td>
                                             <td style={{ padding: '8px 16px', verticalAlign: 'middle', width: 150 }}><div style={{ display: 'flex', alignItems: 'center' }}><span style={{ fontSize: 9, fontWeight: 900, padding: '2px 8px', borderRadius: 6, background: `${statusCol}15`, color: statusCol, border: `1px solid ${statusCol}30`, textTransform: 'uppercase', letterSpacing: '0.4px' }}>{l.status}</span></div></td>
-                                            <td style={{ padding: '8px 16px', verticalAlign: 'middle', width: 220 }}>{l.owner ? (<div style={{ display: 'flex', alignItems: 'center', gap: 8, whiteSpace: 'nowrap' }}><div style={{ width: 24, height: 24, borderRadius: 6, background: 'linear-gradient(135deg, #1e293b, #0f172a)', border: '1px solid rgba(255,255,255,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 10, fontWeight: 900, color: 'var(--accent-primary)', flexShrink: 0 }}>{l.owner.name[0]}</div><span style={{ fontWeight: 700, fontSize: 12, color: '#f1f5f9' }}>{l.owner.name}</span></div>) : <span style={{ color: '#475569', fontSize: 11, fontWeight: 700 }}>Unassigned Portfolio</span>}</td>
+                                            <td style={{ padding: '8px 16px', verticalAlign: 'middle', width: 220 }}>{l.owner ? (<div style={{ display: 'flex', alignItems: 'center', gap: 8, whiteSpace: 'nowrap' }}><div style={{ width: 24, height: 24, borderRadius: 6, background: 'linear-gradient(135deg, #1e293b, #0f172a)', border: '1px solid rgba(255,255,255,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 10, fontWeight: 900, color: 'var(--accent-primary)', flexShrink: 0 }}>{l.owner.name[0]}</div><span style={{ fontWeight: 700, fontSize: 12, color: '#f1f5f9' }}>{l.owner.name}</span></div>) : <span style={{ color: '#475569', fontSize: 11, fontWeight: 700 }}>Unassigned</span>}</td>
                                             <td style={{ padding: '8px 16px', verticalAlign: 'middle', width: 140 }}><div style={{ fontSize: 11, color: '#64748b', fontWeight: 700, letterSpacing: '0.2px' }}>{format(parseISO(l.updatedAt), 'MMM dd, yyyy')}</div></td>
                                             <td style={{ padding: '8px 16px' }}></td>
                                         </tr>
@@ -397,7 +400,7 @@ export default function LeadOperationsHub() {
                     <div style={{ width: 1, height: 32, background: 'var(--border)' }} />
                     <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                         <select value={newOwnerId} onChange={e => setNewOwnerId(e.target.value)} style={{ padding: '8px 12px', borderRadius: 8, background: 'rgba(255,255,255,0.05)', color: 'var(--text-primary)', border: '1px solid var(--border)', outline: 'none', cursor: 'pointer', fontSize: 13, minWidth: 180 }}>
-                            <option value="">Select Recipient...</option>
+                            <option value="">Assign to...</option>
                             {salesReps.map(rep => <option key={rep.id} value={rep.id}>{rep.name}</option>)}
                         </select>
                         <button onClick={handleMassDistribution} disabled={!newOwnerId || distributing} style={{ padding: '8px 16px', borderRadius: 8, background: 'var(--accent-primary)', color: 'white', border: 'none', fontWeight: 700, fontSize: 13, cursor: (!newOwnerId || distributing) ? 'not-allowed' : 'pointer', opacity: (!newOwnerId || distributing) ? 0.5 : 1, display: 'flex', alignItems: 'center', gap: 6 }}>
@@ -413,7 +416,7 @@ export default function LeadOperationsHub() {
                 <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(4px)', zIndex: 200, display: 'flex', alignItems: 'center', justifyContent: 'center' }} onClick={e => e.target === e.currentTarget && setShowImport(false)}>
                     <div style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 20, padding: 32, width: 500, boxShadow: '0 20px 40px rgba(0,0,0,0.4)' }}>
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
-                            <h3 style={{ fontSize: 18, fontWeight: 700, margin: 0 }}>Import Leads (CSV)</h3>
+                            <h3 style={{ fontSize: 18, fontWeight: 700, margin: 0 }}>Import Leads</h3>
                             <button onClick={() => setShowImport(false)} style={{ background: 'transparent', border: 'none', color: 'var(--text-muted)', cursor: 'pointer' }}><X size={20} /></button>
                         </div>
                         <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>

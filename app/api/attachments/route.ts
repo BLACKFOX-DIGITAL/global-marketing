@@ -9,6 +9,23 @@ export async function POST(req: NextRequest) {
     const { name, fileUrl, fileType, fileSize, leadId, opportunityId } = await req.json()
 
     try {
+        // Verify the user owns the parent record before attaching
+        if (leadId) {
+            const lead = await prisma.lead.findUnique({ where: { id: leadId }, select: { ownerId: true } })
+            if (!lead) return NextResponse.json({ error: 'Lead not found' }, { status: 404 })
+            if (user.role !== 'Administrator' && lead.ownerId !== user.userId) {
+                return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+            }
+        }
+
+        if (opportunityId) {
+            const opp = await prisma.opportunity.findUnique({ where: { id: opportunityId }, select: { ownerId: true } })
+            if (!opp) return NextResponse.json({ error: 'Opportunity not found' }, { status: 404 })
+            if (user.role !== 'Administrator' && opp.ownerId !== user.userId) {
+                return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+            }
+        }
+
         const attachment = await prisma.attachment.create({
             data: {
                 name,

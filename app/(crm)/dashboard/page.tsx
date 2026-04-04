@@ -1,6 +1,6 @@
 'use client'
 import { useEffect, useState } from 'react'
-import { Users, Calendar, CheckCircle, TrendingUp, Briefcase, Target, ChevronRight, Phone, Mail, Zap, Star, Activity, Check, Waves, Pencil } from 'lucide-react'
+import { Users, Calendar, CheckCircle, TrendingUp, Briefcase, Target, ChevronRight, Phone, Mail, Zap, Star, Check, Waves, Pencil } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { format } from 'date-fns'
@@ -94,7 +94,10 @@ export default function DashboardPage() {
 
     useEffect(() => {
         if (init?.redirect) {
-            router.push(init.redirect)
+            const currentPath = window.location.pathname
+            if (currentPath !== init.redirect) {
+                router.replace(init.redirect)
+            }
         }
     }, [init, router])
 
@@ -141,27 +144,12 @@ export default function DashboardPage() {
 
     const handleLogCallStep = async (leadId: string, outcome: string, phone: string) => {
         setActiveActionPopup(null)
-        
-        // Optimistic UI — update local state immediately
-        if (data) {
-            const leadIndex = data.recentLeads.findIndex(l => l.id === leadId)
-            if (leadIndex !== -1) {
-                const callStatus = settings?.leadStatuses?.find(s => s.value.toLowerCase().includes('call'))?.value || 'Called'
-                const lostStatus = settings?.leadStatuses?.find(s => s.value.toLowerCase() === 'lost' || s.value.toLowerCase().includes('lost'))?.value || 'Lost'
-                
-                data.recentLeads[leadIndex].callCount += 1
-                if (outcome === 'connected_not_interested') data.recentLeads[leadIndex].status = lostStatus
-                else if (outcome === 'connected_interested') data.recentLeads[leadIndex].status = callStatus
-            }
-        }
-
         try {
             await fetch(`/api/leads/${leadId}/call-attempt`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ outcome, note: `Dashboard log: ${outcome}` })
             })
-            // Mutate everything to ensure consistency
             mutate('/api/dashboard/stats')
             mutate((key: any) => typeof key === 'string' && (key.includes('/api/leads') || key.includes('/api/dashboard')))
         } catch (err) {
@@ -171,20 +159,6 @@ export default function DashboardPage() {
 
     const handleLogMailStep = async (leadId: string, outcome: string, email: string) => {
         setActiveActionPopup(null)
-
-        // Optimistic UI
-        if (data) {
-            const leadIndex = data.recentLeads.findIndex(l => l.id === leadId)
-            if (leadIndex !== -1) {
-                const mailStatus = settings?.leadStatuses?.find(s => s.value.toLowerCase().includes('mail') || s.value.toLowerCase().includes('email'))?.value || 'Mail Sent'
-                const lostStatus = settings?.leadStatuses?.find(s => s.value.toLowerCase() === 'lost' || s.value.toLowerCase().includes('lost'))?.value || 'Lost'
-
-                data.recentLeads[leadIndex].mailCount += 1
-                if (outcome === 'response_not_interested') data.recentLeads[leadIndex].status = lostStatus
-                else if (outcome === 'sent') data.recentLeads[leadIndex].status = mailStatus
-            }
-        }
-
         try {
             await fetch(`/api/leads/${leadId}/mail-attempt`, {
                 method: 'POST',
@@ -199,14 +173,6 @@ export default function DashboardPage() {
     }
 
     const handleUpdateStatus = async (leadId: string, status: string) => {
-        // Optimistic UI
-        if (data) {
-            const leadIndex = data.recentLeads.findIndex(l => l.id === leadId)
-            if (leadIndex !== -1) {
-                data.recentLeads[leadIndex].status = status
-            }
-        }
-
         try {
             await fetch(`/api/leads/${leadId}`, {
                 method: 'PUT',
@@ -288,7 +254,7 @@ export default function DashboardPage() {
                                 {greeting}, {userName} 👋
                             </div>
                             <h1 style={{ fontSize: 24, fontWeight: 900, margin: 0, lineHeight: 1.2, letterSpacing: '-0.3px' }}>
-                                Performance Hub
+                                My Dashboard
                             </h1>
                         </div>
 
@@ -343,7 +309,7 @@ export default function DashboardPage() {
                     {[
                         {
                             label: 'Active Leads', value: data?.stats.totalLeads || 0,
-                            sub: 'Total in pipeline', icon: <Users size={18} />, color: 'var(--accent-primary)', bg: 'rgba(99,102,241,0.1)'
+                            sub: 'In your lead list', icon: <Users size={18} />, color: 'var(--accent-primary)', bg: 'rgba(99,102,241,0.1)'
                         },
                         {
                             label: 'Open Deals', value: totalPipelineDeals,
@@ -376,7 +342,7 @@ export default function DashboardPage() {
 
                                 {kpi.alert && (
                                     <span style={{ fontSize: 11, fontWeight: 700, color: '#ef4444', background: 'rgba(239,68,68,0.1)', padding: '3px 8px', borderRadius: 100 }}>
-                                        Alert
+                                        Overdue
                                     </span>
                                 )}
                             </div>
@@ -484,7 +450,7 @@ export default function DashboardPage() {
                                         <div style={{ width: 48, height: 48, borderRadius: '50%', background: 'rgba(99,102,241,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                                             <Calendar size={22} color="var(--accent-primary)" />
                                         </div>
-                                        <div style={{ fontSize: 13, color: 'var(--text-muted)', textAlign: 'center' }}>No upcoming follow-ups</div>
+                                        <div style={{ fontSize: 13, color: 'var(--text-muted)', textAlign: 'center' }}>No upcoming tasks</div>
                                     </div>
                                 ) : (
                                     data?.upcomingTasks.map((task, idx) => (
@@ -569,9 +535,9 @@ export default function DashboardPage() {
                     }}>
                         <div style={{ padding: '14px 20px', borderBottom: '1px solid var(--border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                             <div>
-                                <div className="section-label" style={{ marginBottom: 2 }}>Pipeline</div>
-                                <h3 style={{ margin: 0, fontSize: 14, fontWeight: 700 }}>Recent Leads</h3>
-                            </div>
+                                    <div className="section-label" style={{ marginBottom: 2 }}>Activity</div>
+                                    <h3 style={{ margin: 0, fontSize: 14, fontWeight: 700 }}>Recent Leads</h3>
+                                </div>
                             <Link href="/leads" style={{ fontSize: 11, color: 'var(--accent-primary)', textDecoration: 'none', fontWeight: 700, display: 'flex', alignItems: 'center', gap: 4, padding: '4px 12px', background: 'rgba(99,102,241,0.08)', borderRadius: 100, border: '1px solid rgba(99,102,241,0.15)' }}>
                                 View All <ChevronRight size={12} />
                             </Link>
@@ -580,7 +546,7 @@ export default function DashboardPage() {
                             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                                 <thead>
                                     <tr style={{ borderBottom: '1px solid var(--border)' }}>
-                                        {['Lead', 'Company', 'Status', 'Added', 'Actions'].map(h => (
+                                        {['Lead', 'Company', 'Status', 'Created', 'Actions'].map(h => (
                                             <th key={h} style={{ padding: '10px 20px', textAlign: 'left', fontSize: 9, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.8px', color: 'var(--text-muted)' }}>{h}</th>
                                         ))}
                                     </tr>
@@ -688,7 +654,7 @@ export default function DashboardPage() {
                                 {goalsData.goals.filter(g => g.category !== 'TASKS').map(goal => {
                                     const current = goalsData.progress[goal.category] || 0
                                     const percent = Math.min(100, Math.round((current / goal.targetValue) * 100))
-                                    const label = goal.category === 'DEALS' ? 'Deals Closed' : 'New Leads'
+                                    const label = goal.category === 'DEALS' ? 'Deals Closed' : goal.category === 'TEST_JOBS' ? 'Test Jobs' : goal.category === 'LEADS' ? 'New Leads' : goal.category
                                     const color = percent >= 100 ? '#10b981' : percent >= 60 ? 'var(--accent-primary)' : '#f59e0b'
                                     return (
                                         <div key={goal.id}>
@@ -747,7 +713,7 @@ export default function DashboardPage() {
                         setEditTaskId(null)
                         mutate('/api/dashboard/stats')
                     }}
-                    leads={[]} // Dashboard doesn't have leads list easily available, EditTaskModal handles fetching task details including leadId
+                    leads={[]}
                     priorities={settings.priorities}
                 />
             )}

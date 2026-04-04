@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { getCurrentUser } from '@/lib/auth'
+import { format, startOfDay, endOfDay, subDays, startOfMonth } from 'date-fns'
 
 export const dynamic = 'force-dynamic'
 
@@ -10,71 +11,78 @@ export async function GET() {
         return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const [totalUsers, totalLeads, totalOpportunities, opportunities] = await Promise.all([
-        prisma.user.count({ where: { role: { not: 'Administrator' } } }),
-        prisma.lead.count(),
-        prisma.opportunity.count(),
-        prisma.opportunity.findMany({ select: { stage: true } })
-    ])
-
-    // Group opportunities by stage
-    const stageBreakdown = opportunities.reduce((acc: Record<string, number>, opp: { stage: string | null }) => {
-        acc[opp.stage!] = (acc[opp.stage!] || 0) + 1
-        return acc
-    }, {})
-
-    // Get recently added leads
-    const [recentLeads, goals] = await Promise.all([
-        prisma.lead.findMany({
-            take: 5,
-            orderBy: { createdAt: 'desc' },
-            include: { owner: { select: { name: true } } }
-        }),
-        prisma.userGoal.findMany({
-            where: { period: `${new Date().getFullYear()}-${String(new Date().getMonth() + 1).padStart(2, '0')}` }
-        })
-    ])
-
     const now = new Date()
-    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1)
+    const startOfThisMonth = startOfMonth(now)
     const startOfLastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1)
     const endOfLastMonth = new Date(now.getFullYear(), now.getMonth(), 0, 23, 59, 59, 999)
+    const fourteenDaysAgo = subDays(now, 13)
+    const thirtyDaysAgo = subDays(now, 30)
+    const monthStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`
 
-    const [actualWon, actualLeads, actualTasks, repsData] = await Promise.all([
-        prisma.opportunity.count({ where: { stage: 'Closed Won', updatedAt: { gte: startOfMonth } } }),
-        prisma.lead.count({ where: { createdAt: { gte: startOfMonth }, isDeleted: false } }),
-        prisma.task.count({ where: { completed: true, completedAt: { gte: startOfMonth } } }),
+    const [
+        totalUsers,
+        totalLeads,
+        totalOpportunities,
+        stageGroups,
+        recentLeads,
+        goals,
+        actualWon,
+        actualLeads,
+        actualTasks,
+        repsData,
+        lastMonthDeals,
+        lastMonthPipeline,
+        lastMonthLeads,
+        poolCount,
+        overdueTasks,
+        pendingLeave,
+        staleLeads,
+        trendLeads,
+        trendOpps,
+        trendTasks,
+    ] = await Promise.all([
+        prisma.user.count({ where: { role: { not: 'Administrator' }, isSuspended: false } }),
+        prisma.lead.count({ where: { isDeleted: false } }),
+        prisma.opportunity.count({ where: { isDeleted: false } }),
+        prisma.opportunity.groupBy({ by: ['stage'], where: { isDeleted: false }, _count: true }),
+        prisma.lead.findMany({
+            where: { isDeleted: false },
+            take: 5,
+            orderBy: { createdAt: 'desc' },
+            select: { id: true, name: true, company: true, status: true, createdAt: true, owner: { select: { name: true } } }
+        }),
+        prisma.userGoal.findMany({ where: { period: monthStr } }),
+        prisma.opportunity.count({ where: { stage: 'Closed Won', updatedAt: { gte: startOfThisMonth } } }),
+        prisma.lead.count({ where: { createdAt: { gte: startOfThisMonth }, isDeleted: false } }),
+        prisma.task.count({ where: { completed: true, completedAt: { gte: startOfThisMonth } } }),
         prisma.user.findMany({
-            where: { role: { not: 'Administrator' } },
+            where: { role: { not: 'Administrator' }, isSuspended: false },
             select: {
                 id: true,
                 name: true,
-                opportunities: { select: { stage: true } },
+                xp: true,
+                level: true,
+                currentStreak: true,
                 _count: {
                     select: {
-                        leads: { where: { createdAt: { gte: startOfMonth } } },
-                        tasks: { where: { completed: true, completedAt: { gte: startOfMonth } } }
+                        leads: { where: { isDeleted: false } },
+                        tasks: { where: { completed: true, completedAt: { gte: startOfThisMonth } } },
                     }
+                },
+                opportunities: {
+                    where: { stage: 'Closed Won', updatedAt: { gte: startOfThisMonth } },
+                    select: { id: true }
                 }
             }
-        })
-    ])
-
-    const [lastMonthDeals, lastMonthPipeline, lastMonthLeads] = await Promise.all([
+        }),
         prisma.opportunity.count({ where: { stage: 'Closed Won', updatedAt: { gte: startOfLastMonth, lte: endOfLastMonth } } }),
-        prisma.opportunity.count({ where: { createdAt: { lte: endOfLastMonth } } }),
-        prisma.lead.count({ where: { createdAt: { gte: startOfLastMonth, lte: endOfLastMonth }, isDeleted: false } })
-    ])
-
-    const calculateTrend = (current: number, previous: number) => {
-        if (previous === 0) return current > 0 ? 100 : 0;
-        return Number((((current - previous) / previous) * 100).toFixed(1));
-    }
-
-    // --- 14-DAY PERFORMANCE TRACKING ---
-    const fourteenDaysAgo = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 13, 0, 0, 0, 0)
-    
-    const [trendLeads, trendOpps, trendTasks] = await Promise.all([
+        prisma.opportunity.count({ where: { createdAt: { lte: endOfLastMonth }, isDeleted: false } }),
+        prisma.lead.count({ where: { createdAt: { gte: startOfLastMonth, lte: endOfLastMonth }, isDeleted: false } }),
+        prisma.lead.count({ where: { ownerId: null, isDeleted: false } }),
+        prisma.task.count({ where: { completed: false, dueDate: { lt: now } } }),
+        prisma.leaveRequest.count({ where: { status: 'Pending' } }),
+        // Stale leads: assigned, not deleted, no activity in 30 days
+        prisma.lead.count({ where: { ownerId: { not: null }, isDeleted: false, lastActivityAt: { lt: thirtyDaysAgo } } }),
         prisma.lead.findMany({
             where: { createdAt: { gte: fourteenDaysAgo }, isDeleted: false },
             select: { createdAt: true }
@@ -86,47 +94,55 @@ export async function GET() {
         prisma.task.findMany({
             where: { completedAt: { gte: fourteenDaysAgo }, completed: true },
             select: { completedAt: true }
-        })
+        }),
     ])
 
+    // Build daily trends array (14 days)
     const dailyTrends = []
-    const { format, startOfDay, endOfDay, subDays } = require('date-fns')
-    
     for (let i = 0; i < 14; i++) {
-        const day = subDays(new Date(), 13 - i)
+        const day = subDays(now, 13 - i)
         const dayStart = startOfDay(day)
         const dayEnd = endOfDay(day)
-        
         dailyTrends.push({
             date: format(day, 'MMM dd'),
             leads: trendLeads.filter(l => l.createdAt >= dayStart && l.createdAt <= dayEnd).length,
             closed: trendOpps.filter(o => o.updatedAt >= dayStart && o.updatedAt <= dayEnd).length,
-            tasks: trendTasks.filter(t => t.completedAt && t.completedAt >= dayStart && t.completedAt <= dayEnd).length
+            tasks: trendTasks.filter(t => t.completedAt && t.completedAt >= dayStart && t.completedAt <= dayEnd).length,
         })
     }
+
+    const calculateTrend = (current: number, previous: number) => {
+        if (previous === 0) return current > 0 ? 100 : 0
+        return Number((((current - previous) / previous) * 100).toFixed(1))
+    }
+
+    const stageBreakdown = stageGroups.reduce((acc: Record<string, number>, g) => {
+        acc[g.stage] = g._count
+        return acc
+    }, {})
 
     const trends = {
         deals: calculateTrend(actualWon, lastMonthDeals),
         pipeline: calculateTrend(totalOpportunities, lastMonthPipeline),
-        leads: calculateTrend(actualLeads, lastMonthLeads)
+        leads: calculateTrend(actualLeads, lastMonthLeads),
     }
 
     const globalGoals = {
-        DEALS: { target: goals.filter((g: { category: string }) => g.category === 'DEALS').reduce((s: number, g: { targetValue: number }) => s + g.targetValue, 0), actual: actualWon },
-        LEADS: { target: goals.filter((g: { category: string }) => g.category === 'LEADS').reduce((s: number, g: { targetValue: number }) => s + g.targetValue, 0), actual: actualLeads },
-        TASKS: { target: goals.filter((g: { category: string }) => g.category === 'TASKS').reduce((s: number, g: { targetValue: number }) => s + g.targetValue, 0), actual: actualTasks }
+        DEALS: { target: goals.filter(g => g.category === 'DEALS').reduce((s, g) => s + g.targetValue, 0), actual: actualWon },
+        LEADS: { target: goals.filter(g => g.category === 'LEADS').reduce((s, g) => s + g.targetValue, 0), actual: actualLeads },
+        TASKS: { target: goals.filter(g => g.category === 'TASKS').reduce((s, g) => s + g.targetValue, 0), actual: actualTasks },
     }
 
-    const leaderboard = repsData.map((rep: any) => {
-        const wonDeals = rep.opportunities.filter((a: any) => a.stage === 'Closed Won').length
-        return {
-            id: rep.id,
-            name: rep.name,
-            closedWon: wonDeals,
-            leadsAssigned: rep._count.leads,
-            tasksCompleted: rep._count.tasks
-        }
-    }).sort((a: any, b: any) => b.closedWon - a.closedWon).slice(0, 5)
+    const leaderboard = repsData.map(rep => ({
+        id: rep.id,
+        name: rep.name,
+        xp: rep.xp,
+        level: rep.level,
+        currentStreak: rep.currentStreak,
+        closedWon: rep.opportunities.length,
+        leadsAssigned: rep._count.leads,
+        tasksCompleted: rep._count.tasks,
+    })).sort((a, b) => b.closedWon - a.closedWon)
 
     return NextResponse.json({
         totalUsers,
@@ -137,7 +153,7 @@ export async function GET() {
         globalGoals,
         leaderboard,
         trends,
-        dailyTrends
+        dailyTrends,
+        alerts: { poolCount, overdueTasks, pendingLeave, staleLeads },
     })
 }
-

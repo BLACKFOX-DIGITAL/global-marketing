@@ -1,7 +1,7 @@
 'use client'
 import { useState, useEffect, useCallback } from 'react'
 import NotificationCenter from '@/components/NotificationCenter'
-import { Plus, X, Trash2, User as UserIcon, Calendar, FileText, Upload, Zap, Users } from 'lucide-react'
+import { Plus, X, Trash2, Calendar, FileText, Upload } from 'lucide-react'
 import { format, parseISO, isWeekend, addDays } from 'date-fns'
 
 interface LeaveRequest {
@@ -64,6 +64,7 @@ export default function LeavePage() {
     const [isHalfDay, setIsHalfDay] = useState(false)
     const [reason, setReason] = useState('')
     const [submitting, setSubmitting] = useState(false)
+    const [submitError, setSubmitError] = useState<string | null>(null)
     const [file, setFile] = useState<File | null>(null)
     const [leaveSettings, setLeaveSettings] = useState<Array<{ id: string, value: string, color: string | null }>>([])
 
@@ -82,11 +83,12 @@ export default function LeavePage() {
         }
 
         const sData = await settingsRes.json()
-        setLeaveSettings(sData.options || [])
-        if (sData.options?.length > 0 && !type) setType(sData.options[0].value)
+        const options = sData.options || []
+        setLeaveSettings(options)
+        if (options.length > 0) setType(t => t || options[0].value)
 
         setLoading(false)
-    }, [type])
+    }, [])
 
     useEffect(() => {
         requestAnimationFrame(() => {
@@ -97,24 +99,29 @@ export default function LeavePage() {
     async function handleSubmit(e: React.FormEvent) {
         e.preventDefault()
         setSubmitting(true)
+        setSubmitError(null)
 
-        // Mock file upload delay if file exists
-        if (file) {
-            await new Promise(r => setTimeout(r, 600));
-        }
-
-        await fetch('/api/leave', {
+        const res = await fetch('/api/leave', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ type, startDate, endDate, reason }),
         })
+
+        setSubmitting(false)
+
+        if (!res.ok) {
+            const data = await res.json().catch(() => ({}))
+            setSubmitError(data.error || 'Failed to submit leave request')
+            return
+        }
+
         setShowModal(false)
         setType('Casual Leave')
         setStartDate('')
         setEndDate('')
         setReason('')
         setFile(null)
-        setSubmitting(false)
+        setSubmitError(null)
         fetchRequests()
     }
 
@@ -154,8 +161,8 @@ export default function LeavePage() {
             <div className="crm-content" style={{ paddingTop: 16 }}>
                 <div className="page-header" style={{ marginBottom: 20 }}>
                     <div>
-                        <h2>Leave Management</h2>
-                        <p>Submit your leaves and monitor remaining balances.</p>
+                        <h2>Leave</h2>
+                        <p>Apply for leave and track your remaining balance.</p>
                     </div>
                     <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
                         <NotificationCenter />
@@ -207,7 +214,7 @@ export default function LeavePage() {
                 {/* Table */}
                 <div className="card" style={{ padding: 0 }}>
                     <div style={{ padding: '16px 20px', borderBottom: '1px solid var(--border)' }}>
-                        <h3 style={{ fontSize: 15, fontWeight: 600 }}>My Request History</h3>
+                        <h3 style={{ fontSize: 15, fontWeight: 600 }}>My Leave History</h3>
                     </div>
                     <table className="data-table" style={{ borderTop: 'none' }}>
                         <thead>
@@ -217,14 +224,14 @@ export default function LeavePage() {
                                 <th>Duration</th>
                                 <th>Reason</th>
                                 <th>Status</th>
-                                <th style={{ textAlign: 'right' }}>Action</th>
+                                <th style={{ textAlign: 'right' }}>Actions</th>
                             </tr>
                         </thead>
                         <tbody>
                             {loading ? (
                                 <tr><td colSpan={6} style={{ textAlign: 'center', padding: 40 }}><div className="spinner" style={{ margin: '0 auto' }} /></td></tr>
                             ) : myRequests.length === 0 ? (
-                                <tr><td colSpan={6} style={{ textAlign: 'center', padding: 40, color: 'var(--text-muted)' }}>No requests found</td></tr>
+                                <tr><td colSpan={6} style={{ textAlign: 'center', padding: 40, color: 'var(--text-muted)' }}>No leave requests yet</td></tr>
                             ) : myRequests.map(req => {
                                 const days = req.reason?.includes('Half day') ? 0.5 : calculateWorkingDays(req.startDate, req.endDate)
                                 return (
@@ -364,6 +371,11 @@ export default function LeavePage() {
                                 />
                             </div>
 
+                            {submitError && (
+                                <div style={{ padding: '10px 14px', borderRadius: 8, background: 'rgba(239,68,68,0.1)', color: '#ef4444', fontSize: 13 }}>
+                                    {submitError}
+                                </div>
+                            )}
                             <div style={{ display: 'flex', gap: 12, justifyContent: 'flex-end', marginTop: 16 }}>
                                 <button type="button" onClick={() => setShowModal(false)} className="btn-secondary" style={{ flex: 1 }}>Cancel</button>
                                 <button type="submit" className="btn-primary" style={{ flex: 2, display: 'flex', justifyContent: 'center' }} disabled={submitting || requestedDays === 0 || (requireDoc && !file) || (balances.find(b => b.value === type) && balances.find(b => b.value === type)!.remaining < requestedDays)}>

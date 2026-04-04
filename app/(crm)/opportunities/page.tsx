@@ -21,27 +21,44 @@ interface Opportunity {
 function QuickTaskModal({ oppId, leadId, onClose, onCreated }: { oppId: string, leadId: string | null, onClose: () => void, onCreated: () => void }) {
     const [task, setTask] = useState({ title: '', taskType: 'Follow-up', priority: 'Medium', dueDate: '', ownerId: '' })
     const [loading, setLoading] = useState(false)
+    const [error, setError] = useState<string | null>(null)
 
     async function handleSubmit(e: React.FormEvent) {
         e.preventDefault()
+        if (!leadId) {
+            setError('This opportunity has no linked lead. Tasks require a lead.')
+            return
+        }
         setLoading(true)
-        await fetch('/api/tasks', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ ...task, opportunityId: oppId, leadId })
-        })
-        setLoading(false)
-        onCreated()
+        setError(null)
+        try {
+            const res = await fetch('/api/tasks', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ ...task, opportunityId: oppId, leadId })
+            })
+            if (!res.ok) {
+                const data = await res.json()
+                setError(data.error || 'Failed to create task')
+                return
+            }
+            onCreated()
+        } catch {
+            setError('Network error. Please try again.')
+        } finally {
+            setLoading(false)
+        }
     }
 
     return (
         <div className="modal-overlay" onClick={e => e.target === e.currentTarget && onClose()}>
             <div className="modal" style={{ maxWidth: 400 }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
-                    <h3 style={{ fontSize: 17, fontWeight: 700 }}>Quick Task</h3>
+                    <h3 style={{ fontSize: 17, fontWeight: 700 }}>Add Task</h3>
                     <button className="btn-ghost" onClick={onClose} style={{ padding: '4px 8px' }}>✕</button>
                 </div>
                 <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+                    {error && <div style={{ color: '#ef4444', fontSize: 13, background: 'rgba(239,68,68,0.08)', padding: '8px 12px', borderRadius: 6 }}>{error}</div>}
                     <div className="form-group"><label className="form-label">Task Title</label><input placeholder="e.g. Schedule demo" value={task.title} onChange={e => setTask(f => ({ ...f, title: e.target.value }))} required /></div>
                     <div className="grid-2">
                         <div className="form-group"><label className="form-label">Type</label>
@@ -77,11 +94,9 @@ const fetcher = (url: string) => fetch(url).then(res => res.json())
 
 export default function OpportunitiesPage() {
     const { data: oppsData, mutate: mutateOpps } = useSWR('/api/opportunities', fetcher, { keepPreviousData: true })
-    const { data: usersData } = useSWR('/api/users', fetcher, { keepPreviousData: true })
     const { data: settingsData } = useSWR('/api/admin/settings?category=OPPORTUNITY_STAGE', fetcher, { keepPreviousData: true })
 
     const opportunities: Opportunity[] = Array.isArray(oppsData) ? oppsData : []
-    const users: Array<{ id: string; name: string }> = usersData?.users || []
     const stages: Array<{ value: string; color: string | null }> = settingsData?.options || []
     
     const loading = !oppsData || !settingsData
@@ -97,10 +112,6 @@ export default function OpportunitiesPage() {
         (o.company || o.lead?.company || '').toLowerCase().includes(searchQuery.toLowerCase())
     )
 
-    async function fetchData() {
-        mutateOpps()
-    }
-
     async function handleDrop(stage: string) {
         if (!dragId) return
         await fetch(`/api/opportunities/${dragId}`, {
@@ -109,14 +120,14 @@ export default function OpportunitiesPage() {
             body: JSON.stringify({ stage }),
         })
         setDragId(null)
-        fetchData()
+        mutateOpps()
     }
 
     async function executeDelete() {
         if (!deleteConfirmId) return
         await fetch(`/api/opportunities/${deleteConfirmId}`, { method: 'DELETE' })
         setDeleteConfirmId(null)
-        fetchData()
+        mutateOpps()
     }
 
     const updateStage = async (id: string, newStage: string, oppTitle: string) => {
@@ -131,7 +142,7 @@ export default function OpportunitiesPage() {
         if (newStage === 'Closed Won') {
             import('canvas-confetti').then((confetti) => {
                 confetti.default({ particleCount: 150, spread: 80, origin: { y: 0.6 } })
-            }).catch(e => console.error('Conffeti error', e))
+            }).catch(e => console.error('Confetti error', e))
         }
 
         await fetch(`/api/opportunities/${id}`, {
@@ -140,7 +151,7 @@ export default function OpportunitiesPage() {
             body: JSON.stringify({ stage: newStage })
         })
         setStageConfirm(null)
-        fetchData()
+        mutateOpps()
     }
 
     return (
@@ -152,7 +163,7 @@ export default function OpportunitiesPage() {
                             <span style={{ fontSize: 13, color: 'var(--text-muted)' }}>Showing {filteredOpportunities.length} deals</span>
                             <div className="search-bar" style={{ width: 220, height: 30 }}>
                                 <Search size={13} color="var(--text-muted)" />
-                                <input placeholder="Filter deals..." value={searchQuery} onChange={e => setSearchQuery(e.target.value)} style={{ fontSize: 12 }} />
+                                <input placeholder="Search deals..." value={searchQuery} onChange={e => setSearchQuery(e.target.value)} style={{ fontSize: 12 }} />
                             </div>
                         </div>
                     </div>
@@ -185,14 +196,14 @@ export default function OpportunitiesPage() {
                                                 <span className="kanban-column-count">{count}</span>
                                             </div>
                                             <div style={{ fontSize: 11, color: 'var(--text-muted)', fontWeight: 600 }}>
-                                                {avgProb}% Avg Prob
+                                                {avgProb}% Avg Win
                                             </div>
                                         </div>
                                     </div>
                                     <div className="kanban-cards">
                                         {cards.length === 0 && (
                                             <div style={{ padding: 24, textAlign: 'center', border: '1px dashed var(--border)', borderRadius: 10, color: 'var(--text-muted)', fontSize: 12, opacity: 0.5 }}>
-                                                Drop here
+                                                Drag cards here
                                             </div>
                                         )}
                                         {cards.map(opp => {
@@ -206,7 +217,7 @@ export default function OpportunitiesPage() {
                                                     onDragEnd={() => setDragId(null)}
                                                 >
                                                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 6 }}>
-                                                        <div className="kanban-card-days">{daysInStage} day{daysInStage !== 1 ? 's' : ''} in stage</div>
+                                                        <div className="kanban-card-days">{daysInStage}d in stage</div>
                                                         <div style={{ display: 'flex', gap: 4 }}>
                                                             {stage !== 'Closed Won' && stage !== 'Closed Lost' && (
                                                                 <>
@@ -251,7 +262,7 @@ export default function OpportunitiesPage() {
                 )}
 
 
-                {taskModalOpp && <QuickTaskModal oppId={taskModalOpp.oppId} leadId={taskModalOpp.leadId} onClose={() => setTaskModalOpp(null)} onCreated={() => { setTaskModalOpp(null); fetchData() }} />}
+                {taskModalOpp && <QuickTaskModal oppId={taskModalOpp.oppId} leadId={taskModalOpp.leadId} onClose={() => setTaskModalOpp(null)} onCreated={() => { setTaskModalOpp(null); mutateOpps() }} />}
                 {deleteConfirmId && (
                     <div className="modal-overlay" onClick={e => e.target === e.currentTarget && setDeleteConfirmId(null)}>
                         <div className="modal" style={{ maxWidth: 400 }}>

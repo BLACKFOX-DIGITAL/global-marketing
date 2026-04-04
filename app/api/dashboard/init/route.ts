@@ -6,24 +6,26 @@ export async function GET() {
     const user = await getCurrentUser()
     if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
-    if (user.role === 'Administrator') {
-        return NextResponse.json({ redirect: '/admin/dashboard' })
-    }
-
     const [leadStatuses, stages, priorities] = await Promise.all([
         getCachedSystemOptions('LEAD_STATUS'),
         getCachedSystemOptions('OPPORTUNITY_STAGE'),
         getCachedSystemOptions('TASK_PRIORITY'),
     ])
 
-    const response = NextResponse.json({
+    const responseData: any = {
         user: { name: user.name, email: user.email, role: user.role },
         settings: {
             leadStatuses,
             stages,
             priorities,
         },
-    })
+    }
+
+    if (user.role === 'Administrator') {
+        responseData.redirect = '/admin/dashboard'
+    }
+
+    const response = NextResponse.json(responseData)
 
     // Profile info is stable, settings are cached on server
     response.headers.set('Cache-Control', 'private, max-age=600, stale-while-revalidate=120')

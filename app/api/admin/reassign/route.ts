@@ -11,6 +11,7 @@ export async function GET() {
     // Return active leads (to reassign) and users (to assign to)
     const [leads, users] = await Promise.all([
         prisma.lead.findMany({
+            where: { isDeleted: false },
             select: { id: true, name: true, company: true, status: true, owner: { select: { id: true, name: true } } },
             orderBy: { createdAt: 'desc' }
         }),
@@ -32,19 +33,29 @@ export async function PUT(req: NextRequest) {
     try {
         const { leadIds, newOwnerId } = await req.json()
 
-        if (!Array.isArray(leadIds) || !newOwnerId) {
+        if (!Array.isArray(leadIds) || leadIds.length === 0 || !newOwnerId) {
             return NextResponse.json({ error: 'Invalid input' }, { status: 400 })
         }
 
-        // Validate the new owner exists
-        const ownerExists = await prisma.user.findUnique({ where: { id: newOwnerId } })
+        if (leadIds.length > 500) {
+            return NextResponse.json({ error: 'Too many leads in a single request' }, { status: 400 })
+        }
+
+        // Validate the new owner exists, is a Sales Rep, and is not suspended
+        const ownerExists = await prisma.user.findUnique({ where: { id: newOwnerId }, select: { id: true, role: true, isSuspended: true } })
         if (!ownerExists) {
             return NextResponse.json({ error: 'New owner not found' }, { status: 404 })
+        }
+        if (ownerExists.role === 'Administrator') {
+            return NextResponse.json({ error: 'Cannot assign leads to an Administrator' }, { status: 400 })
+        }
+        if (ownerExists.isSuspended) {
+            return NextResponse.json({ error: 'Cannot assign leads to a suspended user' }, { status: 400 })
         }
 
         // Perform the bulk update for Leads
         const updatedLeads = await prisma.lead.updateMany({
-            where: { id: { in: leadIds } },
+            where: { id: { in: leadIds }, isDeleted: false },
             data: { ownerId: newOwnerId }
         })
 
@@ -52,7 +63,7 @@ export async function PUT(req: NextRequest) {
         // For simplicity and safety in this MVP, we only reassign the Lead itself.
 
         return NextResponse.json({ success: true, count: updatedLeads.count })
-    } catch (err: unknown) {
-        return NextResponse.json({ error: (err as Error).message }, { status: 500 })
+    } catch {
+        return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 })
     }
 }

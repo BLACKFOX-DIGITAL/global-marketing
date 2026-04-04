@@ -58,7 +58,7 @@ export default function AuditLedger() {
             <div style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid var(--border)', borderRadius: 12, padding: '8px 16px', display: 'flex', gap: 12, alignItems: 'center', backdropFilter: 'blur(10px)' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                     <Filter size={13} color="#64748b" strokeWidth={2.5} />
-                    <span style={{ fontSize: 10, color: '#64748b', fontWeight: 900, textTransform: 'uppercase', letterSpacing: '1px' }}>Protocol Filter:</span>
+                    <span style={{ fontSize: 10, color: '#64748b', fontWeight: 900, textTransform: 'uppercase', letterSpacing: '1px' }}>Filter by action:</span>
                 </div>
                 <select
                     value={actionFilter}
@@ -77,7 +77,7 @@ export default function AuditLedger() {
                         appearance: 'none'
                     }}
                 >
-                    <option value="">ALL OPERATIONAL EVENTS</option>
+                    <option value="">All Events</option>
                     {actionTypes.map(at => (
                         <option key={at.action} value={at.action}>{at.action} • {at._count}</option>
                     ))}
@@ -96,18 +96,18 @@ export default function AuditLedger() {
                     <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', minWidth: 900 }}>
                         <thead style={{ background: 'rgba(255,255,255,0.02)', borderBottom: '1px solid var(--border)' }}>
                             <tr style={{ color: '#475569', fontSize: 10, textTransform: 'uppercase', letterSpacing: '1px' }}>
-                                <th style={{ padding: '12px 24px', fontWeight: 800 }}>Temporal Coordinate</th>
-                                <th style={{ padding: '12px 24px', fontWeight: 800 }}>Executive Operator</th>
-                                <th style={{ padding: '12px 24px', fontWeight: 800 }}>Entity Alignment</th>
-                                <th style={{ padding: '12px 24px', fontWeight: 800 }}>Event Protocol</th>
-                                <th style={{ padding: '12px 24px', fontWeight: 800 }}>Validation Log</th>
+                                <th style={{ padding: '12px 24px', fontWeight: 800 }}>Time</th>
+                                <th style={{ padding: '12px 24px', fontWeight: 800 }}>User</th>
+                                <th style={{ padding: '12px 24px', fontWeight: 800 }}>Related Lead</th>
+                                <th style={{ padding: '12px 24px', fontWeight: 800 }}>Action</th>
+                                <th style={{ padding: '12px 24px', fontWeight: 800 }}>Description</th>
                             </tr>
                         </thead>
                         <tbody>
                             {loading ? (
                                 <tr><td colSpan={5} style={{ textAlign: 'center', padding: 80 }}><div className="spinner" /></td></tr>
                             ) : logs.length === 0 ? (
-                                <tr><td colSpan={5} style={{ textAlign: 'center', padding: 80, color: '#475569', fontSize: 12, fontWeight: 800 }}>ZERO OPERATIONAL LOGS RECOVERED</td></tr>
+                                <tr><td colSpan={5} style={{ textAlign: 'center', padding: 80, color: '#475569', fontSize: 12, fontWeight: 800 }}>No activity logs found</td></tr>
                             ) : (
                                 logs.map((log) => (
                                     <tr key={log.id} style={{ borderBottom: '1px solid var(--border)', transition: 'all 0.2s' }}>
@@ -128,10 +128,10 @@ export default function AuditLedger() {
                                             {log.lead ? (
                                                 <div>
                                                     <div style={{ fontSize: 12, fontWeight: 800, color: '#f1f5f9' }}>{log.lead.company || 'ANONYMOUS'}</div>
-                                                    <div style={{ fontSize: 9, color: '#64748b', fontWeight: 700, maxWidth: 180, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', marginTop: 1 }}>{log.lead.website || 'No Digital Identity'}</div>
+                                                    <div style={{ fontSize: 9, color: '#64748b', fontWeight: 700, maxWidth: 180, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', marginTop: 1 }}>{log.lead.website || '—'}</div>
                                                 </div>
                                             ) : (
-                                                <div style={{ fontSize: 9, color: '#475569', fontWeight: 900, textTransform: 'uppercase' }}>System-Wide Event</div>
+                                                <div style={{ fontSize: 9, color: '#475569', fontWeight: 700, fontStyle: 'italic' }}>—</div>
                                             )}
                                         </td>
                                         <td style={{ padding: '8px 24px', verticalAlign: 'middle' }}>
@@ -152,10 +152,10 @@ export default function AuditLedger() {
                 </div>
                 {auditTotal > 30 && (
                     <div style={{ padding: '16px 24px', display: 'flex', justifyContent: 'space-between', borderTop: '1px solid var(--border)', alignItems: 'center', background: 'rgba(255,255,255,0.01)' }}>
-                        <span style={{ fontSize: 10, color: '#64748b', fontWeight: 900, textTransform: 'uppercase', letterSpacing: '1px' }}>Log Frame: {auditPage} / {Math.ceil(auditTotal / 30)}</span>
+                        <span style={{ fontSize: 10, color: '#64748b', fontWeight: 900, textTransform: 'uppercase', letterSpacing: '1px' }}>Page {auditPage} of {Math.ceil(auditTotal / 30)}</span>
                         <div style={{ display: 'flex', gap: 10 }}>
-                            <button onClick={() => setAuditPage(p => Math.max(1, p - 1))} disabled={auditPage === 1} style={{ padding: '6px 14px', border: '1px solid var(--border)', background: 'transparent', color: '#f1f5f9', borderRadius: 8, fontSize: 10, fontWeight: 900, textTransform: 'uppercase', letterSpacing: '0.5px', cursor: auditPage === 1 ? 'not-allowed' : 'pointer', opacity: auditPage === 1 ? 0.3 : 1, transition: 'all 0.2s' }}>Backward</button>
-                            <button onClick={() => setAuditPage(p => Math.min(Math.ceil(auditTotal / 30), p + 1))} disabled={auditPage === Math.ceil(auditTotal / 30)} style={{ padding: '6px 14px', border: '1px solid var(--border)', background: 'transparent', color: '#f1f5f9', borderRadius: 8, fontSize: 10, fontWeight: 900, textTransform: 'uppercase', letterSpacing: '0.5px', cursor: auditPage === Math.ceil(auditTotal / 30) ? 'not-allowed' : 'pointer', opacity: auditPage === Math.ceil(auditTotal / 30) ? 0.3 : 1, transition: 'all 0.2s' }}>Forward</button>
+                            <button onClick={() => setAuditPage(p => Math.max(1, p - 1))} disabled={auditPage === 1} style={{ padding: '6px 14px', border: '1px solid var(--border)', background: 'transparent', color: '#f1f5f9', borderRadius: 8, fontSize: 10, fontWeight: 900, textTransform: 'uppercase', letterSpacing: '0.5px', cursor: auditPage === 1 ? 'not-allowed' : 'pointer', opacity: auditPage === 1 ? 0.3 : 1, transition: 'all 0.2s' }}>Previous</button>
+                            <button onClick={() => setAuditPage(p => Math.min(Math.ceil(auditTotal / 30), p + 1))} disabled={auditPage === Math.ceil(auditTotal / 30)} style={{ padding: '6px 14px', border: '1px solid var(--border)', background: 'transparent', color: '#f1f5f9', borderRadius: 8, fontSize: 10, fontWeight: 900, textTransform: 'uppercase', letterSpacing: '0.5px', cursor: auditPage === Math.ceil(auditTotal / 30) ? 'not-allowed' : 'pointer', opacity: auditPage === Math.ceil(auditTotal / 30) ? 0.3 : 1, transition: 'all 0.2s' }}>Next</button>
                         </div>
                     </div>
                 )}

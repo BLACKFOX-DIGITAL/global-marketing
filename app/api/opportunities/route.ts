@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
-import { getCurrentUser } from '@/lib/auth'
+import { getCurrentUser, isManager } from '@/lib/auth'
 
 export const dynamic = 'force-dynamic'
 
@@ -14,7 +14,7 @@ export async function GET(req: NextRequest) {
         const search = searchParams.get('search') || ''
 
         const where: any = { isDeleted: false }
-        if (user.role !== 'Administrator' && user.role !== 'Manager') {
+        if (!isManager(user)) {
             where.ownerId = user.userId
         }
         if (stage) where.stage = stage
@@ -36,14 +36,9 @@ export async function GET(req: NextRequest) {
         })
 
         return NextResponse.json(opportunities)
-    } catch (err: any) {
+    } catch (err) {
         console.error('API Opportunities GET Error:', err)
-        return NextResponse.json({
-            error: 'Internal Server Error',
-            details: err.message || String(err),
-            stack: err.stack,
-            hint: "Check if all relations (owner, lead, stageHistory) exist and are properly mapped."
-        }, { status: 500 })
+        return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 })
     }
 }
 
@@ -62,7 +57,8 @@ export async function POST(req: NextRequest) {
                 closeDate: body.closeDate ? new Date(body.closeDate) : null,
                 notes: body.notes,
                 region: body.region,
-                ownerId: body.ownerId || user.userId,
+                // Only admins can assign to a different owner
+                ownerId: user.role === 'Administrator' ? (body.ownerId || user.userId) : user.userId,
                 leadId: body.leadId || null,
             },
             include: {

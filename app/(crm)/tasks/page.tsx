@@ -120,25 +120,32 @@ function CreateTaskModal({ onClose, onCreated, leads, priorities, preSelectedLea
         leadId: preSelectedLeadId || '',
     })
     const [loading, setLoading] = useState(false)
+    const [error, setError] = useState<string | null>(null)
 
     async function handleSubmit(e: React.FormEvent) {
         e.preventDefault()
         if (!form.title.trim() || !form.leadId) return
         setLoading(true)
+        setError(null)
         const res = await fetch('/api/tasks', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(form),
         })
         setLoading(false)
-        if (res.ok) onCreated()
+        if (res.ok) {
+            onCreated()
+        } else {
+            const data = await res.json().catch(() => ({}))
+            setError(data.error || 'Failed to create task')
+        }
     }
 
     return (
         <div className="modal-overlay" onClick={e => e.target === e.currentTarget && onClose()}>
             <div className="modal" style={{ maxWidth: 520 }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 22 }}>
-                    <h3 style={{ fontSize: 17, fontWeight: 700 }}>New Follow-Up Task</h3>
+                    <h3 style={{ fontSize: 17, fontWeight: 700 }}>New Task</h3>
                     <button className="btn-ghost" onClick={onClose} style={{ padding: '4px 8px' }}>✕</button>
                 </div>
                 <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
@@ -181,8 +188,8 @@ function CreateTaskModal({ onClose, onCreated, leads, priorities, preSelectedLea
 
                     <div className="grid-2">
                         <div className="form-group">
-                            <label className="form-label">Due Date</label>
-                            <input type="date" value={form.dueDate} onChange={e => setForm(f => ({ ...f, dueDate: e.target.value }))} />
+                            <label className="form-label">Due Date & Time</label>
+                            <input type="datetime-local" value={form.dueDate} onChange={e => setForm(f => ({ ...f, dueDate: e.target.value }))} />
                         </div>
                         <div className="form-group">
                             <label className="form-label">Priority</label>
@@ -203,6 +210,11 @@ function CreateTaskModal({ onClose, onCreated, leads, priorities, preSelectedLea
                         </div>
                     </div>
 
+                    {error && (
+                        <div style={{ padding: '10px 14px', borderRadius: 8, background: 'rgba(239,68,68,0.1)', color: '#ef4444', fontSize: 13 }}>
+                            {error}
+                        </div>
+                    )}
                     <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end', marginTop: 8 }}>
                         <button type="button" className="btn-secondary" onClick={onClose}>Cancel</button>
                         <button type="submit" className="btn-primary" disabled={loading || !form.leadId}>
@@ -250,9 +262,9 @@ function ViewTaskModal({ task, onClose, onToggle, onEdit, priorities }: { task: 
                 {task.lead && (
                     <div style={{ padding: 16, border: '1px solid var(--border)', borderRadius: 12, marginBottom: 24, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                         <div style={{ flex: 1 }}>
-                            <div style={{ fontSize: 11, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: 4 }}>Associated Lead</div>
+                            <div style={{ fontSize: 11, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: 4 }}>Lead</div>
                             <div style={{ fontWeight: 600 }}>{task.lead.name}</div>
-                            <div style={{ fontSize: 12, color: 'var(--text-secondary)' }}>{task.lead.company || 'Private Customer'}</div>
+                            <div style={{ fontSize: 12, color: 'var(--text-secondary)' }}>{task.lead.company || 'No company'}</div>
                         </div>
                         <Link href={`/leads/${task.lead.id}`} className="btn-secondary" style={{ padding: '6px 12px', fontSize: 12, textDecoration: 'none' }}>View Lead</Link>
                     </div>
@@ -303,7 +315,7 @@ export default function TasksPage() {
 
     const { data: tasksData, mutate: fetchTasks } = useSWR(`/api/tasks?status=${tab}&priority=${priorityFilter}&page=${page}&limit=10`, fetcher, { keepPreviousData: true })
     const { data: prioritiesData } = useSWR('/api/admin/settings?category=TASK_PRIORITY', fetcher, { keepPreviousData: true })
-    const { data: leadsData } = useSWR('/api/leads', fetcher, { keepPreviousData: true })
+    const { data: leadsData } = useSWR('/api/leads?limit=100', fetcher, { keepPreviousData: true })
 
     const tasks: Task[] = Array.isArray(tasksData?.tasks) ? tasksData.tasks : []
     const pagination = tasksData?.pagination || { total: 0, page: 1, limit: 10, totalPages: 1 }
@@ -353,7 +365,7 @@ export default function TasksPage() {
                 <div className="page-header" style={{ marginBottom: 16 }}>
                     <div>
                         <h2 style={{ fontSize: 22 }}>Tasks & Follow-Ups</h2>
-                        <p style={{ fontSize: 12 }}>All your pending actions for leads.</p>
+                        <p style={{ fontSize: 12 }}>Track calls, emails, meetings and follow-ups.</p>
                     </div>
                     <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
                         <NotificationCenter />
@@ -378,7 +390,7 @@ export default function TasksPage() {
                             ><CalendarIcon size={14} /> Calendar</button>
                         </div>
                         <button className="btn-primary" onClick={() => setShowModal(true)}>
-                            <Plus size={16} /> New Follow-Up
+                            <Plus size={16} /> New Task
                         </button>
                     </div>
                 </div>
@@ -397,7 +409,7 @@ export default function TasksPage() {
                             value={priorityFilter}
                             onChange={(e) => { setPriorityFilter(e.target.value); setPage(1); }}
                         >
-                            <option>All Priority</option>
+                            <option>All Priorities</option>
                             {priorities.map(p => <option key={p.value}>{p.value}</option>)}
                         </select>
                     </div>
@@ -512,27 +524,39 @@ export default function TasksPage() {
                                     )
                                 })}
                                 
-                                {tasksData && pagination.totalPages > 1 && (
-                                    <div className="pagination-container" style={{ padding: '16px', display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 12, borderTop: '1px solid var(--border)' }}>
-                                        <button className="btn-secondary" disabled={page <= 1} onClick={() => { setPage(p => Math.max(1, p - 1)); window.scrollTo({ top: 0, behavior: 'smooth' }); }} style={{ padding: '6px 12px', fontSize: 13 }}>
-                                            Previous
-                                        </button>
-                                        <div style={{ display: 'flex', gap: 6 }}>
-                                            {Array.from({ length: pagination.totalPages }).map((_, i) => (
-                                                <button key={i} onClick={() => { setPage(i + 1); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
+                                {tasksData && pagination.totalPages > 1 && (() => {
+                                    const totalPages = pagination.totalPages
+                                    const pageNums = totalPages <= 5
+                                        ? Array.from({ length: totalPages }, (_, i) => i + 1)
+                                        : Array.from({ length: 5 }, (_, i) => Math.max(1, Math.min(page - 2, totalPages - 4)) + i)
+                                    return (
+                                        <div className="pagination-container" style={{ padding: '16px', display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 6, borderTop: '1px solid var(--border)' }}>
+                                            <button className="btn-secondary" disabled={page <= 1} onClick={() => { setPage(p => Math.max(1, p - 1)); window.scrollTo({ top: 0, behavior: 'smooth' }); }} style={{ padding: '6px 12px', fontSize: 13 }}>
+                                                Previous
+                                            </button>
+                                            {pageNums[0] > 1 && <>
+                                                <button onClick={() => setPage(1)} style={{ width: 30, height: 30, borderRadius: 8, border: '1px solid var(--border)', background: 'var(--bg-card)', color: 'var(--text-secondary)', fontSize: 12, fontWeight: 700, cursor: 'pointer' }}>1</button>
+                                                {pageNums[0] > 2 && <span style={{ color: 'var(--text-muted)', padding: '0 4px' }}>…</span>}
+                                            </>}
+                                            {pageNums.map(n => (
+                                                <button key={n} onClick={() => { setPage(n); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
                                                     style={{
                                                         width: 30, height: 30, borderRadius: 8, border: '1px solid var(--border)',
-                                                        background: page === i + 1 ? 'var(--accent-primary)' : 'var(--bg-card)',
-                                                        color: page === i + 1 ? 'white' : 'var(--text-secondary)',
+                                                        background: page === n ? 'var(--accent-primary)' : 'var(--bg-card)',
+                                                        color: page === n ? 'white' : 'var(--text-secondary)',
                                                         fontSize: 12, fontWeight: 700, cursor: 'pointer'
-                                                    }}>{i + 1}</button>
+                                                    }}>{n}</button>
                                             ))}
+                                            {pageNums[pageNums.length - 1] < totalPages && <>
+                                                {pageNums[pageNums.length - 1] < totalPages - 1 && <span style={{ color: 'var(--text-muted)', padding: '0 4px' }}>…</span>}
+                                                <button onClick={() => setPage(totalPages)} style={{ width: 30, height: 30, borderRadius: 8, border: '1px solid var(--border)', background: page === totalPages ? 'var(--accent-primary)' : 'var(--bg-card)', color: page === totalPages ? 'white' : 'var(--text-secondary)', fontSize: 12, fontWeight: 700, cursor: 'pointer' }}>{totalPages}</button>
+                                            </>}
+                                            <button className="btn-secondary" disabled={page >= pagination.totalPages} onClick={() => { setPage(p => Math.min(pagination.totalPages, p + 1)); window.scrollTo({ top: 0, behavior: 'smooth' }); }} style={{ padding: '6px 12px', fontSize: 13 }}>
+                                                Next
+                                            </button>
                                         </div>
-                                        <button className="btn-secondary" disabled={page >= pagination.totalPages} onClick={() => { setPage(p => Math.min(pagination.totalPages, p + 1)); window.scrollTo({ top: 0, behavior: 'smooth' }); }} style={{ padding: '6px 12px', fontSize: 13 }}>
-                                            Next
-                                        </button>
-                                    </div>
-                                )}
+                                    )
+                                })()}
                             </div>
                         )}
                     </div>

@@ -52,8 +52,10 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
                 closeDate: body.closeDate ? new Date(body.closeDate) : undefined,
                 notes: body.notes,
                 region: body.region,
-                ownerId: body.ownerId,
-                leadId: body.leadId || null,
+                // Only admins can reassign to a different owner
+                ownerId: user.role === 'Administrator' ? body.ownerId : undefined,
+                // Only update leadId if explicitly provided — avoids nulling the link on partial updates
+                leadId: body.leadId !== undefined ? (body.leadId || null) : undefined,
             },
             include: {
                 owner: { select: { id: true, name: true, email: true } },

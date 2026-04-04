@@ -139,7 +139,7 @@ function Stepper({ lead, onRefresh, onConvert, availableStatuses }: { lead: Lead
     const status = lead.status
 
     if (availableStatuses.length === 0) {
-        return <div style={{ fontSize: 13, color: 'var(--text-muted)', fontStyle: 'italic', marginTop: 10 }}>No statuses defined. Please configure them in Admin Settings.</div>
+        return <div style={{ fontSize: 13, color: 'var(--text-muted)', fontStyle: 'italic', marginTop: 10 }}>Pipeline stages aren&apos;t configured yet. Contact your admin.</div>
     }
 
     const pipelineSteps = availableStatuses.filter(s => !OUTCOME_STATUSES.includes(s.value))
@@ -281,7 +281,7 @@ function Stepper({ lead, onRefresh, onConvert, availableStatuses }: { lead: Lead
                                     textAlign: 'center',
                                     lineHeight: 1.2
                                 }}>
-                                {step.value === 'Called' ? 'Call' : step.value === 'Mail Sent' ? 'Mail' : step.value}
+                                {step.value}
                                 {step.value === 'Called' && lead.lastCallOutcome && (
                                     <div style={{ fontSize: 9, color: CALL_OUTCOME_OPTIONS.find(o => o.value === lead.lastCallOutcome)?.color || 'var(--text-muted)', marginTop: 4, opacity: 0.9 }}>
                                         {CALL_OUTCOME_OPTIONS.find(o => o.value === lead.lastCallOutcome)?.label}
@@ -721,7 +721,7 @@ export default function LeadDetailContent({ id, linkPrefix = '' }: { id: string,
                                         </button>
                                     </div>
                                     <div style={{ display: 'flex', alignItems: 'center', gap: 6, color: 'var(--text-secondary)', fontSize: 11, marginTop: 4 }}>
-                                        <User size={12} /> {lead.name} • {lead.industry || 'Lead'}
+                                        <User size={12} /> {lead.name}{lead.industry ? ` • ${lead.industry}` : ''}
                                     </div>
                                 </div>
                             </div>
@@ -822,7 +822,7 @@ export default function LeadDetailContent({ id, linkPrefix = '' }: { id: string,
                                     {/* Compact Quick Add Task Form */}
                                     <form onSubmit={handleCreateTask} style={{ display: 'flex', flexDirection: 'column', gap: 10, padding: '14px 16px', background: 'var(--bg-input)', borderRadius: 10, border: '1px solid var(--border)' }}>
                                         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                                            <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Quick Add Follow-Up</div>
+                                            <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Add Task</div>
                                             <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
                                                 {TASK_TYPES.map(t => (
                                                     <button key={t.value} type="button" onClick={() => setNewTask(f => ({ ...f, taskType: t.value }))}
@@ -893,7 +893,7 @@ export default function LeadDetailContent({ id, linkPrefix = '' }: { id: string,
                                                         </div>
                                                         <div style={{ flex: 1, minWidth: 0 }}>
                                                             <div style={{ fontSize: 13, fontWeight: 500, color: task.completed ? 'var(--text-muted)' : 'var(--text-primary)', textDecoration: task.completed ? 'line-through' : 'none' }}>{task.title}</div>
-                                                            {task.owner && <div style={{ fontSize: 10, color: 'var(--text-muted)', marginTop: 1 }}>→ {task.owner.name}</div>}
+                                                            {task.owner && <div style={{ fontSize: 10, color: 'var(--text-muted)', marginTop: 1 }}>Assigned to: {task.owner.name}</div>}
                                                         </div>
                                                         <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0 }}>
                                                             {task.dueDate && (
@@ -987,7 +987,7 @@ export default function LeadDetailContent({ id, linkPrefix = '' }: { id: string,
                     {/* Contacts */}
                     <div className="card" style={{ padding: 16 }}>
                         <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-muted)', letterSpacing: '0.5px', marginBottom: 12, display: 'flex', alignItems: 'center', gap: 6 }}>
-                            <User size={13} color="var(--accent-primary)" /> CONTACT PERSONS
+                            <User size={13} color="var(--accent-primary)" /> Contacts
                         </div>
                         <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
                             {lead.contacts && lead.contacts.length > 0 ? lead.contacts.map(c => (
@@ -996,7 +996,7 @@ export default function LeadDetailContent({ id, linkPrefix = '' }: { id: string,
                                         <div style={{ fontWeight: 600, fontSize: 13, color: 'var(--text-primary)' }}>{c.name}</div>
                                         {c.isPrimary && <div style={{ fontSize: 8, background: 'rgba(99,102,241,0.1)', color: 'var(--accent-primary)', padding: '1px 4px', borderRadius: 4, fontWeight: 800 }}>PRIMARY</div>}
                                     </div>
-                                    <div style={{ fontSize: 11, color: 'var(--text-secondary)', marginTop: 2 }}>{c.position || 'No Title'}</div>
+                                    <div style={{ fontSize: 11, color: 'var(--text-secondary)', marginTop: 2 }}>{c.position || ''}</div>
                                     {c.email && (
                                         <div style={{ display: 'flex', flexDirection: 'column', gap: 2, marginTop: 4 }}>
                                             {c.email.split(',').map((email, idx) => (
@@ -1029,7 +1029,7 @@ export default function LeadDetailContent({ id, linkPrefix = '' }: { id: string,
                     {/* Overview */}
                     <div className="card" style={{ padding: 16 }}>
                         <div style={{ fontSize: 11, color: 'var(--text-muted)', marginBottom: 10, display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontWeight: 700 }}>
-                            <span>LEAD OWNER</span>
+                            <span>Owner</span>
                             <select
                                 value={lead.owner?.id || ''}
                                 onChange={e => reassignLead(e.target.value)}
@@ -1042,7 +1042,7 @@ export default function LeadDetailContent({ id, linkPrefix = '' }: { id: string,
                             <div style={{ width: 32, height: 32, borderRadius: '50%', background: 'rgba(99,102,241,0.1)', color: 'var(--accent-primary)', fontSize: 12, display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px solid rgba(99,102,241,0.2)', fontWeight: 600 }}>{ownerInitials}</div>
                             <div>
                                 <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-primary)' }}>{lead.owner?.name || 'Unassigned'}</div>
-                                <div style={{ fontSize: 11, color: 'var(--text-muted)' }}>Account Executive</div>
+                                <div style={{ fontSize: 11, color: 'var(--text-muted)' }}>Sales Rep</div>
                             </div>
                         </div>
                     </div>
@@ -1050,7 +1050,7 @@ export default function LeadDetailContent({ id, linkPrefix = '' }: { id: string,
                     {/* Activity */}
                     <div className="card" style={{ padding: 20 }}>
                         <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--text-muted)', letterSpacing: '0.5px', marginBottom: 15, display: 'flex', alignItems: 'center', gap: 6 }}>
-                            <History size={14} /> ACTIVITY TIMELINE
+                            <History size={14} /> Activity
                         </div>
                         <ActivityTimeline leadId={lead.id} />
                     </div>

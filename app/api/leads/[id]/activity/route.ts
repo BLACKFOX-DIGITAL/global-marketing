@@ -15,7 +15,7 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
     })
     
     if (!lead) return NextResponse.json({ error: 'Not found' }, { status: 404 })
-    if (user.role !== 'Administrator' && lead.ownerId && lead.ownerId !== user.userId) {
+    if (user.role !== 'Administrator' && lead.ownerId !== user.userId) {
         return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
 

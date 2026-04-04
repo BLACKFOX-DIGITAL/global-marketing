@@ -25,6 +25,7 @@ export default function EmailModal({ leadId, leadName, leadEmail, onClose, onSuc
     const [preview, setPreview] = useState(false)
     const [loading, setLoading] = useState(false)
     const [fetching, setFetching] = useState(true)
+    const [error, setError] = useState('')
 
     useEffect(() => {
         fetch('/api/admin/email-templates')
@@ -50,21 +51,22 @@ export default function EmailModal({ leadId, leadName, leadEmail, onClose, onSuc
     const handleSend = async () => {
         if (!subject || !body) return
         setLoading(true)
+        setError('')
         try {
             const res = await fetch('/api/email/send', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ leadId, subject, body })
             })
-            const data = await res.json()
             if (res.ok) {
                 onSuccess()
                 onClose()
             } else {
-                alert(data.error || 'Failed to send email')
+                const data = await res.json().catch(() => ({}))
+                setError(data.error || 'Failed to send email')
             }
-        } catch (err) {
-            alert('Something went wrong')
+        } catch {
+            setError('Network error — please try again')
         } finally {
             setLoading(false)
         }
@@ -99,7 +101,7 @@ export default function EmailModal({ leadId, leadName, leadEmail, onClose, onSuc
                                         cursor: 'pointer', transition: 'all 0.2s'
                                     }}
                                 >
-                                    Blank Canvas
+                                    Custom (Blank)
                                 </button>
                                 {templates.map(t => (
                                     <button
@@ -166,7 +168,8 @@ export default function EmailModal({ leadId, leadName, leadEmail, onClose, onSuc
                 </div>
 
                 {/* Footer */}
-                <div style={{ padding: '16px 24px', borderTop: '1px solid var(--border)', display: 'flex', justifyContent: 'flex-end', gap: 12, background: 'rgba(255,255,255,0.02)' }}>
+                <div style={{ padding: '16px 24px', borderTop: '1px solid var(--border)', display: 'flex', justifyContent: 'flex-end', alignItems: 'center', gap: 12, background: 'rgba(255,255,255,0.02)' }}>
+                    {error && <span style={{ fontSize: 13, color: '#ef4444', flex: 1 }}>{error}</span>}
                     <button onClick={onClose} className="btn-secondary" style={{ borderRadius: 10 }}>Cancel</button>
                     <button
                         onClick={handleSend}

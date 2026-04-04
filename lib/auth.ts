@@ -1,6 +1,7 @@
 import jwt from 'jsonwebtoken'
 import { cookies } from 'next/headers'
 import { NextResponse } from 'next/server'
+import { prisma } from '@/lib/prisma'
 
 const JWT_SECRET = process.env.JWT_SECRET as string
 
@@ -60,7 +61,12 @@ export async function getCurrentUser(): Promise<JWTPayload | null> {
     const cookieStore = await cookies()
     const token = cookieStore.get(COOKIE_NAME)?.value
     if (!token) return null
-    return verifyToken(token)
+    const payload = verifyToken(token)
+    if (!payload) return null
+    // Check suspension status against DB — JWT alone cannot reflect admin actions taken after token issuance
+    const dbUser = await prisma.user.findUnique({ where: { id: payload.userId }, select: { isSuspended: true } })
+    if (!dbUser || dbUser.isSuspended) return null
+    return payload
 }
 
 export async function getAuthToken(): Promise<string | null> {
@@ -73,11 +79,9 @@ export function isAdmin(user: JWTPayload | null): boolean {
 }
 
 export function isManager(user: JWTPayload | null): boolean {
-    const r = user?.role || ''
-    return r === 'Manager' || r === 'Administrator' || r === 'Sales Manager'
+    return user?.role === 'Administrator'
 }
 
 export function isSalesRep(user: JWTPayload | null): boolean {
-    const r = user?.role || ''
-    return r === 'Sales Rep' || r === 'SalesRep' || r === 'Representative' || r === 'Telemarketer'
+    return user?.role === 'Sales Rep'
 }

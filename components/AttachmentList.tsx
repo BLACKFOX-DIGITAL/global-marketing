@@ -25,7 +25,7 @@ export default function AttachmentList({
 }) {
     const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null)
     const [uploadPromptOpen, setUploadPromptOpen] = useState(false)
-    const [newFileName, setNewFileName] = useState('Contract_Draft_v1.pdf')
+    const [newFileName, setNewFileName] = useState('')
     const getIcon = (type: string | null) => {
         if (!type) return <File size={18} />
         if (type.includes('image')) return <ImageIcon size={18} color="#10b981" />
@@ -46,7 +46,7 @@ export default function AttachmentList({
                 <h4 style={{ fontSize: 13, fontWeight: 700, margin: 0, color: 'var(--text-primary)' }}>Files & Documents</h4>
                 <button
                     onClick={() => {
-                        setNewFileName('Contract_Draft_v1.pdf')
+                        setNewFileName('')
                         setUploadPromptOpen(true)
                     }}
                     disabled={uploading}
@@ -111,9 +111,9 @@ export default function AttachmentList({
                 <div className="modal-overlay" onClick={e => e.target === e.currentTarget && setUploadPromptOpen(false)}>
                     <div className="modal" style={{ maxWidth: 400 }}>
                         <div style={{ marginBottom: 24 }}>
-                            <h3 style={{ fontSize: 20, fontWeight: 700, marginBottom: 8, color: 'var(--text-primary)' }}>Simulate File Upload</h3>
+                            <h3 style={{ fontSize: 20, fontWeight: 700, marginBottom: 8, color: 'var(--text-primary)' }}>Attach File</h3>
                             <p style={{ color: 'var(--text-secondary)', fontSize: 13, lineHeight: 1.5 }}>
-                                Please enter a mock file name to attach to this record.
+                                Enter a name for this file.
                             </p>
                         </div>
                         <div className="form-group">
@@ -134,7 +134,7 @@ export default function AttachmentList({
                         <div style={{ display: 'flex', gap: 12, justifyContent: 'flex-end', marginTop: 12 }}>
                             <button className="btn-secondary" onClick={() => setUploadPromptOpen(false)}>Cancel</button>
                             <button className="btn-primary" onClick={() => { if (newFileName.trim()) { onUpload(newFileName.trim()); setUploadPromptOpen(false); } }}>
-                                Default Upload
+                                Attach
                             </button>
                         </div>
                     </div>

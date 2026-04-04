@@ -43,6 +43,10 @@ export async function POST(req: NextRequest) {
             return NextResponse.json({ error: 'Missing required fields' }, { status: 400 })
         }
 
+        if (!['Administrator', 'Sales Rep'].includes(role)) {
+            return NextResponse.json({ error: 'Invalid role' }, { status: 400 })
+        }
+
         const hashedPassword = await bcrypt.hash(password, 12)
 
         const newUser = await prisma.user.create({
@@ -57,11 +61,11 @@ export async function POST(req: NextRequest) {
 
         const { password: _, ...userWithoutPassword } = newUser
         return NextResponse.json(userWithoutPassword)
-    } catch (err: any) {
-        if (err.code === 'P2002') {
+    } catch (err: unknown) {
+        if ((err as { code?: string }).code === 'P2002') {
             return NextResponse.json({ error: 'Email already exists' }, { status: 400 })
         }
-        return NextResponse.json({ error: err.message }, { status: 500 })
+        return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
     }
 }
 
@@ -74,21 +78,22 @@ export async function PUT(req: NextRequest) {
     try {
         const { id, name, email, role, baseSalary, resendSenderEmail, password, isSuspended } = await req.json()
 
-        const data: any = {
-            name,
-            email,
-            role,
-            baseSalary: baseSalary !== undefined ? parseFloat(baseSalary) : undefined,
-            resendSenderEmail
+        if (!id) {
+            return NextResponse.json({ error: 'Missing user ID' }, { status: 400 })
         }
 
-        if (isSuspended !== undefined) {
-            data.isSuspended = isSuspended
+        if (role !== undefined && !['Administrator', 'Sales Rep'].includes(role)) {
+            return NextResponse.json({ error: 'Invalid role' }, { status: 400 })
         }
 
-        if (password) {
-            data.password = await bcrypt.hash(password, 12)
-        }
+        const data: Record<string, unknown> = {}
+        if (name !== undefined) data.name = name
+        if (email !== undefined) data.email = email
+        if (role !== undefined) data.role = role
+        if (baseSalary !== undefined) data.baseSalary = parseFloat(baseSalary)
+        if (resendSenderEmail !== undefined) data.resendSenderEmail = resendSenderEmail
+        if (isSuspended !== undefined) data.isSuspended = isSuspended
+        if (password) data.password = await bcrypt.hash(password, 12)
 
         const updatedUser = await prisma.user.update({
             where: { id },
@@ -97,8 +102,11 @@ export async function PUT(req: NextRequest) {
 
         const { password: _, ...userWithoutPassword } = updatedUser
         return NextResponse.json(userWithoutPassword)
-    } catch (err: any) {
-        return NextResponse.json({ error: err.message }, { status: 500 })
+    } catch (err: unknown) {
+        if ((err as { code?: string }).code === 'P2002') {
+            return NextResponse.json({ error: 'Email already in use' }, { status: 400 })
+        }
+        return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
     }
 }
 
@@ -142,7 +150,7 @@ export async function DELETE(req: NextRequest) {
         ])
 
         return NextResponse.json({ success: true })
-    } catch (err: any) {
-        return NextResponse.json({ error: err.message }, { status: 500 })
+    } catch {
+        return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
     }
 }

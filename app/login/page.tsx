@@ -47,8 +47,8 @@ export default function LoginPage() {
                     <div style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: 64, height: 64, borderRadius: 20, background: 'linear-gradient(135deg, #6366f1, #06b6d4)', marginBottom: 20, boxShadow: '0 10px 30px rgba(99, 102, 241, 0.4)' }}>
                         <Zap size={30} color="white" fill="white" />
                     </div>
-                    <h1 style={{ fontSize: 28, fontWeight: 800, marginBottom: 8, letterSpacing: '-0.5px' }}>Access Protocol</h1>
-                    <p style={{ fontSize: 14, color: 'var(--text-muted)', margin: 0 }}>Secure gateway to <span style={{ color: 'var(--accent-primary)', fontWeight: 700 }}>Global Marketing</span></p>
+                    <h1 style={{ fontSize: 28, fontWeight: 800, marginBottom: 8, letterSpacing: '-0.5px' }}>Sign In</h1>
+                    <p style={{ fontSize: 14, color: 'var(--text-muted)', margin: 0 }}>Sign in to your account</p>
                 </div>
 
                 {error && (
@@ -60,14 +60,13 @@ export default function LoginPage() {
 
                 <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
                     <div className="form-group">
-                        <label className="form-label">Network ID</label>
+                        <label className="form-label">Email</label>
                         <input type="email" placeholder="you@company.com" value={email} onChange={e => setEmail(e.target.value)} required style={{ fontSize: 14, height: 48, borderRadius: 12 }} />
                     </div>
 
                     <div className="form-group">
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                            <label className="form-label" style={{ marginBottom: 0 }}>Cipher Key</label>
-                            <button type="button" style={{ background: 'none', border: 'none', color: 'var(--accent-primary)', fontSize: 12, fontWeight: 600, cursor: 'pointer', padding: 0 }}>Restore Access</button>
+                            <label className="form-label" style={{ marginBottom: 0 }}>Password</label>
                         </div>
                         <div style={{ position: 'relative', marginTop: 10 }}>
                             <input
@@ -85,7 +84,7 @@ export default function LoginPage() {
                     </div>
 
                     <button type="submit" className="btn-primary w-full" disabled={loading} style={{ justifyContent: 'center', marginTop: 10, padding: '14px 20px', fontSize: 16, fontWeight: 800, borderRadius: 14, boxShadow: '0 8px 25px rgba(99, 102, 241, 0.3)' }}>
-                        {loading ? <div className="spinner" /> : <><span>Initialize Session</span> <ArrowRight size={18} /></>}
+                        {loading ? <div className="spinner" /> : <><span>Sign In</span> <ArrowRight size={18} /></>}
                     </button>
                 </form>
 

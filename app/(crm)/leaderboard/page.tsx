@@ -1,7 +1,8 @@
 'use client'
 import { useState, useEffect } from 'react'
+import { useRouter } from 'next/navigation'
 import NotificationCenter from '@/components/NotificationCenter'
-import { Trophy, Award, Star, TrendingUp, Target, CheckCircle, Clock, Flame, Zap, ChevronDown, ChevronUp } from 'lucide-react'
+import { Trophy, Award, Star, TrendingUp, Target, CheckCircle, Clock, Zap, ChevronDown, ChevronUp } from 'lucide-react'
 import { format } from 'date-fns'
 
 
@@ -36,6 +37,7 @@ function getColor(name: string) {
 }
 
 export default function LeaderboardPage() {
+    const router = useRouter()
     const [data, setData] = useState<LeaderboardData | null>(null)
     const [loading, setLoading] = useState(true)
     const [period, setPeriod] = useState('month')
@@ -70,7 +72,7 @@ export default function LeaderboardPage() {
                                 <h2 style={{ fontSize: 22, fontWeight: 700, marginBottom: 4, display: 'flex', alignItems: 'center', gap: 10 }}>
                                     <Trophy size={22} color="#f59e0b" /> Sales Leaderboard
                                 </h2>
-                                <p style={{ color: 'var(--text-muted)', fontSize: 13, margin: 0 }}>Ranked by XP. Earn points through calls, mails, tasks, conversions & wins.</p>
+                                <p style={{ color: 'var(--text-muted)', fontSize: 13, margin: 0 }}>Earn XP through calls, emails, tasks, conversions and closed deals.</p>
                                 <p style={{ color: 'var(--text-muted)', fontSize: 11, marginTop: 4 }}>
                                     Last updated: {data ? format(new Date(), 'MMM dd, h:mm a') : '—'}
                                 </p>
@@ -253,7 +255,7 @@ export default function LeaderboardPage() {
                                 <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: '1px', textTransform: 'uppercase', opacity: 0.8, marginBottom: 8 }}>Your Current Status</div>
                                 <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, marginBottom: 4 }}>
                                     <span style={{ fontSize: 42, fontWeight: 800, lineHeight: 1 }}>#{cu.rank}</span>
-                                    <span style={{ fontSize: 13, opacity: 0.8 }}>out of {data?.totalUsers} agents</span>
+                                    <span style={{ fontSize: 13, opacity: 0.8 }}>out of {data?.totalUsers} members</span>
                                 </div>
                                 <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
                                     <span style={{ fontSize: 14, fontWeight: 700 }}>{cu.title}</span>
@@ -273,14 +275,14 @@ export default function LeaderboardPage() {
                                     </div>
                                 )}
                                 <button
-                                    onClick={() => window.location.href = '/tasks'}
+                                    onClick={() => router.push('/tasks')}
                                     style={{
                                         width: '100%', padding: '10px', borderRadius: 10, border: '2px solid rgba(255,255,255,0.3)',
                                         background: 'rgba(255,255,255,0.1)', color: 'white', fontSize: 13, fontWeight: 700,
                                         cursor: 'pointer', transition: 'all 0.2s',
                                     }}
                                 >
-                                    Earn More XP →
+                                    Complete Tasks to Earn XP →
                                 </button>
                             </div>
                         )}
@@ -299,7 +301,7 @@ export default function LeaderboardPage() {
                                     </div>
                                     <div style={{ background: 'rgba(16,185,129,0.08)', borderRadius: 10, padding: '14px 12px', textAlign: 'center' }}>
                                         <Award size={16} color="#10b981" style={{ marginBottom: 6 }} />
-                                        <div style={{ fontSize: 9, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: 2 }}>Closed</div>
+                                        <div style={{ fontSize: 9, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: 2 }}>Deals Won</div>
                                         <div style={{ fontSize: 20, fontWeight: 700 }}>{cu.closedWon} Deals</div>
                                     </div>
                                     <div style={{ background: 'rgba(245,158,11,0.08)', borderRadius: 10, padding: '14px 12px', textAlign: 'center' }}>
@@ -356,7 +358,7 @@ export default function LeaderboardPage() {
                                             💡 <strong>Streak Bonus:</strong> Keep a daily streak to multiply all XP by up to 2x!
                                         </div>
                                         <div style={{ fontSize: 10, color: 'var(--text-muted)' }}>
-                                            ⚠️ <strong>Note:</strong> Editing the same item repeatedly is subject to an anti-spam cooldown.
+                                            ⚠️ <strong>Note:</strong> Repeated edits to the same item within a short time won&apos;t earn additional XP.
                                         </div>
                                     </div>
                                 </div>

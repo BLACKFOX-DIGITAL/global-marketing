@@ -14,7 +14,7 @@ export async function GET(req: NextRequest) {
     }
 
     const existingLead = await prisma.lead.findFirst({
-        where: { website },
+        where: { website, isDeleted: false },
         select: { id: true }
     })
 

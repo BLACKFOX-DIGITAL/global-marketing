@@ -34,13 +34,16 @@ export async function PATCH(_req: NextRequest, { params }: { params: Promise<{ i
         // Award XP when completing (not when un-completing)
         let gamification = null
         if (updated.completed) {
+            gamification = await awardXP(user.userId, 'TASK_COMPLETED', 'TASK_COMPLETED', id)
+            // Bonus XP for on-time completion
             const isOnTime = task.dueDate ? new Date() <= task.dueDate : false
-            const xpAction: keyof Awaited<ReturnType<typeof import('@/lib/gamification').getXPValues>> = isOnTime ? 'TASK_ON_TIME_BONUS' : 'TASK_COMPLETED'
-            gamification = await awardXP(user.userId, xpAction)
+            if (isOnTime) {
+                await awardXP(user.userId, 'TASK_ON_TIME_BONUS', 'TASK_ON_TIME_BONUS', id)
+            }
         }
 
         return NextResponse.json({ ...updated, gamification })
     } catch {
-        return NextResponse.json({ error: 'Not found' }, { status: 404 })
+        return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 })
     }
 }
