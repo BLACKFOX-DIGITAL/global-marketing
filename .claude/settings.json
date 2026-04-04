@@ -1,0 +1,7 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(grep -E \"^\\(GET|POST|PUT|DELETE|PATCH\\)\" /Users/shakkhor666/Antigravity/CFM/app/api/*/*/route.ts)"
+    ]
+  }
+}

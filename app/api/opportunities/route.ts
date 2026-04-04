@@ -48,6 +48,11 @@ export async function POST(req: NextRequest) {
 
     try {
         const body = await req.json()
+
+        if (!body.title?.trim()) {
+            return NextResponse.json({ error: 'Title is required' }, { status: 400 })
+        }
+
         const opportunity = await prisma.opportunity.create({
             data: {
                 title: body.title,

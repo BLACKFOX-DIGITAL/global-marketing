@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { getCurrentUser } from '@/lib/auth'
+import { logActivity } from '@/lib/activity'
 
 export async function GET(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
     const user = await getCurrentUser()
@@ -64,6 +65,15 @@ export async function DELETE(_req: NextRequest, { params }: { params: Promise<{ 
         }
 
         await prisma.task.delete({ where: { id } })
+
+        await logActivity({
+            userId: user.userId,
+            type: 'TASK',
+            action: 'DELETED',
+            description: `Task deleted: ${task.title}`,
+            leadId: task.leadId ?? undefined,
+        })
+
         return NextResponse.json({ message: 'Deleted' })
     } catch {
         return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 })

@@ -7,9 +7,8 @@ export const dynamic = 'force-dynamic'
 
 export async function GET() {
     const user = await getCurrentUser()
-    if (!user || user.role !== 'Administrator') {
-        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
+    if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    if (user.role !== 'Administrator') return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
 
     const now = new Date()
     const startOfThisMonth = startOfMonth(now)
@@ -21,14 +20,13 @@ export async function GET() {
 
     const [
         totalUsers,
-        totalLeads,
         totalOpportunities,
         stageGroups,
         recentLeads,
         goals,
         actualWon,
         actualLeads,
-        actualTasks,
+        actualTestJobs,
         repsData,
         lastMonthDeals,
         lastMonthPipeline,
@@ -39,10 +37,8 @@ export async function GET() {
         staleLeads,
         trendLeads,
         trendOpps,
-        trendTasks,
     ] = await Promise.all([
         prisma.user.count({ where: { role: { not: 'Administrator' }, isSuspended: false } }),
-        prisma.lead.count({ where: { isDeleted: false } }),
         prisma.opportunity.count({ where: { isDeleted: false } }),
         prisma.opportunity.groupBy({ by: ['stage'], where: { isDeleted: false }, _count: true }),
         prisma.lead.findMany({
@@ -54,7 +50,7 @@ export async function GET() {
         prisma.userGoal.findMany({ where: { period: monthStr } }),
         prisma.opportunity.count({ where: { stage: 'Closed Won', updatedAt: { gte: startOfThisMonth } } }),
         prisma.lead.count({ where: { createdAt: { gte: startOfThisMonth }, isDeleted: false } }),
-        prisma.task.count({ where: { completed: true, completedAt: { gte: startOfThisMonth } } }),
+        prisma.opportunity.count({ where: { stage: 'Test Job Received', isDeleted: false, createdAt: { gte: startOfThisMonth } } }),
         prisma.user.findMany({
             where: { role: { not: 'Administrator' }, isSuspended: false },
             select: {
@@ -91,10 +87,6 @@ export async function GET() {
             where: { updatedAt: { gte: fourteenDaysAgo }, stage: 'Closed Won' },
             select: { updatedAt: true }
         }),
-        prisma.task.findMany({
-            where: { completedAt: { gte: fourteenDaysAgo }, completed: true },
-            select: { completedAt: true }
-        }),
     ])
 
     // Build daily trends array (14 days)
@@ -107,7 +99,6 @@ export async function GET() {
             date: format(day, 'MMM dd'),
             leads: trendLeads.filter(l => l.createdAt >= dayStart && l.createdAt <= dayEnd).length,
             closed: trendOpps.filter(o => o.updatedAt >= dayStart && o.updatedAt <= dayEnd).length,
-            tasks: trendTasks.filter(t => t.completedAt && t.completedAt >= dayStart && t.completedAt <= dayEnd).length,
         })
     }
 
@@ -130,7 +121,7 @@ export async function GET() {
     const globalGoals = {
         DEALS: { target: goals.filter(g => g.category === 'DEALS').reduce((s, g) => s + g.targetValue, 0), actual: actualWon },
         LEADS: { target: goals.filter(g => g.category === 'LEADS').reduce((s, g) => s + g.targetValue, 0), actual: actualLeads },
-        TASKS: { target: goals.filter(g => g.category === 'TASKS').reduce((s, g) => s + g.targetValue, 0), actual: actualTasks },
+        TEST_JOBS: { target: goals.filter(g => g.category === 'TEST_JOBS').reduce((s, g) => s + g.targetValue, 0), actual: actualTestJobs },
     }
 
     const leaderboard = repsData.map(rep => ({

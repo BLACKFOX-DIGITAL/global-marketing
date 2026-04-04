@@ -23,6 +23,11 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
     
     if (!lead) return NextResponse.json({ error: 'Not found' }, { status: 404 })
 
+    // Block non-admins from seeing soft-deleted leads
+    if (user.role !== 'Administrator' && lead.isDeleted) {
+        return NextResponse.json({ error: 'Not found' }, { status: 404 })
+    }
+
     // Block access if not admin and either: lead is owned by someone else, OR lead has no owner (pool)
     if (user.role !== 'Administrator' && lead.ownerId !== user.userId) {
         return NextResponse.json({ error: 'Forbidden' }, { status: 403 })

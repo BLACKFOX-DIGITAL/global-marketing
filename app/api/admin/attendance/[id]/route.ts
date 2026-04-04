@@ -5,9 +5,8 @@ import { differenceInMinutes } from 'date-fns'
 
 export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
     const user = await getCurrentUser()
-    if (!user || user.role !== 'Administrator') {
-        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
+    if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    if (user.role !== 'Administrator') return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
 
     const { id } = await params
     const { punchIn, punchOut, notes } = await req.json()

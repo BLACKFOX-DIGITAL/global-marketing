@@ -10,26 +10,26 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     const { id } = await params
 
     try {
-        // Fetch claim limit before entering transaction
+        // Fetch claim limit setting (read-only, safe outside transaction)
         const claimLimitSetting = await prisma.systemSetting.findUnique({ where: { key: 'CLAIM_LIMIT' } })
         const CLAIM_LIMIT = parseInt(claimLimitSetting?.value || '50')
 
-        const currentPoolLeadsCount = await prisma.lead.count({
-            where: {
-                ownerId: user.userId,
-                isClaimedFromPool: true,
-                status: { notIn: ['Lost', 'Won', 'Converted', 'Active Client'] }
-            }
-        })
-
-        if (currentPoolLeadsCount >= CLAIM_LIMIT) {
-            return NextResponse.json({
-                error: `You have reached the limit of ${CLAIM_LIMIT} active leads claimed from the pool. Close some leads before claiming more.`
-            }, { status: 403 })
-        }
-
-        // Use a transaction to prevent two users claiming the same lead simultaneously
+        // Use a transaction to atomically check the claim limit AND claim the lead,
+        // preventing race conditions where the same user claims multiple leads simultaneously.
         const updatedLead = await prisma.$transaction(async (tx) => {
+            // Re-check claim count inside the transaction to prevent TOCTOU race condition
+            const currentPoolLeadsCount = await tx.lead.count({
+                where: {
+                    ownerId: user.userId,
+                    isClaimedFromPool: true,
+                    status: { notIn: ['Lost', 'Won', 'Converted', 'Active Client'] }
+                }
+            })
+
+            if (currentPoolLeadsCount >= CLAIM_LIMIT) {
+                throw new Error('LIMIT_REACHED')
+            }
+
             const lead = await tx.lead.findUnique({ where: { id } })
 
             if (!lead || lead.ownerId !== null) {
@@ -64,6 +64,11 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
         return NextResponse.json({ ...updatedLead, gamification })
     } catch (err: unknown) {
         const msg = (err as Error).message
+        if (msg === 'LIMIT_REACHED') {
+            return NextResponse.json({
+                error: `You have reached the limit of ${CLAIM_LIMIT} active leads claimed from the pool. Close some leads before claiming more.`
+            }, { status: 403 })
+        }
         if (msg === 'LEAD_NOT_AVAILABLE') {
             return NextResponse.json({ error: 'Lead not available' }, { status: 400 })
         }

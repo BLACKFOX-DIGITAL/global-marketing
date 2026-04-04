@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
-import bcrypt from 'bcryptjs'
+import { hashPassword } from '@/lib/auth'
 
 export const dynamic = 'force-dynamic'
 
@@ -31,7 +31,7 @@ export async function POST(req: Request) {
             return NextResponse.json({ error: 'Name, email, and password are required.' }, { status: 400 })
         }
 
-        const hashed = await bcrypt.hash(password, 12)
+        const hashed = await hashPassword(password)
         const admin = await prisma.user.create({
             data: { 
                 name, 

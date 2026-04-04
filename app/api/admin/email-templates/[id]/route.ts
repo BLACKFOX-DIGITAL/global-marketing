@@ -4,9 +4,8 @@ import { getCurrentUser, isAdmin } from '@/lib/auth'
 
 export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
     const user = await getCurrentUser()
-    if (!isAdmin(user)) {
-        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
+    if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    if (!isAdmin(user)) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
 
     const { id } = await params
 
@@ -29,9 +28,8 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
 
 export async function DELETE(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
     const user = await getCurrentUser()
-    if (!isAdmin(user)) {
-        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
+    if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    if (!isAdmin(user)) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
 
     const { id } = await params
 

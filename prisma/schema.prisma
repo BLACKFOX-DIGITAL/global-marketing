@@ -86,6 +86,8 @@ model Lead {
   @@index([name])
   @@index([email])
   @@index([company])
+  @@index([lastActivityAt])
+  @@index([ownerId, lastActivityAt, isDeleted])
 }
 
 model CallAttempt {
@@ -156,6 +158,8 @@ model Opportunity {
   @@index([ownerId, stage])
   @@index([updatedAt])
   @@index([ownerId, stage, updatedAt])
+  @@index([stage, isDeleted])
+  @@index([isDeleted])
 }
 
 model ActivityLog {
@@ -171,6 +175,9 @@ model ActivityLog {
   opportunity   Opportunity? @relation(fields: [opportunityId], references: [id], onDelete: Cascade)
   lead          Lead?        @relation(fields: [leadId], references: [id], onDelete: Cascade)
   user          User         @relation(fields: [userId], references: [id])
+
+  @@index([userId, createdAt])
+  @@index([leadId, createdAt])
 }
 
 model Notification {
@@ -255,6 +262,8 @@ model AttendanceRecord {
   notes     String?
   createdAt DateTime  @default(now())
   user      User      @relation(fields: [userId], references: [id])
+
+  @@index([userId, punchIn])
 }
 
 model LeaveRequest {
@@ -321,6 +330,7 @@ model XPHistory {
   user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId, actionType])
+  @@index([createdAt])
 }
 
 model Holiday {

@@ -1,18 +1,25 @@
 'use client'
-import React, { useState, useEffect, use, useCallback, useRef } from 'react'
-import { Pencil, Mail, Phone, MapPin, Globe, Rocket, CheckSquare, Check, Calendar, User, Plus, History, Paperclip, MessageSquare, CheckCircle, AlertCircle, Loader2, Search, Copy } from 'lucide-react'
+import React, { useState, useEffect, useCallback, useRef } from 'react'
+import { Pencil, Mail, Phone, MapPin, Globe, Rocket, CheckSquare, Check, Calendar, User, Plus, History, MessageSquare, CheckCircle, AlertCircle, Loader2, Search, Copy } from 'lucide-react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { format, parseISO, formatDistanceToNow } from 'date-fns'
+import { format, parseISO } from 'date-fns'
 import EditLeadModal from '@/components/EditLeadModal'
 import ActivityTimeline from '@/components/ActivityTimeline'
-import AttachmentList from '@/components/AttachmentList'
 import Editor from '@/components/Editor'
 import EmailModal from '@/components/EmailModal'
 import EditTaskModal from '@/components/EditTaskModal'
 
 // Auto-validates email on mount, shows tick/cross
+// Capped at 500 entries to prevent unbounded memory growth on long sessions
+const EMAIL_CACHE_MAX = 500
 const emailBadgeCache = new Map<string, { state: 'loading' | 'valid' | 'unknown' | 'invalid' }>()
+function setEmailCache(key: string, value: { state: 'loading' | 'valid' | 'unknown' | 'invalid' }) {
+    if (emailBadgeCache.size >= EMAIL_CACHE_MAX) {
+        emailBadgeCache.delete(emailBadgeCache.keys().next().value!)
+    }
+    emailBadgeCache.set(key, value)
+}
 function EmailBadge({ email }: { email: string }) {
     const [state, setState] = useState<'loading' | 'valid' | 'unknown' | 'invalid'>('loading')
     useEffect(() => {
@@ -35,9 +42,11 @@ function EmailBadge({ email }: { email: string }) {
             body: JSON.stringify({ email: trimmed }), signal: ctrl.signal,
         }).then(r => r.json()).then(data => {
             const s = data.valid ? (data.unknown ? 'unknown' : 'valid') : 'invalid'
-            emailBadgeCache.set(trimmed, { state: s })
+            setEmailCache(trimmed, { state: s })
             if (mounted) setState(s)
-        }).catch(() => { })
+        }).catch(() => {
+            if (mounted) setState('unknown')
+        })
         return () => {
             mounted = false
             ctrl.abort()
@@ -445,14 +454,14 @@ export default function LeadDetailContent({ id, linkPrefix = '' }: { id: string,
     const [isEditing, setIsEditing] = useState(false)
     const [converting, setConverting] = useState(false)
     const [showConvertModal, setShowConvertModal] = useState(false)
-    const [activeTab, setActiveTab] = useState<'tasks' | 'attachments'>('tasks')
-    const [uploading, setUploading] = useState(false)
+    const [activeTab, setActiveTab] = useState<'tasks'>('tasks')
     const [newTask, setNewTask] = useState({ title: '', taskType: 'Follow-up', dueDate: '', priority: 'Medium' })
     const [creatingTask, setCreatingTask] = useState(false)
     const [priorities, setPriorities] = useState<{ value: string; color: string | null }[]>([])
     const [savingNotes, setSavingNotes] = useState<'idle' | 'saving' | 'saved'>('idle')
     // Track the last notes value that was saved so we only auto-save on actual changes.
     const savedNotesRef = useRef<string | null | undefined>(undefined)
+    const leadRef = useRef<Lead | null>(null)
     const [showEmailModal, setShowEmailModal] = useState(false)
 
     const [error, setError] = useState<number | null>(null)
@@ -508,7 +517,12 @@ export default function LeadDetailContent({ id, linkPrefix = '' }: { id: string,
                 }
                 const text = await res.text()
                 if (!text) return {}
-                return JSON.parse(text)
+                try {
+                    return JSON.parse(text)
+                } catch (parseErr) {
+                    console.error(`JSON parse failed for ${url}:`, parseErr)
+                    return {}
+                }
             } catch (err) {
                 console.error(`Fetch failed for ${url}:`, err)
                 return {}
@@ -522,7 +536,7 @@ export default function LeadDetailContent({ id, linkPrefix = '' }: { id: string,
             safeFetch('/api/users')
         ])
 
-        if (leadData.id) setLead(leadData)
+        if (leadData.id) { setLead(leadData); leadRef.current = leadData }
         if (statusData.options) setStatuses(statusData.options)
         if (priorityData.options) setPriorities(priorityData.options)
         if (userData && userData.users) setUsers(userData.users)
@@ -568,6 +582,7 @@ export default function LeadDetailContent({ id, linkPrefix = '' }: { id: string,
 
         // Optimistic update
         setLead(updatedLead)
+        leadRef.current = updatedLead
 
         try {
             const res = await fetch(`/api/leads/${id}`, {
@@ -610,7 +625,7 @@ export default function LeadDetailContent({ id, linkPrefix = '' }: { id: string,
                 const res = await fetch(`/api/leads/${id}`, {
                     method: 'PUT',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ ...toLeadPayload(lead!), notes: currentNotes })
+                    body: JSON.stringify({ ...toLeadPayload(leadRef.current!), notes: currentNotes })
                 })
                 if (res.ok) {
                     savedNotesRef.current = currentNotes
@@ -627,27 +642,6 @@ export default function LeadDetailContent({ id, linkPrefix = '' }: { id: string,
          
     }, [currentNotes, id])
 
-    const handleDeleteAttachment = async (attachId: string) => {
-        await fetch(`/api/attachments?id=${attachId}`, { method: 'DELETE' })
-        await fetchLeadAndOptions()
-    }
-
-    const handleUpload = async (name: string) => {
-        setUploading(true)
-        await fetch('/api/attachments', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                name,
-                fileUrl: '#',
-                fileType: name.endsWith('.pdf') ? 'application/pdf' : 'image/png',
-                fileSize: 1024 * 450,
-                leadId: id
-            })
-        })
-        await fetchLeadAndOptions()
-        setUploading(false)
-    }
 
     useEffect(() => {
         fetchLeadAndOptions()
@@ -682,7 +676,6 @@ export default function LeadDetailContent({ id, linkPrefix = '' }: { id: string,
     )
 
     const primaryContact = lead.contacts?.find(c => c.isPrimary) || lead.contacts?.[0]
-    const position = primaryContact?.position || 'Contact'
     const displayTitle = lead.company || lead.name || 'Unknown'
     const initials = displayTitle.split(' ').map((n: string) => n[0]).join('').toUpperCase().slice(0, 2)
     const ownerInitials = lead.owner?.name.split(' ').map((n: string) => n[0]).join('').toUpperCase().slice(0, 2) || '?'
@@ -745,8 +738,8 @@ export default function LeadDetailContent({ id, linkPrefix = '' }: { id: string,
                                 <div style={{ minWidth: 0 }}>
                                     <div style={{ fontSize: 9, color: 'var(--text-muted)', fontWeight: 700, textTransform: 'uppercase', display: 'flex', alignItems: 'center', gap: 6 }}>Email <EmailBadge email={lead.email || ''} /></div>
                                     <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-                                        {lead.email ? lead.email.split(',').map((email, idx) => (
-                                            <div key={idx} style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                                        {lead.email ? lead.email.split(',').map((email) => (
+                                            <div key={email.trim()} style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
                                                 <Link href={`mailto:${email.trim()}`}
                                                     onClick={(e) => { if (e.altKey) { e.preventDefault(); copyToClipboard(email.trim(), 'Email'); } }}
                                                     style={{ color: 'var(--text-primary)', textDecoration: 'none', fontSize: 12, fontWeight: 500, display: 'block', overflow: 'hidden', textOverflow: 'ellipsis' }}>
@@ -763,8 +756,8 @@ export default function LeadDetailContent({ id, linkPrefix = '' }: { id: string,
                                 <div>
                                     <div style={{ fontSize: 9, color: 'var(--text-muted)', fontWeight: 700, textTransform: 'uppercase' }}>Phone</div>
                                     <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-                                        {lead.phone ? lead.phone.split(',').map((phone, idx) => (
-                                            <div key={idx} style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                                        {lead.phone ? lead.phone.split(',').map((phone) => (
+                                            <div key={phone.trim()} style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
                                                 <Link href={`tel:${phone.trim()}`}
                                                     onClick={(e) => { if (e.altKey) { e.preventDefault(); copyToClipboard(phone.trim(), 'Phone'); } }}
                                                     style={{ color: 'var(--text-primary)', textDecoration: 'none', fontSize: 12, fontWeight: 500 }}>
@@ -800,7 +793,6 @@ export default function LeadDetailContent({ id, linkPrefix = '' }: { id: string,
                         <div style={{ borderBottom: '1px solid var(--border)', display: 'flex', gap: 0, padding: '0 20px' }}>
                             {[
                                 { key: 'tasks' as const, icon: <CheckSquare size={14} />, label: 'Tasks' },
-                                { key: 'attachments' as const, icon: <Paperclip size={14} />, label: 'Files' },
                             ].map(t => (
                                 <button key={t.key}
                                     onClick={() => setActiveTab(t.key)}
@@ -922,14 +914,6 @@ export default function LeadDetailContent({ id, linkPrefix = '' }: { id: string,
                                 </div>
                             )}
 
-                            {activeTab === 'attachments' && (
-                                <AttachmentList
-                                    attachments={lead.attachments}
-                                    onDelete={handleDeleteAttachment}
-                                    onUpload={handleUpload}
-                                    uploading={uploading}
-                                />
-                            )}
                         </div>
                     </div>
 
@@ -999,8 +983,8 @@ export default function LeadDetailContent({ id, linkPrefix = '' }: { id: string,
                                     <div style={{ fontSize: 11, color: 'var(--text-secondary)', marginTop: 2 }}>{c.position || ''}</div>
                                     {c.email && (
                                         <div style={{ display: 'flex', flexDirection: 'column', gap: 2, marginTop: 4 }}>
-                                            {c.email.split(',').map((email, idx) => (
-                                                <div key={idx} style={{ fontSize: 11, color: 'var(--accent-primary)', display: 'flex', alignItems: 'center', gap: 4 }}>
+                                            {c.email.split(',').map((email) => (
+                                                <div key={email.trim()} style={{ fontSize: 11, color: 'var(--accent-primary)', display: 'flex', alignItems: 'center', gap: 4 }}>
                                                     <Mail size={10} />
                                                     <span onClick={() => copyToClipboard(email.trim(), 'Email')} style={{ cursor: 'pointer' }}>{email.trim()}</span>
                                                     <span className="hover-copy" style={{ cursor: 'pointer', marginLeft: 4 }} onClick={() => copyToClipboard(email.trim(), 'Email')}><Copy size={10} /></span>
@@ -1010,8 +994,8 @@ export default function LeadDetailContent({ id, linkPrefix = '' }: { id: string,
                                     )}
                                     {c.phone && (
                                         <div style={{ display: 'flex', flexDirection: 'column', gap: 2, marginTop: 2 }}>
-                                            {c.phone.split(',').map((phone, idx) => (
-                                                <div key={idx} style={{ fontSize: 11, color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: 4 }}>
+                                            {c.phone.split(',').map((phone) => (
+                                                <div key={phone.trim()} style={{ fontSize: 11, color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: 4 }}>
                                                     <Phone size={10} />
                                                     <span onClick={() => copyToClipboard(phone.trim(), 'Phone')} style={{ cursor: 'pointer' }}>{phone.trim()}</span>
                                                     <span className="hover-copy" style={{ cursor: 'pointer', marginLeft: 4 }} onClick={() => copyToClipboard(phone.trim(), 'Phone')}><Copy size={10} /></span>

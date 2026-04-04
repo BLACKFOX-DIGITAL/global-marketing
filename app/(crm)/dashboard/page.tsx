@@ -1,6 +1,6 @@
 'use client'
 import { useEffect, useState } from 'react'
-import { Users, Calendar, CheckCircle, TrendingUp, Briefcase, Target, ChevronRight, Phone, Mail, Zap, Star, Check, Waves, Pencil } from 'lucide-react'
+import { Users, Calendar, CheckCircle, TrendingUp, Briefcase, ChevronRight, Phone, Mail, Zap, Star, Check, Waves, Pencil } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { format } from 'date-fns'
@@ -9,18 +9,8 @@ import { AttendanceWidget } from '@/components/AttendanceWidget'
 import EditTaskModal from '@/components/EditTaskModal'
 
 // Lazy-load heavy Recharts bundle — doesn't block initial render
-const AnalyticsDashboard = dynamic(
-    () => import('@/components/AnalyticsCharts').then(m => ({ default: m.AnalyticsDashboard })),
-    {
-        loading: () => (
-            <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: 200, color: 'var(--text-muted)', gap: 10 }}>
-                <div style={{ width: 20, height: 20, borderRadius: '50%', border: '2px solid var(--border)', borderTopColor: 'var(--accent-primary)', animation: 'spin 0.8s linear infinite' }} />
-                Loading charts...
-            </div>
-        ),
-        ssr: false,
-    }
-)
+import { AnalyticsDashboard } from '@/components/AnalyticsCharts'
+
 
 interface DashboardData {
     stats: {
@@ -641,7 +631,7 @@ export default function DashboardPage() {
                     </div>
 
                     {/* Goal Pacing */}
-                    {goalsData?.goals && goalsData.goals.filter(g => g.category !== 'TASKS').length > 0 && (
+                    {goalsData?.goals && goalsData.goals.length > 0 && (
                         <div className="dash-card" style={{ gridColumn: 'span 12', padding: '16px 20px', animation: 'fadeSlideUp 0.4s ease both 0.44s' }}>
                             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
                                 <div>
@@ -651,7 +641,7 @@ export default function DashboardPage() {
                                 <TrendingUp size={18} color="var(--accent-primary)" />
                             </div>
                             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: 32 }}>
-                                {goalsData.goals.filter(g => g.category !== 'TASKS').map(goal => {
+                                {goalsData.goals.map(goal => {
                                     const current = goalsData.progress[goal.category] || 0
                                     const percent = Math.min(100, Math.round((current / goal.targetValue) * 100))
                                     const label = goal.category === 'DEALS' ? 'Deals Closed' : goal.category === 'TEST_JOBS' ? 'Test Jobs' : goal.category === 'LEADS' ? 'New Leads' : goal.category
@@ -686,8 +676,8 @@ export default function DashboardPage() {
                             {!holidays.length ? (
                                 <div style={{ fontSize: 11, color: 'var(--text-muted)', fontStyle: 'italic' }}>No upcoming holidays.</div>
                             ) : (
-                                holidays.map((h, i) => (
-                                    <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                                holidays.map((h) => (
+                                    <div key={h.id} style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                                         <Calendar size={14} color="var(--accent-primary)" />
                                         <span style={{ fontSize: 13, fontWeight: 600 }}>{h.name}</span>
                                         <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>({format(new Date(h.date), 'MMM d')})</span>

@@ -5,9 +5,8 @@ import { startOfDay, endOfDay, parseISO } from 'date-fns'
 
 export async function GET(req: NextRequest) {
     const user = await getCurrentUser()
-    if (!user || user.role !== 'Administrator') {
-        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
+    if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    if (user.role !== 'Administrator') return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
 
     const { searchParams } = new URL(req.url)
     const dateStr = searchParams.get('date') // Expected YYYY-MM-DD
@@ -26,18 +25,21 @@ export async function GET(req: NextRequest) {
         }
     }
 
-    const [records, allUsers] = await Promise.all([
-        prisma.attendanceRecord.findMany({
-            where,
-            include: { user: { select: { id: true, name: true, email: true, role: true } } },
-            orderBy: [{ punchIn: 'desc' }]
-        }),
-        prisma.user.findMany({
-            where: { role: 'Sales Rep', isSuspended: false },
-            select: { id: true, name: true, email: true, role: true },
-            orderBy: { name: 'asc' }
-        })
-    ])
-
-    return NextResponse.json({ records, allUsers })
+    try {
+        const [records, allUsers] = await Promise.all([
+            prisma.attendanceRecord.findMany({
+                where,
+                include: { user: { select: { id: true, name: true, email: true, role: true } } },
+                orderBy: [{ punchIn: 'desc' }]
+            }),
+            prisma.user.findMany({
+                where: { role: 'Sales Rep', isSuspended: false },
+                select: { id: true, name: true, email: true, role: true },
+                orderBy: { name: 'asc' }
+            })
+        ])
+        return NextResponse.json({ records, allUsers })
+    } catch {
+        return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+    }
 }

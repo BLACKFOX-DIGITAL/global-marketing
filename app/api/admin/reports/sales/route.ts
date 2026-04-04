@@ -7,9 +7,8 @@ export const dynamic = 'force-dynamic'
 
 export async function GET(req: NextRequest) {
     const user = await getCurrentUser()
-    if (!user || user.role !== 'Administrator') {
-        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
+    if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    if (user.role !== 'Administrator') return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
 
     const { searchParams } = new URL(req.url)
     const period = searchParams.get('period') || 'month'
@@ -81,7 +80,7 @@ export async function GET(req: NextRequest) {
             select: { id: true, status: true, ownerId: true, createdAt: true, isClaimedFromPool: true }
         }),
         prisma.opportunity.findMany({
-            where: { ownerId: repId ? repId : undefined },
+            where: { ownerId: repId ? repId : undefined, isDeleted: false },
             select: { id: true, stage: true, ownerId: true, createdAt: true, updatedAt: true }
         }),
         prisma.task.findMany({
@@ -126,7 +125,7 @@ export async function GET(req: NextRequest) {
             select: { completedAt: true }
         }),
         prisma.opportunity.findMany({
-            where: { stage: 'Closed Won', updatedAt: { gte: trendSince }, ownerId: repId ? repId : undefined },
+            where: { stage: 'Closed Won', updatedAt: { gte: trendSince }, ownerId: repId ? repId : undefined, isDeleted: false },
             select: { updatedAt: true }
         })
     ])

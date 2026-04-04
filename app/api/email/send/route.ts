@@ -1,11 +1,17 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { getCurrentUser, isManager } from '@/lib/auth'
+import { rateLimit } from '@/lib/rateLimit'
 
 export async function POST(req: NextRequest) {
     const user = await getCurrentUser()
     if (!user) {
         return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
+    const rl = rateLimit(`email-send:${user.userId}`, { limit: 20, windowMs: 60_000 })
+    if (!rl.allowed) {
+        return NextResponse.json({ error: 'Too many emails. Try again in a minute.' }, { status: 429 })
     }
 
     try {

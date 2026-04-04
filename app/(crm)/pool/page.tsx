@@ -1,6 +1,6 @@
 'use client'
 import { useState, useDeferredValue } from 'react'
-import { Search, ChevronLeft, ChevronRight, Hand, Waves, Clock } from 'lucide-react'
+import { Search, ChevronLeft, ChevronRight, Hand, Clock, Inbox } from 'lucide-react'
 import NotificationCenter from '@/components/NotificationCenter'
 import StatusBadge from '@/components/StatusBadge'
 import { formatDistanceToNow } from 'date-fns'
@@ -34,6 +34,7 @@ export default function PoolPage() {
     const search = useDeferredValue(searchInput)
     const [statusFilter, setStatusFilter] = useState('')
     const [claiming, setClaiming] = useState<string | null>(null)
+    const [claimError, setClaimError] = useState<string | null>(null)
     const [isScrolled, setIsScrolled] = useState(false)
 
     const params = new URLSearchParams({ page: String(page), limit: '50' })
@@ -42,6 +43,7 @@ export default function PoolPage() {
 
     const { data, mutate: fetchPool } = useSWR(`/api/pool?${params}`, fetcher, { keepPreviousData: true })
     const { data: settingsData } = useSWR('/api/admin/settings?category=LEAD_STATUS', fetcher)
+    const { mutate } = useSWRConfig()
 
     const leads: Lead[] = data?.leads || []
     const total: number = data?.total || 0
@@ -50,19 +52,23 @@ export default function PoolPage() {
 
     const statusOptions: string[] = settingsData?.options?.map((o: { value: string }) => o.value) || []
 
-    const { mutate } = useSWRConfig()
-
     async function handleClaim(id: string) {
         setClaiming(id)
+        setClaimError(null)
         const res = await fetch(`/api/leads/${id}/claim`, { method: 'POST' })
 
         if (res.ok) {
             fetchPool()
-            mutate('/api/dashboard/stats')
-            mutate((key: any) => typeof key === 'string' && key.startsWith('/api/leads'))
+            mutate((key: unknown) => typeof key === 'string' && (
+                key.startsWith('/api/leads') ||
+                key.startsWith('/api/dashboard') ||
+                key.startsWith('/api/admin/leads') ||
+                key.includes('stats')
+            ))
         } else {
             const err = await res.json()
-            alert(err.error || 'Failed to claim lead')
+            setClaimError(err.error || 'Failed to claim lead')
+            setTimeout(() => setClaimError(null), 3000)
         }
         setClaiming(null)
     }
@@ -73,6 +79,53 @@ export default function PoolPage() {
         const start = Math.max(1, Math.min(page - 2, totalPages - 4))
         return Array.from({ length: 5 }, (_, i) => start + i)
     })()
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const Row = ({ index, style }: any) => {
+        const lead = leads[index]
+        return (
+            <div style={{
+                ...style,
+                display: 'flex', alignItems: 'center',
+                padding: '0 18px', borderBottom: '1px solid var(--border)',
+                background: index % 2 === 0 ? 'transparent' : 'rgba(0,0,0,0.01)'
+            }} className="lead-row-container">
+                <div style={{ width: '25%', display: 'flex', alignItems: 'center', gap: 10 }}>
+                    <div style={{ flexShrink: 0, scale: '0.85', transformOrigin: 'left center' }}>
+                        <Avatar name={lead.company || lead.name} />
+                    </div>
+                    <div style={{ overflow: 'hidden' }}>
+                        <div style={{ fontWeight: 600, color: 'var(--text-primary)', fontSize: 12, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{lead.company || lead.name}</div>
+                        {lead.name && lead.name !== lead.company && <div style={{ fontSize: 10, color: 'var(--text-muted)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{lead.name}</div>}
+                    </div>
+                </div>
+                <div style={{ width: '25%', paddingRight: 10 }}>
+                    <div style={{ color: 'var(--text-secondary)', fontSize: 11, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{lead.website || '—'}</div>
+                    {lead.email && <div style={{ fontSize: 10, color: 'var(--text-muted)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{lead.email}</div>}
+                </div>
+                <div style={{ width: '15%', color: 'var(--text-secondary)', fontSize: 11, fontWeight: 500 }}>
+                    {lead.industry || '—'}
+                </div>
+                <div style={{ width: '15%', fontSize: 11, color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', gap: 6 }}>
+                    <Clock size={11} color="var(--text-muted)" /> {formatDistanceToNow(new Date(lead.lastActivityAt))}
+                </div>
+                <div style={{ width: '10%', scale: '0.9', transformOrigin: 'left center' }}>
+                    <StatusBadge status={lead.status} />
+                </div>
+                <div style={{ width: '10%', textAlign: 'right' }}>
+                    <button
+                        className="btn-primary"
+                        style={{ padding: '4px 12px', fontSize: 11, display: 'inline-flex', alignItems: 'center', gap: 6, borderRadius: 8 }}
+                        onClick={() => handleClaim(lead.id)}
+                        disabled={claiming !== null}
+                    >
+                        {claiming === lead.id ? <div className="spinner" style={{ width: 12, height: 12, borderColor: '#fff', borderTopColor: 'transparent' }} /> : <Hand size={12} />}
+                        Claim
+                    </button>
+                </div>
+            </div>
+        )
+    }
 
     return (
         <div style={{ display: 'flex', flexDirection: 'column', height: '100%', overflow: 'hidden' }}>
@@ -85,9 +138,7 @@ export default function PoolPage() {
                     transition: 'all 0.3s ease-in-out'
                 }}>
                     <div style={{ display: 'flex', alignItems: 'baseline', gap: 12 }}>
-                        <h2 style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 0 }}>
-                            <Waves size={20} color="var(--accent-primary)" /> Open Lead Pool
-                        </h2>
+                        <h2 style={{ marginBottom: 0 }}>Open Lead Pool</h2>
                         <span style={{ fontSize: 13, color: 'var(--text-muted)' }}>{total} leads available</span>
                     </div>
                 </div>
@@ -116,8 +167,8 @@ export default function PoolPage() {
                     <NotificationCenter />
 
                     {isScrolled && (
-                        <div style={{ fontSize: 11, fontWeight: 700, background: 'rgba(56, 189, 248, 0.1)', color: '#38bdf8', padding: '4px 10px', borderRadius: 6, display: 'flex', alignItems: 'center', gap: 6, transition: 'all 0.2s' }}>
-                            <Waves size={12} /> {total} Left
+                        <div style={{ fontSize: 11, fontWeight: 700, background: 'rgba(56, 189, 248, 0.1)', color: '#38bdf8', padding: '4px 10px', borderRadius: 6, display: 'flex', alignItems: 'center', gap: 6 }}>
+                            {total} Left
                         </div>
                     )}
                 </div>
@@ -143,62 +194,24 @@ export default function PoolPage() {
                                 <div className="spinner" />
                             </div>
                         ) : leads.length === 0 ? (
-                            <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-muted)' }}>
-                                The pool is empty right now.
+                            <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 12, color: 'var(--text-muted)' }}>
+                                <Inbox size={36} strokeWidth={1.5} />
+                                <div style={{ fontSize: 14, fontWeight: 600, color: 'var(--text-secondary)' }}>
+                                    {search || statusFilter ? 'No leads match your filters' : 'No leads available'}
+                                </div>
+                                {(search || statusFilter) && (
+                                    <div style={{ fontSize: 12 }}>Try adjusting your search or status filter</div>
+                                )}
                             </div>
                         ) : (
-                            <AutoSizer renderProp={({ height, width }: any) => (
+                            <AutoSizer renderProp={({ height, width }) => (
                                 <List
+                                    rowComponent={Row}
+                                    rowProps={{}}
                                     rowCount={leads.length}
                                     rowHeight={56}
-                                    onScroll={(e: any) => setIsScrolled(e.currentTarget.scrollTop > 50)}
-                                    style={{ height: height as any, width: width as any, overflowY: 'auto' as any }}
-                                    rowProps={{}}
-                                    rowComponent={({ index, style }: any) => {
-                                        const lead = leads[index]
-                                        return (
-                                            <div style={{
-                                                ...style,
-                                                display: 'flex', alignItems: 'center',
-                                                padding: '0 18px', borderBottom: '1px solid var(--border)',
-                                                background: index % 2 === 0 ? 'transparent' : 'rgba(0,0,0,0.01)'
-                                            }} className="lead-row-container">
-                                                <div style={{ width: '25%', display: 'flex', alignItems: 'center', gap: 10 }}>
-                                                    <div style={{ flexShrink: 0, scale: '0.85', transformOrigin: 'left center' }}>
-                                                        <Avatar name={lead.company || lead.name} />
-                                                    </div>
-                                                    <div style={{ overflow: 'hidden' }}>
-                                                        <div style={{ fontWeight: 600, color: 'var(--text-primary)', fontSize: 12, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{lead.company || lead.name}</div>
-                                                        {lead.name && lead.name !== lead.company && <div style={{ fontSize: 10, color: 'var(--text-muted)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{lead.name}</div>}
-                                                    </div>
-                                                </div>
-                                                <div style={{ width: '25%', paddingRight: 10 }}>
-                                                    <div style={{ color: 'var(--text-secondary)', fontSize: 11, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{lead.website || '—'}</div>
-                                                    {lead.email && <div style={{ fontSize: 10, color: 'var(--text-muted)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{lead.email}</div>}
-                                                </div>
-                                                <div style={{ width: '15%', color: 'var(--text-secondary)', fontSize: 11, fontWeight: 500 }}>
-                                                    {lead.industry || '—'}
-                                                </div>
-                                                <div style={{ width: '15%', fontSize: 11, color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', gap: 6 }}>
-                                                    <Clock size={11} color="var(--text-muted)" /> {formatDistanceToNow(new Date(lead.lastActivityAt))}
-                                                </div>
-                                                <div style={{ width: '10%', scale: '0.9', transformOrigin: 'left center' }}>
-                                                    <StatusBadge status={lead.status} />
-                                                </div>
-                                                <div style={{ width: '10%', textAlign: 'right' }}>
-                                                    <button
-                                                        className="btn-primary"
-                                                        style={{ padding: '4px 12px', fontSize: 11, display: 'inline-flex', alignItems: 'center', gap: 6, borderRadius: 8 }}
-                                                        onClick={() => handleClaim(lead.id)}
-                                                        disabled={claiming !== null}
-                                                    >
-                                                        {claiming === lead.id ? <div className="spinner" style={{ width: 12, height: 12, borderColor: '#fff', borderTopColor: 'transparent' }} /> : <Hand size={12} />}
-                                                        Claim
-                                                    </button>
-                                                </div>
-                                            </div>
-                                        )
-                                    }}
+                                    style={{ height: height ?? 0, width: width ?? 0 }}
+                                    onScroll={(e: React.UIEvent<HTMLDivElement>) => setIsScrolled(e.currentTarget.scrollTop > 50)}
                                 />
                             )} />
                         )}
@@ -233,6 +246,13 @@ export default function PoolPage() {
                     </div>
                 </div>
             </div>
+
+            {claimError && (
+                <div style={{ position: 'fixed', bottom: 32, left: '50%', transform: 'translateX(-50%)', background: 'var(--bg-card)', border: '1px solid #ef4444', padding: '12px 24px', borderRadius: 12, display: 'flex', alignItems: 'center', gap: 12, zIndex: 1000, boxShadow: '0 8px 32px rgba(0,0,0,0.15)' }}>
+                    <div style={{ width: 24, height: 24, borderRadius: '50%', background: 'rgba(239,68,68,0.1)', color: '#ef4444', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14, fontWeight: 700 }}>!</div>
+                    <span style={{ fontSize: 13, color: 'var(--text-primary)', fontWeight: 500 }}>{claimError}</span>
+                </div>
+            )}
         </div>
     )
 }

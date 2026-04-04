@@ -5,9 +5,8 @@ import { calculateMonthlySalary } from '@/lib/payroll'
 
 export async function GET(req: NextRequest) {
     const user = await getCurrentUser()
-    if (!user || user.role !== 'Administrator') {
-        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
+    if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    if (user.role !== 'Administrator') return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
 
     const { searchParams } = new URL(req.url)
     const dateStr = searchParams.get('date') || new Date().toISOString()

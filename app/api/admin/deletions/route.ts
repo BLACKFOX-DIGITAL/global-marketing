@@ -4,7 +4,8 @@ import { getCurrentUser } from '@/lib/auth'
 
 export async function GET() {
     const user = await getCurrentUser()
-    if (!user || user.role !== 'Administrator') return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    if (user.role !== 'Administrator') return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
 
     // Fetch soft-deleted leads
     const leads = await prisma.lead.findMany({

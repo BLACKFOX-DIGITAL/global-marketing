@@ -4,17 +4,16 @@ import { History } from 'lucide-react'
 
 export default function AuditPage() {
     return (
-        <div style={{ padding: '24px 32px' }}>
-            <div style={{ marginBottom: 24, display: 'flex', alignItems: 'center', gap: 12 }}>
-                <div style={{ width: 40, height: 40, borderRadius: 10, background: 'rgba(255,255,255,0.05)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                    <History size={20} color="var(--text-primary)" />
+        <div style={{ padding: '14px 20px', maxWidth: '100%', margin: '0 auto', width: '100%' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 18 }}>
+                <div style={{ background: 'linear-gradient(135deg, #6366f1, #4f46e5)', padding: 7, borderRadius: 10, color: '#fff', boxShadow: '0 0 18px rgba(99,102,241,0.25)' }}>
+                    <History size={17} strokeWidth={2.5} />
                 </div>
                 <div>
-                    <h1 style={{ fontSize: 24, fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>Leads Activity</h1>
-                    <p style={{ fontSize: 13, color: 'var(--text-muted)', margin: '4px 0 0 0' }}>Comprehensive audit log of all lead operations and system events</p>
+                    <h1 style={{ fontSize: 17, fontWeight: 900, letterSpacing: '-0.4px', margin: 0, color: '#f8fafc' }}>Activity Audit Log</h1>
+                    <div style={{ fontSize: 10, color: '#64748b', fontWeight: 600 }}>Comprehensive log of all lead operations and system events</div>
                 </div>
             </div>
-            
             <AuditLedger />
         </div>
     )

@@ -1,14 +1,13 @@
 import jwt from 'jsonwebtoken'
+import bcrypt from 'bcryptjs'
 import { cookies } from 'next/headers'
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 
-const JWT_SECRET = process.env.JWT_SECRET as string
+const JWT_SECRET = process.env.JWT_SECRET
 
 if (!JWT_SECRET) {
-    if (process.env.NODE_ENV === 'production') {
-        throw new Error('JWT_SECRET environment variable is required in production')
-    }
+    throw new Error('JWT_SECRET environment variable is required')
 }
 export const COOKIE_NAME = 'crm_token'
 
@@ -25,7 +24,16 @@ export function signToken(payload: JWTPayload): string {
 
 export function verifyToken(token: string): JWTPayload | null {
     try {
-        return jwt.verify(token, JWT_SECRET) as unknown as JWTPayload
+        const decoded = jwt.verify(token, JWT_SECRET)
+        if (!decoded || typeof decoded !== 'object') return null
+        const p = decoded as Record<string, unknown>
+        if (
+            typeof p.userId !== 'string' ||
+            typeof p.email !== 'string' ||
+            typeof p.name !== 'string' ||
+            typeof p.role !== 'string'
+        ) return null
+        return { userId: p.userId, email: p.email, name: p.name, role: p.role }
     } catch {
         return null
     }
@@ -63,11 +71,21 @@ export async function getCurrentUser(): Promise<JWTPayload | null> {
     if (!token) return null
     const payload = verifyToken(token)
     if (!payload) return null
-    // Check suspension status against DB — JWT alone cannot reflect admin actions taken after token issuance
-    const dbUser = await prisma.user.findUnique({ where: { id: payload.userId }, select: { isSuspended: true } })
+    
+    // Fetch fresh status AND role directly from DB to prevent stale JWT redirects
+    const dbUser = await prisma.user.findUnique({ 
+        where: { id: payload.userId }, 
+        select: { isSuspended: true, role: true } 
+    })
+    
     if (!dbUser || dbUser.isSuspended) return null
-    return payload
+    
+    return {
+        ...payload,
+        role: dbUser.role
+    }
 }
+
 
 export async function getAuthToken(): Promise<string | null> {
     const cookieStore = await cookies()
@@ -78,10 +96,16 @@ export function isAdmin(user: JWTPayload | null): boolean {
     return user?.role === 'Administrator'
 }
 
+// No separate Manager role exists — Administrators are the only elevated role.
+// isManager is an alias for isAdmin. If a Manager role is added later, only change this function.
 export function isManager(user: JWTPayload | null): boolean {
-    return user?.role === 'Administrator'
+    return isAdmin(user)
 }
 
-export function isSalesRep(user: JWTPayload | null): boolean {
-    return user?.role === 'Sales Rep'
+export async function hashPassword(password: string): Promise<string> {
+    return bcrypt.hash(password, 12)
+}
+
+export async function verifyPassword(password: string, hash: string): Promise<boolean> {
+    return bcrypt.compare(password, hash)
 }

@@ -119,7 +119,7 @@ export async function POST(req: NextRequest) {
             })
             if (existingLead) {
                 const ownerName = existingLead.owner?.name || 'the Unassigned Pool'
-                return NextResponse.json({ error: `This lead already exists in the platform and belongs to: ${ownerName}` }, { status: 400 })
+                return NextResponse.json({ error: 'This lead already exists in the platform.' }, { status: 400 })
             }
         }
 

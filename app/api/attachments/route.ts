@@ -52,6 +52,13 @@ export async function DELETE(req: NextRequest) {
 
     if (!id) return NextResponse.json({ error: 'ID required' }, { status: 400 })
 
-    await prisma.attachment.delete({ where: { id, userId: user.userId } })
-    return NextResponse.json({ success: true })
+    try {
+        await prisma.attachment.delete({ where: { id, userId: user.userId } })
+        return NextResponse.json({ success: true })
+    } catch (err: unknown) {
+        if ((err as { code?: string }).code === 'P2025') {
+            return NextResponse.json({ error: 'Attachment not found' }, { status: 404 })
+        }
+        return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+    }
 }

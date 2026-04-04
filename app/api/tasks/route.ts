@@ -39,7 +39,7 @@ export async function GET(req: NextRequest) {
             { completedAt: null },
         ]
     }
-    if (priority && priority !== 'All Priority') {
+    if (priority && priority !== 'All Priorities') {
         where.priority = priority
     }
     if (leadId) where.leadId = leadId

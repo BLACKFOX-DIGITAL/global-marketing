@@ -1,10 +1,9 @@
 'use client'
 import React, { useState, useDeferredValue } from 'react'
-import Header from '@/components/Header'
 import NotificationCenter from '@/components/NotificationCenter'
 import Link from 'next/link'
 import dynamic from 'next/dynamic'
-import { Plus, Search, Filter, Trash2, Pencil, ChevronLeft, ChevronRight, UserPlus, PhoneCall, Mail, BookOpen, Copy } from 'lucide-react'
+import { Plus, Search, Trash2, Pencil, ChevronLeft, ChevronRight, UserPlus, PhoneCall, Mail, BookOpen, Inbox } from 'lucide-react'
 import { List } from 'react-window'
 import { AutoSizer } from 'react-virtualized-auto-sizer'
 import useSWR from 'swr'
@@ -67,7 +66,7 @@ function StatCard({ icon, label, value, color, periodLabel, onClick }: {
                     width: 32, height: 32, borderRadius: 8,
                     background: `${color}12`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
                 }}>
-                    {React.cloneElement(icon as React.ReactElement<any>, { size: 18 })}
+                    {React.isValidElement(icon) ? React.cloneElement(icon as React.ReactElement<any>, { size: 18 }) : null}
                 </div>
                 <div>
                     <div style={{ fontSize: 10, color: 'var(--text-muted)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.4px' }}>{label}</div>
@@ -130,11 +129,7 @@ export default function LeadsPage() {
     const total: number = leadsData?.total || 0
     const totalPages: number = leadsData?.totalPages || 1
     
-    const loading = !leadsData || !statsData
-
-    function handleDeleteAsk(id: string) {
-        setDeleteConfirmId(id)
-    }
+    const loading = !leadsData
 
     async function executeDelete() {
         if (!deleteConfirmId) return
@@ -269,8 +264,12 @@ export default function LeadsPage() {
                                 <div className="spinner" />
                             </div>
                         ) : leads.length === 0 ? (
-                            <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-muted)' }}>
-                                No leads found
+                            <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 12, color: 'var(--text-muted)' }}>
+                                <Inbox size={36} strokeWidth={1.5} />
+                                <div style={{ fontSize: 14, fontWeight: 600, color: 'var(--text-secondary)' }}>
+                                    {search || status ? 'No leads match your filters' : 'No leads yet'}
+                                </div>
+                                {(search || status) && <div style={{ fontSize: 12 }}>Try adjusting your search or status filter</div>}
                             </div>
                         ) : (
                             <AutoSizer renderProp={({ height, width }: any) => (
@@ -346,7 +345,7 @@ export default function LeadsPage() {
                                                     <button className="btn-ghost" style={{ padding: '5px 8px' }} onClick={() => setEditLeadId(lead.id)}>
                                                         <Pencil size={13} />
                                                     </button>
-                                                    <button className="btn-ghost" style={{ padding: '5px 8px', color: '#ef4444' }} onClick={() => handleDeleteAsk(lead.id)} disabled={deleting === lead.id}>
+                                                    <button className="btn-ghost" style={{ padding: '5px 8px', color: '#ef4444' }} onClick={() => setDeleteConfirmId(lead.id)} disabled={deleting === lead.id}>
                                                         {deleting === lead.id ? <div className="spinner" style={{ width: 13, height: 13 }} /> : <Trash2 size={13} />}
                                                     </button>
                                                 </div>

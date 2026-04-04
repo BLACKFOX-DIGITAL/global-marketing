@@ -1,40 +1,78 @@
 'use client'
 import { useState, useEffect, useCallback, useMemo } from 'react'
 import {
-    Target,
-    Users,
-    ChevronLeft,
-    ChevronRight,
-    Save,
-    Activity,
-    Trophy,
-    TrendingUp,
-    CheckCircle2,
-    AlertCircle,
-    X
+    Target, ChevronLeft, ChevronRight, Save, Activity,
+    Trophy, TrendingUp, TrendingDown, CheckCircle2, X,
+    BarChart3, Search, Users
 } from 'lucide-react'
 import { format, addMonths, subMonths, parse } from 'date-fns'
+import {
+    BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip,
+    ResponsiveContainer, Legend
+} from 'recharts'
 
-interface UserGoal { userId: string; category: string; targetValue: number; period: string; }
+interface UserGoal { userId: string; category: string; targetValue: number; period: string }
 
 const CATEGORIES = [
     { id: 'DEALS', label: 'Closed Deals', icon: Target, color: '#10b981' },
     { id: 'TEST_JOBS', label: 'New Test Jobs', icon: Activity, color: '#3b82f6' }
 ]
 
+function KpiCard({ label, value, sub, icon: Icon, color, highlight = false }: {
+    label: string; value: string | number; sub: string
+    icon: React.ElementType; color: string; highlight?: boolean
+}) {
+    return (
+        <div style={{
+            padding: '14px 16px', borderRadius: 14,
+            background: highlight ? `${color}12` : 'rgba(30,41,59,0.45)',
+            border: `1px solid ${highlight ? color + '30' : 'rgba(255,255,255,0.06)'}`,
+            backdropFilter: 'blur(20px)', display: 'flex', flexDirection: 'column', gap: 6,
+            boxShadow: highlight ? `0 0 20px ${color}18` : 'none'
+        }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <div style={{ fontSize: 9, color: '#64748b', fontWeight: 800, letterSpacing: '0.8px', textTransform: 'uppercase' }}>{label}</div>
+                <div style={{ width: 24, height: 24, borderRadius: 7, background: `${color}18`, color, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <Icon size={13} strokeWidth={2.5} />
+                </div>
+            </div>
+            <div style={{ fontSize: 26, fontWeight: 900, color: highlight ? color : '#f8fafc', letterSpacing: '-1px', lineHeight: 1 }}>{value}</div>
+            <div style={{ fontSize: 10, color: '#475569', fontWeight: 700 }}>{sub}</div>
+        </div>
+    )
+}
+
+function GoalBadge({ actual, target }: { actual: number; target: number }) {
+    const pct = target > 0 ? Math.min((actual / target) * 100, 100) : 0
+    const color = pct >= 90 ? '#10b981' : pct >= 50 ? '#f59e0b' : '#f43f5e'
+    return (
+        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+            <div style={{ flex: 1, height: 4, borderRadius: 4, background: 'rgba(255,255,255,0.05)', overflow: 'hidden' }}>
+                <div style={{ width: `${pct}%`, height: '100%', borderRadius: 4, background: color, transition: 'width 0.6s ease' }} />
+            </div>
+            <span style={{ fontSize: 11, fontWeight: 900, color, minWidth: 34 }}>{Math.round(pct)}%</span>
+        </div>
+    )
+}
+
 export default function GoalsPage() {
     const [loading, setLoading] = useState(true)
     const [goals, setGoals] = useState<UserGoal[]>([])
-    const [goalUsers, setGoalUsers] = useState<{ id: string, name: string, role: string }[]>([])
+    const [goalUsers, setGoalUsers] = useState<{ id: string; name: string; role: string }[]>([])
     const [goalPeriod, setGoalPeriod] = useState(format(new Date(), 'yyyy-MM'))
     const [actuals, setActuals] = useState<any[]>([])
+    const [trendData, setTrendData] = useState<any[]>([])
     const [stats, setStats] = useState<any>(null)
     const [pendingChanges, setPendingChanges] = useState<Record<string, number>>({})
     const [saving, setSaving] = useState(false)
     const [showSuccess, setShowSuccess] = useState(false)
+    const [error, setError] = useState<string | null>(null)
+    const [search, setSearch] = useState('')
+    const [chartMode, setChartMode] = useState<'DEALS' | 'TEST_JOBS'>('DEALS')
 
     const fetchData = useCallback(async () => {
         setLoading(true)
+        setError(null)
         try {
             const res = await fetch(`/api/admin/goals?period=${goalPeriod}`)
             if (res.ok) {
@@ -42,18 +80,19 @@ export default function GoalsPage() {
                 setGoalUsers(d.users || [])
                 setGoals(d.goals || [])
                 setActuals(d.actuals || [])
+                setTrendData(d.trendData || [])
                 setStats(d.stats || null)
+            } else {
+                setError('Failed to load goals data')
             }
-        } catch (err) {
-            console.error(err)
+        } catch {
+            setError('Failed to load goals data')
         } finally {
             setLoading(false)
         }
     }, [goalPeriod])
 
-    useEffect(() => {
-        fetchData()
-    }, [fetchData])
+    useEffect(() => { fetchData() }, [fetchData])
 
     const handleSaveAll = async () => {
         if (Object.keys(pendingChanges).length === 0) return
@@ -62,7 +101,6 @@ export default function GoalsPage() {
             const [userId, category] = key.split('_')
             return { userId, category, targetValue: val, period: goalPeriod }
         })
-
         try {
             const res = await fetch('/api/admin/goals', {
                 method: 'POST',
@@ -75,8 +113,8 @@ export default function GoalsPage() {
                 setTimeout(() => setShowSuccess(false), 3000)
                 fetchData()
             }
-        } catch (err) {
-            console.error('Failed to save goals', err)
+        } catch {
+            setError('Failed to save goals')
         } finally {
             setSaving(false)
         }
@@ -103,197 +141,274 @@ export default function GoalsPage() {
 
     const hasChanges = Object.keys(pendingChanges).length > 0
 
+    const filteredUsers = useMemo(() =>
+        goalUsers.filter(u => u.name.toLowerCase().includes(search.toLowerCase())),
+        [goalUsers, search]
+    )
+
+    // Compute overall team achievement %
+    const teamAchievement = useMemo(() => {
+        const totalTarget = CATEGORIES.reduce((s, c) => s + (totals[c.id] || 0), 0)
+        const totalActual = CATEGORIES.reduce((s, c) => s + (stats?.totalActuals?.[c.id] || 0), 0)
+        return totalTarget > 0 ? Math.round((totalActual / totalTarget) * 100) : 0
+    }, [totals, stats])
+
+    const activeCat = CATEGORIES.find(c => c.id === chartMode)!
+
     return (
-        <div style={{ padding: '16px 24px', maxWidth: 1200, margin: '0 auto', width: '100%', minHeight: '100vh', background: 'radial-gradient(circle at top right, #0f172a 0%, #020617 100%)' }}>
-            
-            {/* COMPACT HEADER */}
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                    <div style={{ background: 'linear-gradient(135deg, #3b82f6, #1d4ed8)', padding: 7, borderRadius: 10, color: '#fff', boxShadow: '0 0 20px rgba(59,130,246,0.3)' }}>
-                        <Target size={20} strokeWidth={2.5} />
+        <div style={{ padding: '14px 20px', maxWidth: 1400, margin: '0 auto', width: '100%', minHeight: '100vh' }}>
+
+            {/* Header */}
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 18 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                    <div style={{ background: 'linear-gradient(135deg, #3b82f6, #1d4ed8)', padding: 7, borderRadius: 10, color: '#fff', boxShadow: '0 0 18px rgba(59,130,246,0.25)' }}>
+                        <Target size={17} strokeWidth={2.5} />
                     </div>
                     <div>
-                        <h1 style={{ fontSize: 18, fontWeight: 900, letterSpacing: '-0.5px', margin: 0, color: '#f8fafc' }}>Team Performance Goals</h1>
+                        <h1 style={{ fontSize: 17, fontWeight: 900, letterSpacing: '-0.4px', margin: 0, color: '#f8fafc' }}>Team Performance Goals</h1>
+                        <div style={{ fontSize: 10, color: '#64748b', fontWeight: 600 }}>Set and track monthly targets per rep</div>
                     </div>
                 </div>
 
-                <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
-                    <div style={{ background: 'rgba(30, 41, 59, 0.5)', backdropFilter: 'blur(10px)', border: '1px solid rgba(255,255,255,0.05)', borderRadius: 10, padding: '4px 8px', display: 'flex', alignItems: 'center', gap: 8 }}>
-                        <button onClick={() => adjustGoalPeriod(-1)} className="nav-btn"><ChevronLeft size={14} /></button>
-                        <div style={{ fontSize: 13, fontWeight: 800, color: '#f1f5f9', minWidth: 100, textAlign: 'center' }}>{format(parse(goalPeriod, 'yyyy-MM', new Date()), 'MMM yyyy')}</div>
-                        <button onClick={() => adjustGoalPeriod(1)} className="nav-btn"><ChevronRight size={14} /></button>
+                <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                    {/* Period nav */}
+                    <div style={{ background: 'rgba(30,41,59,0.5)', backdropFilter: 'blur(10px)', border: '1px solid rgba(255,255,255,0.07)', borderRadius: 8, padding: '4px 8px', display: 'flex', alignItems: 'center', gap: 6 }}>
+                        <button onClick={() => adjustGoalPeriod(-1)} className="nav-btn"><ChevronLeft size={13} /></button>
+                        <div style={{ fontSize: 12, fontWeight: 800, color: '#f1f5f9', minWidth: 90, textAlign: 'center' }}>
+                            {format(parse(goalPeriod, 'yyyy-MM', new Date()), 'MMM yyyy')}
+                        </div>
+                        <button onClick={() => adjustGoalPeriod(1)} className="nav-btn"><ChevronRight size={13} /></button>
                     </div>
 
-                    <button 
+                    {hasChanges && (
+                        <button onClick={() => setPendingChanges({})} style={{ background: 'transparent', border: 'none', color: '#94a3b8', cursor: 'pointer', display: 'flex' }} title="Discard">
+                            <X size={17} />
+                        </button>
+                    )}
+
+                    <button
                         onClick={handleSaveAll}
                         disabled={!hasChanges || saving}
                         style={{
                             background: hasChanges ? 'linear-gradient(to bottom, #3b82f6, #2563eb)' : 'rgba(255,255,255,0.03)',
                             color: hasChanges ? '#fff' : '#475569',
-                            border: 'none',
-                            padding: '8px 16px',
-                            borderRadius: 10,
-                            fontWeight: 800,
-                            fontSize: 12,
+                            border: 'none', padding: '7px 14px', borderRadius: 8, fontWeight: 800, fontSize: 11,
                             cursor: hasChanges ? 'pointer' : 'not-allowed',
-                            display: 'flex', alignItems: 'center', gap: 8,
-                            transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+                            display: 'flex', alignItems: 'center', gap: 6,
                             boxShadow: hasChanges ? '0 4px 12px rgba(59,130,246,0.3)' : 'none'
                         }}
                     >
-                        {saving ? <div className="mini-spin" /> : <Save size={14} />}
+                        {saving ? <div className="mini-spin" /> : <Save size={13} />}
                         Save Changes
-                        {hasChanges && <span style={{ background: 'rgba(255,255,255,0.2)', padding: '1px 6px', borderRadius: 4, fontSize: 10 }}>{Object.keys(pendingChanges).length}</span>}
+                        {hasChanges && <span style={{ background: 'rgba(255,255,255,0.2)', padding: '1px 5px', borderRadius: 4, fontSize: 9 }}>{Object.keys(pendingChanges).length}</span>}
                     </button>
-                    
-                    {hasChanges && (
-                        <button onClick={() => setPendingChanges({})} style={{ background: 'transparent', border: 'none', color: '#94a3b8', cursor: 'pointer', display: 'flex' }} title="Discard Changes">
-                            <X size={18} />
-                        </button>
-                    )}
                 </div>
             </div>
 
-            {/* CONDENSED STATS GRID */}
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: 12, marginBottom: 20 }}>
-                {CATEGORIES.map(cat => (
-                    <div key={cat.id} style={{ background: 'linear-gradient(135deg, rgba(30, 41, 59, 0.4), rgba(15, 23, 42, 0.4))', backdropFilter: 'blur(20px)', border: '1px solid rgba(255,255,255,0.04)', borderRadius: 16, padding: '16px 20px', position: 'relative' }}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                            <div>
-                                <div style={{ color: '#94a3b8', fontSize: 11, fontWeight: 800, letterSpacing: '0.05em', marginBottom: 4 }}>TOTAL {cat.label.toUpperCase()}</div>
-                                <div style={{ fontSize: 24, fontWeight: 900, color: '#f8fafc', display: 'flex', alignItems: 'baseline', gap: 6 }}>
-                                    {stats?.totalActuals?.[cat.id] || 0}
-                                    <span style={{ fontSize: 11, color: (stats?.comparisons?.[cat.id] || 0) >= 0 ? '#10b981' : '#f43f5e', fontWeight: 700 }}>
-                                        {(stats?.comparisons?.[cat.id] || 0) >= 0 ? '+' : ''}{stats?.comparisons?.[cat.id]?.toFixed(1) || 0}% vs LY
-                                    </span>
-                                </div>
-                            </div>
-                            <div style={{ background: `${cat.color}15`, padding: 8, borderRadius: 10, color: cat.color }}>
-                                <cat.icon size={16} strokeWidth={2.5} />
-                            </div>
-                        </div>
-                        <div style={{ marginTop: 12, height: 4, background: 'rgba(255,255,255,0.03)', borderRadius: 2, overflow: 'hidden' }}>
-                            <div style={{ 
-                                width: `${Math.min(((stats?.totalActuals?.[cat.id] || 0) / (totals[cat.id] || 1)) * 100, 100)}%`, 
-                                height: '100%', 
-                                background: `linear-gradient(90deg, ${cat.color}, ${cat.color}80)`, 
-                                borderRadius: 2,
-                                transition: 'width 1s ease-out'
-                            }} />
-                        </div>
-                    </div>
-                ))}
-                
-                {/* SYSTEM METADATA CARD */}
-                <div style={{ background: 'rgba(30, 41, 59, 0.2)', border: '1px dashed rgba(255,255,255,0.1)', borderRadius: 16, padding: '16px 20px', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
-                    <div style={{ fontSize: 11, fontWeight: 800, color: '#64748b', marginBottom: 4 }}>WIN RATE</div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                        <div style={{ fontSize: 20, fontWeight: 900, color: '#10b981' }}>{stats?.winRate?.toFixed(1) || 0}%</div>
-                        <div style={{ display: 'flex', gap: 2 }}>
-                            {Array.from({ length: 5 }).map((_, i) => (
-                                <div key={i} style={{ 
-                                    width: 3, 
-                                    height: 10, 
-                                    borderRadius: 1, 
-                                    background: (i + 1) * 20 <= (stats?.winRate || 0) ? '#10b981' : '#1e293b' 
-                                }} />
-                            ))}
-                        </div>
-                    </div>
+            {/* Success toast */}
+            {showSuccess && (
+                <div style={{ marginBottom: 14, padding: '10px 16px', borderRadius: 10, background: 'rgba(16,185,129,0.08)', border: '1px solid rgba(16,185,129,0.25)', color: '#10b981', fontSize: 12, fontWeight: 700, display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <CheckCircle2 size={14} /> Goals saved successfully
                 </div>
-            </div>
+            )}
 
-            {/* COMPACT TABLE */}
-            <div style={{ background: 'rgba(15, 23, 42, 0.6)', backdropFilter: 'blur(40px)', border: '1px solid rgba(255,255,255,0.05)', borderRadius: 20, overflow: 'hidden' }}>
-                <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-                    <thead style={{ background: 'rgba(255,255,255,0.02)', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
-                        <tr style={{ color: '#64748b', fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.1em' }}>
-                            <th style={{ padding: '14px 24px', fontWeight: 900 }}>Sales Representative</th>
-                            {CATEGORIES.map(cat => (
-                                <th key={cat.id} style={{ padding: '14px 24px', fontWeight: 900 }}>{cat.label} Tracking</th>
-                            ))}
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {loading ? (
-                            <tr><td colSpan={3} style={{ padding: 60, textAlign: 'center' }}><div className="mini-spin" style={{ margin: '0 auto', width: 24, height: 24 }} /></td></tr>
-                        ) : goalUsers.map(user => (
-                            <tr key={user.id} className="row-hover" style={{ borderBottom: '1px solid rgba(255,255,255,0.02)' }}>
-                                <td style={{ padding: '12px 24px' }}>
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                                        <div style={{ width: 32, height: 32, borderRadius: 10, background: 'linear-gradient(135deg, #1e293b, #0f172a)', border: '1px solid rgba(255,255,255,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#3b82f6', fontSize: 11, fontWeight: 900 }}>
-                                            {user.name.substring(0,2).toUpperCase()}
-                                        </div>
-                                        <div>
-                                            <div style={{ fontWeight: 800, fontSize: 13, color: '#f1f5f9' }}>{user.name}</div>
-                                            <div style={{ fontSize: 10, color: '#64748b', fontWeight: 700 }}>{user.role}</div>
-                                        </div>
-                                    </div>
-                                </td>
-                                {CATEGORIES.map(cat => {
-                                    const goal = goals.find(g => g.userId === user.id && g.category === cat.id)
-                                    const actual = actuals.find(a => a.userId === user.id)?.[cat.id] || 0
-                                    const key = `${user.id}_${cat.id}`
-                                    const targetVal = pendingChanges[key] !== undefined ? pendingChanges[key] : (goal?.targetValue || 0)
-                                    const changed = pendingChanges[key] !== undefined
-                                    const perc = targetVal > 0 ? Math.min((actual/targetVal)*100, 100) : 0
+            {/* Error */}
+            {error && (
+                <div style={{ marginBottom: 14, padding: '10px 16px', borderRadius: 10, background: 'rgba(244,63,94,0.08)', border: '1px solid rgba(244,63,94,0.2)', color: '#f43f5e', fontSize: 12, fontWeight: 700 }}>
+                    {error}
+                </div>
+            )}
 
-                                    return (
-                                        <td key={cat.id} style={{ padding: '12px 24px' }}>
-                                            <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                                                <div style={{ position: 'relative' }}>
-                                                    <input
-                                                        type="number"
-                                                        value={targetVal}
-                                                        onChange={e => setPendingChanges(prev => ({ ...prev, [key]: parseInt(e.target.value) || 0 }))}
-                                                        className="compact-input"
-                                                        style={{ borderColor: changed ? cat.color : 'rgba(255,255,255,0.1)', boxShadow: changed ? `0 0 10px ${cat.color}20` : 'none' }}
-                                                    />
-                                                    {changed && <div style={{ position: 'absolute', top: -3, right: -3, background: cat.color, width: 8, height: 8, borderRadius: '50%', border: '2px solid #020617' }} />}
-                                                </div>
-                                                <div style={{ flex: 1 }}>
-                                                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 10, fontWeight: 800, marginBottom: 4 }}>
-                                                        <span style={{ color: '#475569' }}>ACHIEVED</span>
-                                                        <span style={{ color: cat.color, fontVariantNumeric: 'tabular-nums' }}>{actual} / {targetVal}</span>
+            {loading ? (
+                <div style={{ display: 'flex', justifyContent: 'center', padding: 120 }}><div className="spinner" /></div>
+            ) : (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+
+                    {/* KPI Cards */}
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 12 }}>
+                        <KpiCard
+                            label="Team Achievement"
+                            value={`${teamAchievement}%`}
+                            sub="overall vs targets"
+                            icon={Trophy}
+                            color="#f59e0b"
+                            highlight={teamAchievement >= 80}
+                        />
+                        <KpiCard
+                            label="Closed Deals"
+                            value={stats?.totalActuals?.DEALS || 0}
+                            sub={`target: ${totals.DEALS}`}
+                            icon={Target}
+                            color="#10b981"
+                            highlight={(stats?.totalActuals?.DEALS || 0) >= totals.DEALS && totals.DEALS > 0}
+                        />
+                        <KpiCard
+                            label="New Test Jobs"
+                            value={stats?.totalActuals?.TEST_JOBS || 0}
+                            sub={`target: ${totals.TEST_JOBS}`}
+                            icon={Activity}
+                            color="#3b82f6"
+                            highlight={(stats?.totalActuals?.TEST_JOBS || 0) >= totals.TEST_JOBS && totals.TEST_JOBS > 0}
+                        />
+                        <KpiCard
+                            label="Win Rate"
+                            value={`${stats?.winRate?.toFixed(1) || 0}%`}
+                            sub="closed won vs lost"
+                            icon={TrendingUp}
+                            color="#6366f1"
+                            highlight={(stats?.winRate || 0) >= 70}
+                        />
+                        <KpiCard
+                            label="Deals vs Last Year"
+                            value={`${(stats?.comparisons?.DEALS || 0) >= 0 ? '+' : ''}${stats?.comparisons?.DEALS?.toFixed(1) || 0}%`}
+                            sub="same month YoY"
+                            icon={(stats?.comparisons?.DEALS || 0) >= 0 ? TrendingUp : TrendingDown}
+                            color={(stats?.comparisons?.DEALS || 0) >= 0 ? '#10b981' : '#f43f5e'}
+                        />
+                    </div>
+
+                    {/* Chart */}
+                    <div style={{ background: 'rgba(15,23,42,0.45)', backdropFilter: 'blur(40px)', border: '1px solid rgba(255,255,255,0.06)', borderRadius: 18, padding: '16px 20px' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+                            <h3 style={{ fontSize: 13, fontWeight: 900, margin: 0, color: '#f8fafc', display: 'flex', alignItems: 'center', gap: 6 }}>
+                                <BarChart3 size={14} color="#3b82f6" /> 6-Month Actuals vs Targets
+                            </h3>
+                            <div style={{ display: 'flex', background: 'rgba(0,0,0,0.3)', borderRadius: 8, padding: 2, border: '1px solid rgba(255,255,255,0.06)' }}>
+                                {CATEGORIES.map(cat => (
+                                    <button key={cat.id} onClick={() => setChartMode(cat.id as any)}
+                                        style={{
+                                            padding: '3px 12px', borderRadius: 6, border: 'none', fontSize: 9, fontWeight: 900,
+                                            background: chartMode === cat.id ? cat.color : 'transparent',
+                                            color: chartMode === cat.id ? '#fff' : '#475569',
+                                            cursor: 'pointer', transition: 'all 0.2s', textTransform: 'uppercase', letterSpacing: '0.4px'
+                                        }}>
+                                        {cat.label}
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+                        <div style={{ height: 220, width: '100%' }}>
+                            <ResponsiveContainer width="100%" height="100%">
+                                <BarChart data={trendData} barSize={16} barGap={4}>
+                                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(255,255,255,0.03)" />
+                                    <XAxis dataKey="label" axisLine={false} tickLine={false} tick={{ fill: '#475569', fontSize: 9, fontWeight: 700 }} dy={8} />
+                                    <YAxis axisLine={false} tickLine={false} tick={{ fill: '#475569', fontSize: 9, fontWeight: 700 }} />
+                                    <Tooltip
+                                        contentStyle={{ background: '#0f172a', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 10, fontSize: 11 }}
+                                        itemStyle={{ fontWeight: 800 }}
+                                    />
+                                    <Legend iconType="circle" iconSize={8} wrapperStyle={{ fontSize: 10, fontWeight: 700, paddingTop: 8 }} />
+                                    <Bar dataKey={chartMode === 'DEALS' ? 'dealsActual' : 'testJobsActual'} name="Actual" fill={activeCat.color} radius={[4, 4, 0, 0]} />
+                                    <Bar dataKey={chartMode === 'DEALS' ? 'dealsTarget' : 'testJobsTarget'} name="Target" fill={`${activeCat.color}33`} radius={[4, 4, 0, 0]} />
+                                </BarChart>
+                            </ResponsiveContainer>
+                        </div>
+                    </div>
+
+                    {/* Table */}
+                    <div style={{ background: 'rgba(15,23,42,0.6)', backdropFilter: 'blur(40px)', border: '1px solid rgba(255,255,255,0.06)', borderRadius: 18, overflow: 'hidden' }}>
+                        <div style={{ padding: '12px 20px', borderBottom: '1px solid rgba(255,255,255,0.05)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                            <h3 style={{ fontSize: 11, fontWeight: 900, margin: 0, textTransform: 'uppercase', letterSpacing: '1px', color: '#64748b', display: 'flex', alignItems: 'center', gap: 6 }}>
+                                <Users size={13} /> Rep Targets
+                            </h3>
+                            <div style={{ background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 6, padding: '3px 10px', display: 'flex', alignItems: 'center', gap: 6 }}>
+                                <Search size={11} color="#475569" />
+                                <input
+                                    placeholder="Search rep..."
+                                    value={search}
+                                    onChange={e => setSearch(e.target.value)}
+                                    style={{ background: 'transparent', border: 'none', color: '#fff', fontSize: 10, outline: 'none', width: 120 }}
+                                />
+                            </div>
+                        </div>
+                        <div style={{ overflowX: 'auto' }}>
+                            <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
+                                <thead>
+                                    <tr style={{ background: 'rgba(255,255,255,0.01)', borderBottom: '1px solid rgba(255,255,255,0.04)', color: '#475569', fontSize: 9, textTransform: 'uppercase', letterSpacing: '1px' }}>
+                                        <th style={{ padding: '10px 20px', fontWeight: 900 }}>Sales Representative</th>
+                                        {CATEGORIES.map(cat => (
+                                            <th key={cat.id} style={{ padding: '10px 20px', fontWeight: 900 }}>{cat.label}</th>
+                                        ))}
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {filteredUsers.length === 0 ? (
+                                        <tr><td colSpan={3} style={{ padding: 60, textAlign: 'center', color: '#475569', fontSize: 12, fontWeight: 700 }}>No reps found</td></tr>
+                                    ) : filteredUsers.map(user => (
+                                        <tr key={user.id} style={{ borderBottom: '1px solid rgba(255,255,255,0.03)' }} className="row-hover">
+                                            <td style={{ padding: '12px 20px', verticalAlign: 'middle' }}>
+                                                <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                                                    <div style={{ width: 30, height: 30, borderRadius: 9, background: 'linear-gradient(135deg, #1e3a5f, #0f172a)', border: '1px solid rgba(59,130,246,0.25)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 10, fontWeight: 900, color: '#60a5fa', flexShrink: 0 }}>
+                                                        {user.name.substring(0, 2).toUpperCase()}
                                                     </div>
-                                                    <div style={{ height: 3, background: 'rgba(255,255,255,0.03)', borderRadius: 1, overflow: 'hidden' }}>
-                                                        <div style={{ width: `${perc}%`, height: '100%', background: cat.color, transition: 'width 0.8s ease-out' }} />
+                                                    <div>
+                                                        <div style={{ fontSize: 12.5, fontWeight: 800, color: '#f1f5f9' }}>{user.name}</div>
+                                                        <div style={{ fontSize: 9, color: '#475569', fontWeight: 700 }}>{user.role}</div>
                                                     </div>
                                                 </div>
-                                            </div>
-                                        </td>
-                                    )
-                                })}
-                            </tr>
-                        ))}
-                    </tbody>
-                </table>
-            </div>
+                                            </td>
+                                            {CATEGORIES.map(cat => {
+                                                const goal = goals.find(g => g.userId === user.id && g.category === cat.id)
+                                                const actual = actuals.find(a => a.userId === user.id)?.[cat.id] || 0
+                                                const key = `${user.id}_${cat.id}`
+                                                const targetVal = pendingChanges[key] !== undefined ? pendingChanges[key] : (goal?.targetValue || 0)
+                                                const changed = pendingChanges[key] !== undefined
 
-            {/* MINI METHODOLOGY FOOTER */}
-            <div style={{ marginTop: 20, display: 'flex', gap: 16, overflowX: 'auto', paddingBottom: 10 }}>
-                <div className="mini-card"><Trophy size={14} color="#f59e0b" /> <span>Targets influence quarterly tier bonuses</span></div>
-            </div>
+                                                return (
+                                                    <td key={cat.id} style={{ padding: '12px 20px', verticalAlign: 'middle', minWidth: 220 }}>
+                                                        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                                                            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                                                                <div style={{ position: 'relative' }}>
+                                                                    <input
+                                                                        type="number"
+                                                                        value={targetVal}
+                                                                        onChange={e => setPendingChanges(prev => ({ ...prev, [key]: parseInt(e.target.value) || 0 }))}
+                                                                        className="compact-input"
+                                                                        style={{ borderColor: changed ? cat.color : 'rgba(255,255,255,0.1)', boxShadow: changed ? `0 0 10px ${cat.color}20` : 'none' }}
+                                                                    />
+                                                                    {changed && <div style={{ position: 'absolute', top: -3, right: -3, background: cat.color, width: 8, height: 8, borderRadius: '50%', border: '2px solid #020617' }} />}
+                                                                </div>
+                                                                <div style={{ fontSize: 10, color: '#475569', fontWeight: 700 }}>
+                                                                    <span style={{ color: cat.color, fontWeight: 900 }}>{actual}</span> achieved
+                                                                </div>
+                                                            </div>
+                                                            <GoalBadge actual={actual} target={targetVal} />
+                                                        </div>
+                                                    </td>
+                                                )
+                                            })}
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    {/* Footer */}
+                    <div style={{ display: 'flex', gap: 12, paddingBottom: 10 }}>
+                        <div style={{ background: 'rgba(30,41,59,0.3)', border: '1px solid rgba(255,255,255,0.03)', borderRadius: 10, padding: '8px 12px', display: 'flex', alignItems: 'center', gap: 8, color: '#94a3b8', fontSize: 11, fontWeight: 700 }}>
+                            <Trophy size={13} color="#f59e0b" /> Targets influence quarterly tier bonuses
+                        </div>
+                    </div>
+
+                </div>
+            )}
 
             <style jsx global>{`
                 .nav-btn { background: transparent; border: none; color: #64748b; cursor: pointer; display: flex; padding: 4px; border-radius: 6px; transition: all 0.2s; }
                 .nav-btn:hover { background: rgba(255,255,255,0.05); color: #fff; }
-                .row-hover:hover { background: rgba(255,255,255,0.015); }
+                .row-hover:hover td { background: rgba(255,255,255,0.015); }
                 .compact-input {
                     background: rgba(0,0,0,0.4); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; width: 60px; padding: 6px;
                     color: #fff; font-size: 13px; font-weight: 900; text-align: center; outline: none; transition: all 0.2s;
                 }
                 .compact-input:focus { border-color: #3b82f6; background: rgba(0,0,0,0.6); }
-                .mini-card {
-                    background: rgba(30, 41, 59, 0.3); border: 1px solid rgba(255,255,255,0.03); border-radius: 10px; padding: 8px 12px;
-                    display: flex; alignItems: center; gap: 10px; color: #94a3b8; font-size: 11px; font-weight: 700; white-space: nowrap;
-                }
                 .mini-spin {
-                    width: 14px; height: 14px; border: 2px solid rgba(255,255,255,0.1); border-radius: 50%;
+                    width: 13px; height: 13px; border: 2px solid rgba(255,255,255,0.1); border-radius: 50%;
                     border-top-color: #fff; animation: spin 0.8s linear infinite;
                 }
+                .spinner { width: 30px; height: 30px; border: 3px solid rgba(255,255,255,0.05); border-radius: 50%; border-top-color: #3b82f6; animation: spin 1s linear infinite; }
                 @keyframes spin { to { transform: rotate(360deg); } }
-                @keyframes fadeIn { from { opacity: 0; transform: translateY(-4px); } to { opacity: 1; transform: translateY(0); } }
             `}</style>
         </div>
     )

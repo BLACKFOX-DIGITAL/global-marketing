@@ -1,19 +1,42 @@
 'use client'
 import { useState, useEffect, useMemo } from 'react'
 import { ErrorBoundary } from '@/components/ErrorBoundary'
+import dynamic from 'next/dynamic'
 import {
     TrendingUp, TrendingDown, ShieldAlert, Briefcase, BadgeDollarSign,
-    Target, Users, Zap, ArrowUpRight, BarChart3, Search, Waves,
-    ClipboardList, AlertTriangle, Clock, Mail
+    Target, Users, Zap, BarChart3, Search, AlertTriangle
 } from 'lucide-react'
 import Link from 'next/link'
-import {
-    AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
-    LineChart, Line
-} from 'recharts'
+
+// Dynamically import Recharts to prevent hydration/lazy element issues in React 19/Next 15+
+const ResponsiveContainer = dynamic(() => import('recharts').then(m => m.ResponsiveContainer), { ssr: false })
+const AreaChart = dynamic(() => import('recharts').then(m => m.AreaChart), { ssr: false })
+const Area = dynamic(() => import('recharts').then(m => m.Area), { ssr: false })
+const XAxis = dynamic(() => import('recharts').then(m => m.XAxis), { ssr: false })
+const YAxis = dynamic(() => import('recharts').then(m => m.YAxis), { ssr: false })
+const CartesianGrid = dynamic(() => import('recharts').then(m => m.CartesianGrid), { ssr: false })
+const Tooltip = dynamic(() => import('recharts').then(m => m.Tooltip), { ssr: false })
+const LineChart = dynamic(() => import('recharts').then(m => m.LineChart), { ssr: false })
+const Line = dynamic(() => import('recharts').then(m => m.Line), { ssr: false })
+
 
 function StatCard({ label, value, trend, icon: Icon, color, isPrimary = false, sparklineData, href }: any) {
     const isPositive = (trend || 0) >= 0
+    
+    // Extremely robust icon check to prevent any 'Element type is invalid' crashes
+    const renderIcon = () => {
+        try {
+            if (!Icon) return <ShieldAlert size={12} strokeWidth={2.5} />
+            if (typeof Icon === 'function' || typeof Icon === 'object') {
+                return <Icon size={12} strokeWidth={2.5} />
+            }
+            return <ShieldAlert size={12} strokeWidth={2.5} />
+        } catch (e) {
+            console.error("Icon render error in StatCard:", e)
+            return <ShieldAlert size={12} strokeWidth={2.5} />
+        }
+    }
+
     const inner = (
         <div style={{
             padding: '12px 16px', borderRadius: 16,
@@ -27,7 +50,7 @@ function StatCard({ label, value, trend, icon: Icon, color, isPrimary = false, s
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <div style={{ fontSize: 10, color: 'var(--text-muted)', fontWeight: 800, letterSpacing: '0.6px', textTransform: 'uppercase' }}>{label}</div>
                 <div style={{ width: 24, height: 24, borderRadius: 8, background: `${color}15`, color, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                    <Icon size={12} strokeWidth={2.5} />
+                    {renderIcon()}
                 </div>
             </div>
             <div style={{ display: 'flex', alignItems: 'baseline', gap: 6 }}>
@@ -35,16 +58,18 @@ function StatCard({ label, value, trend, icon: Icon, color, isPrimary = false, s
                 {trend !== undefined && (
                     <div style={{ fontSize: 10, fontWeight: 800, color: isPositive ? '#10b981' : '#f43f5e', display: 'flex', alignItems: 'center', gap: 2 }}>
                         {isPositive ? <TrendingUp size={10} /> : <TrendingDown size={10} />}
-                        {Math.abs(trend)}%
+                        <span style={{ marginLeft: 2 }}>{Math.abs(trend)}%</span>
                     </div>
                 )}
             </div>
-            <div style={{ height: 28, width: '100%', marginTop: 2 }}>
-                <ResponsiveContainer width="100%" height="100%">
-                    <LineChart data={sparklineData || []}>
-                        <Line type="monotone" dataKey="value" stroke={color} strokeWidth={2} dot={false} isAnimationActive />
-                    </LineChart>
-                </ResponsiveContainer>
+            <div style={{ height: 24, width: '100%', marginTop: 2, opacity: (sparklineData && sparklineData.length > 0) ? 1 : 0 }}>
+                {sparklineData && sparklineData.length > 0 && (
+                    <ResponsiveContainer width="100%" height="100%">
+                        <LineChart data={sparklineData}>
+                            <Line type="monotone" dataKey="value" stroke={color} strokeWidth={2} dot={false} isAnimationActive={false} />
+                        </LineChart>
+                    </ResponsiveContainer>
+                )}
             </div>
             {isPrimary && (
                 <div style={{ position: 'absolute', top: 0, right: 0, width: 40, height: 40, background: `radial-gradient(circle at top right, ${color}30, transparent)`, pointerEvents: 'none' }} />
@@ -53,6 +78,7 @@ function StatCard({ label, value, trend, icon: Icon, color, isPrimary = false, s
     )
     return href ? <Link href={href} style={{ textDecoration: 'none' }}>{inner}</Link> : inner
 }
+
 
 function AlertBadge({ label, value, color, href }: { label: string, value: number, color: string, href: string }) {
     if (value === 0) return null
@@ -91,7 +117,6 @@ export default function ExecutiveDashboard() {
             deals: data.dailyTrends.map((d: any) => ({ value: d.closed })),
             pipeline: data.dailyTrends.map((d: any) => ({ value: d.leads })),
             leads: data.dailyTrends.map((d: any) => ({ value: d.leads })),
-            tasks: data.dailyTrends.map((d: any) => ({ value: d.tasks })),
         }
     }, [data])
 
@@ -171,7 +196,7 @@ export default function ExecutiveDashboard() {
                                 value={data.totalUsers || 0}
                                 icon={Briefcase}
                                 color="#ec4899"
-                                sparklineData={sparklines?.tasks || []}
+                                sparklineData={[]}
                                 href="/admin/settings"
                             />
                         </div>
@@ -207,8 +232,7 @@ export default function ExecutiveDashboard() {
                                 <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
                                     {[
                                         { label: 'Deals Closed', key: 'DEALS', color: '#10b981' },
-                                        { label: 'New Leads', key: 'LEADS', color: '#f59e0b' },
-                                        { label: 'Tasks Completed', key: 'TASKS', color: '#3b82f6' },
+                                        { label: 'Test Jobs', key: 'TEST_JOBS', color: '#3b82f6' },
                                     ].map(({ label, key, color }) => {
                                         const g = data.globalGoals?.[key]
                                         if (!g || g.target === 0) return null
@@ -295,8 +319,8 @@ export default function ExecutiveDashboard() {
                                 <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
                                     <thead>
                                         <tr style={{ background: 'rgba(255,255,255,0.01)', borderBottom: '1px solid rgba(255,255,255,0.03)', color: '#475569', fontSize: 10, textTransform: 'uppercase', letterSpacing: '1px' }}>
+                                            <th style={{ padding: '10px 20px', fontWeight: 900 }}>#</th>
                                             <th style={{ padding: '10px 20px', fontWeight: 900 }}>Member</th>
-                                            <th style={{ padding: '10px 20px', fontWeight: 900 }}>Rep</th>
                                             <th style={{ padding: '10px 20px', fontWeight: 900 }}>Deals Won</th>
                                             <th style={{ padding: '10px 20px', fontWeight: 900 }}>Leads</th>
                                             <th style={{ padding: '10px 20px', fontWeight: 900 }}>Tasks Done</th>
@@ -381,7 +405,7 @@ export default function ExecutiveDashboard() {
                                     </div>
                                     <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                                         {(data.recentLeads || []).map((lead: any) => (
-                                            <Link key={lead.id} href={`/leads/${lead.id}`} style={{ textDecoration: 'none' }}>
+                                            <Link key={lead.id} href={`/admin/leads/${lead.id}`} style={{ textDecoration: 'none' }}>
                                                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 10px', borderRadius: 10, background: 'rgba(255,255,255,0.02)', transition: 'background 0.15s' }}
                                                     onMouseEnter={e => (e.currentTarget.style.background = 'rgba(255,255,255,0.05)')}
                                                     onMouseLeave={e => (e.currentTarget.style.background = 'rgba(255,255,255,0.02)')}>

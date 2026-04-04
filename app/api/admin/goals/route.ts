@@ -4,9 +4,8 @@ import { getCurrentUser } from '@/lib/auth'
 
 export async function GET(req: NextRequest) {
     const user = await getCurrentUser()
-    if (!user || user.role !== 'Administrator') {
-        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
+    if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    if (user.role !== 'Administrator') return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
 
     const { searchParams } = new URL(req.url)
     const period = searchParams.get('period') || `${new Date().getFullYear()}-${String(new Date().getMonth() + 1).padStart(2, '0')}`
@@ -23,16 +22,29 @@ export async function GET(req: NextRequest) {
     })
 
     // Calculate actual values for each user and category
-    // period is YYYY-MM
     const [year, month] = period.split('-').map(Number)
     const startDate = new Date(year, month - 1, 1)
     const endDate = new Date(year, month, 0, 23, 59, 59)
 
-    // Calculate Last Year start/end
+    // Last Year comparison
     const lyStartDate = new Date(year - 1, month - 1, 1)
     const lyEndDate = new Date(year - 1, month, 0, 23, 59, 59)
 
     const userIds = users.map(u => u.id)
+
+    // Build last 6 months trend data
+    const trendMonths: { period: string; label: string; startDate: Date; endDate: Date }[] = []
+    for (let i = 5; i >= 0; i--) {
+        const d = new Date(year, month - 1 - i, 1)
+        const y = d.getFullYear()
+        const m = d.getMonth() + 1
+        trendMonths.push({
+            period: `${y}-${String(m).padStart(2, '0')}`,
+            label: d.toLocaleString('default', { month: 'short' }),
+            startDate: new Date(y, m - 1, 1),
+            endDate: new Date(y, m, 0, 23, 59, 59),
+        })
+    }
 
     const [dealsGrouped, testJobsGrouped, lyDeals, lyTestJobs, allWins, allLosses] = await Promise.all([
         prisma.opportunity.groupBy({
@@ -65,26 +77,49 @@ export async function GET(req: NextRequest) {
         TEST_JOBS: actuals.reduce((sum, a) => sum + a.TEST_JOBS, 0)
     }
 
-    const winRate = allWins + allLosses > 0 ? (allWins / (allWins + allLosses)) * 100 : 92.4
+    const winRate = allWins + allLosses > 0 ? (allWins / (allWins + allLosses)) * 100 : 0
 
     const comparisons = {
         DEALS: lyDeals > 0 ? ((totalActuals.DEALS - lyDeals) / lyDeals) * 100 : 0,
         TEST_JOBS: lyTestJobs > 0 ? ((totalActuals.TEST_JOBS - lyTestJobs) / lyTestJobs) * 100 : 0
     }
 
-    return NextResponse.json({ 
-        users, 
-        goals, 
-        actuals, 
-        stats: { totalActuals, winRate, comparisons } 
+    // Fetch trend data for last 6 months
+    const trendData = await Promise.all(trendMonths.map(async (tm) => {
+        const [tDeals, tTestJobs, tGoals] = await Promise.all([
+            prisma.opportunity.count({
+                where: { ownerId: { in: userIds }, stage: 'Closed Won', isDeleted: false, updatedAt: { gte: tm.startDate, lte: tm.endDate } }
+            }),
+            prisma.opportunity.count({
+                where: { ownerId: { in: userIds }, stage: 'Test Job Received', isDeleted: false, createdAt: { gte: tm.startDate, lte: tm.endDate } }
+            }),
+            prisma.userGoal.findMany({ where: { period: tm.period } })
+        ])
+        const dealsTarget = tGoals.filter(g => g.category === 'DEALS').reduce((s, g) => s + g.targetValue, 0)
+        const testJobsTarget = tGoals.filter(g => g.category === 'TEST_JOBS').reduce((s, g) => s + g.targetValue, 0)
+        return {
+            label: tm.label,
+            period: tm.period,
+            dealsActual: tDeals,
+            dealsTarget,
+            testJobsActual: tTestJobs,
+            testJobsTarget,
+        }
+    }))
+
+    return NextResponse.json({
+        users,
+        goals,
+        actuals,
+        trendData,
+        stats: { totalActuals, winRate, comparisons }
     })
 }
 
 export async function POST(req: NextRequest) {
     const user = await getCurrentUser()
-    if (!user || user.role !== 'Administrator') {
-        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
+    if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    if (user.role !== 'Administrator') return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
 
     try {
         const body = await req.json()
@@ -94,12 +129,14 @@ export async function POST(req: NextRequest) {
             if (bulk.length > 500) {
                 return NextResponse.json({ error: 'Too many items in bulk request' }, { status: 400 })
             }
-            const results = []
-            for (const item of bulk) {
-                if (!item.userId || !item.category || (!item.period && !period)) continue
+            const validItems = bulk.filter(item => {
+                if (!item.userId || !item.category || (!item.period && !period)) return false
                 const val = parseFloat(item.targetValue)
-                if (isNaN(val) || val < 0) continue
-                const goal = await prisma.userGoal.upsert({
+                return !isNaN(val) && val >= 0
+            })
+            const results = await Promise.all(validItems.map(item => {
+                const val = parseFloat(item.targetValue)
+                return prisma.userGoal.upsert({
                     where: {
                         userId_category_period: {
                             userId: item.userId,
@@ -115,8 +152,7 @@ export async function POST(req: NextRequest) {
                         period: item.period || period
                     }
                 })
-                results.push(goal)
-            }
+            }))
             return NextResponse.json({ success: true, results })
         }
 

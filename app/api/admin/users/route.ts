@@ -1,13 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
-import { getCurrentUser, isAdmin } from '@/lib/auth'
-import bcrypt from 'bcryptjs'
+import { getCurrentUser, isAdmin, hashPassword } from '@/lib/auth'
 
 export async function GET() {
     const user = await getCurrentUser()
-    if (!isAdmin(user)) {
-        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
+    if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    if (!isAdmin(user)) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
 
     try {
         const users = await prisma.user.findMany({
@@ -32,9 +30,8 @@ export async function GET() {
 
 export async function POST(req: NextRequest) {
     const currentUser = await getCurrentUser()
-    if (!isAdmin(currentUser)) {
-        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
+    if (!currentUser) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    if (!isAdmin(currentUser)) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
 
     try {
         const { name, email, password, role, baseSalary } = await req.json()
@@ -47,7 +44,7 @@ export async function POST(req: NextRequest) {
             return NextResponse.json({ error: 'Invalid role' }, { status: 400 })
         }
 
-        const hashedPassword = await bcrypt.hash(password, 12)
+        const hashedPassword = await hashPassword(password)
 
         const newUser = await prisma.user.create({
             data: {
@@ -55,7 +52,7 @@ export async function POST(req: NextRequest) {
                 email,
                 password: hashedPassword,
                 role,
-                baseSalary: baseSalary !== undefined ? parseFloat(baseSalary) : 0,
+                baseSalary: (() => { const s = parseFloat(baseSalary); return isNaN(s) ? 0 : s })(),
             }
         })
 
@@ -71,9 +68,8 @@ export async function POST(req: NextRequest) {
 
 export async function PUT(req: NextRequest) {
     const currentUser = await getCurrentUser()
-    if (!isAdmin(currentUser)) {
-        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
+    if (!currentUser) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    if (!isAdmin(currentUser)) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
 
     try {
         const { id, name, email, role, baseSalary, resendSenderEmail, password, isSuspended } = await req.json()
@@ -90,10 +86,10 @@ export async function PUT(req: NextRequest) {
         if (name !== undefined) data.name = name
         if (email !== undefined) data.email = email
         if (role !== undefined) data.role = role
-        if (baseSalary !== undefined) data.baseSalary = parseFloat(baseSalary)
+        if (baseSalary !== undefined) { const s = parseFloat(baseSalary); data.baseSalary = isNaN(s) ? 0 : s }
         if (resendSenderEmail !== undefined) data.resendSenderEmail = resendSenderEmail
         if (isSuspended !== undefined) data.isSuspended = isSuspended
-        if (password) data.password = await bcrypt.hash(password, 12)
+        if (password) data.password = await hashPassword(password)
 
         const updatedUser = await prisma.user.update({
             where: { id },
@@ -112,9 +108,8 @@ export async function PUT(req: NextRequest) {
 
 export async function DELETE(req: NextRequest) {
     const currentUser = await getCurrentUser()
-    if (!isAdmin(currentUser)) {
-        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
+    if (!currentUser) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    if (!isAdmin(currentUser)) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
 
     try {
         const { searchParams } = new URL(req.url)

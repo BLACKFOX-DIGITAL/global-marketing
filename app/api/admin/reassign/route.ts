@@ -2,33 +2,47 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { getCurrentUser } from '@/lib/auth'
 
-export async function GET() {
+export async function GET(req: NextRequest) {
     const user = await getCurrentUser()
-    if (!user || user.role !== 'Administrator') {
-        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    if (user.role !== 'Administrator') return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+
+    const { searchParams } = new URL(req.url)
+    const page = Math.max(1, parseInt(searchParams.get('page') || '1') || 1)
+    const limit = Math.min(100, Math.max(1, parseInt(searchParams.get('limit') || '50') || 50))
+    const search = searchParams.get('search') || ''
+    const skip = (page - 1) * limit
+
+    const where: { isDeleted: boolean; OR?: object[] } = { isDeleted: false }
+    if (search) {
+        where.OR = [
+            { name: { contains: search } },
+            { company: { contains: search } },
+        ]
     }
 
-    // Return active leads (to reassign) and users (to assign to)
-    const [leads, users] = await Promise.all([
+    const [leads, total, users] = await Promise.all([
         prisma.lead.findMany({
-            where: { isDeleted: false },
+            where,
             select: { id: true, name: true, company: true, status: true, owner: { select: { id: true, name: true } } },
-            orderBy: { createdAt: 'desc' }
+            orderBy: { createdAt: 'desc' },
+            skip,
+            take: limit,
         }),
+        prisma.lead.count({ where }),
         prisma.user.findMany({
             select: { id: true, name: true, role: true },
             orderBy: { name: 'asc' }
         })
     ])
 
-    return NextResponse.json({ leads, users })
+    return NextResponse.json({ leads, total, page, totalPages: Math.ceil(total / limit), users })
 }
 
 export async function PUT(req: NextRequest) {
     const user = await getCurrentUser()
-    if (!user || user.role !== 'Administrator') {
-        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
+    if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    if (user.role !== 'Administrator') return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
 
     try {
         const { leadIds, newOwnerId } = await req.json()

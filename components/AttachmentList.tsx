@@ -1,6 +1,6 @@
 'use client'
 import { useState } from 'react'
-import { File, Download, X, Plus, ImageIcon, FileText, Trash2 } from 'lucide-react'
+import { File, Download, X, ImageIcon, FileText, Trash2 } from 'lucide-react'
 import { format } from 'date-fns'
 
 interface Attachment {
@@ -15,17 +15,12 @@ interface Attachment {
 export default function AttachmentList({
     attachments,
     onDelete,
-    onUpload,
-    uploading
 }: {
-    attachments: Attachment[],
-    onDelete: (id: string) => void,
-    onUpload: (name: string) => void,
-    uploading?: boolean
+    attachments: Attachment[]
+    onDelete: (id: string) => void
 }) {
     const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null)
-    const [uploadPromptOpen, setUploadPromptOpen] = useState(false)
-    const [newFileName, setNewFileName] = useState('')
+
     const getIcon = (type: string | null) => {
         if (!type) return <File size={18} />
         if (type.includes('image')) return <ImageIcon size={18} color="#10b981" />
@@ -42,20 +37,7 @@ export default function AttachmentList({
 
     return (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
-                <h4 style={{ fontSize: 13, fontWeight: 700, margin: 0, color: 'var(--text-primary)' }}>Files & Documents</h4>
-                <button
-                    onClick={() => {
-                        setNewFileName('')
-                        setUploadPromptOpen(true)
-                    }}
-                    disabled={uploading}
-                    className="btn-primary"
-                    style={{ fontSize: 11, padding: '4px 10px', height: 'auto' }}
-                >
-                    {uploading ? 'Uploading...' : <><Plus size={12} /> Add File</>}
-                </button>
-            </div>
+            <h4 style={{ fontSize: 13, fontWeight: 700, margin: '0 0 8px 0', color: 'var(--text-primary)' }}>Files & Documents</h4>
 
             {attachments.length === 0 ? (
                 <div style={{ padding: '30px', textAlign: 'center', border: '1.5px dashed var(--border)', borderRadius: 12, color: 'var(--text-muted)', fontSize: 13 }}>
@@ -101,40 +83,6 @@ export default function AttachmentList({
                             <button className="btn-secondary" onClick={() => setDeleteConfirmId(null)} style={{ flex: 1, padding: '12px 0' }}>Cancel</button>
                             <button className="btn-primary" onClick={() => { onDelete(deleteConfirmId); setDeleteConfirmId(null) }} style={{ flex: 1, padding: '12px 0', background: '#ef4444', borderColor: '#ef4444' }}>
                                 Yes, Delete File
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            )}
-
-            {uploadPromptOpen && (
-                <div className="modal-overlay" onClick={e => e.target === e.currentTarget && setUploadPromptOpen(false)}>
-                    <div className="modal" style={{ maxWidth: 400 }}>
-                        <div style={{ marginBottom: 24 }}>
-                            <h3 style={{ fontSize: 20, fontWeight: 700, marginBottom: 8, color: 'var(--text-primary)' }}>Attach File</h3>
-                            <p style={{ color: 'var(--text-secondary)', fontSize: 13, lineHeight: 1.5 }}>
-                                Enter a name for this file.
-                            </p>
-                        </div>
-                        <div className="form-group">
-                            <label className="form-label">File Name</label>
-                            <input
-                                autoFocus
-                                type="text"
-                                value={newFileName}
-                                onChange={e => setNewFileName(e.target.value)}
-                                onKeyDown={e => {
-                                    if (e.key === 'Enter' && newFileName.trim()) {
-                                        onUpload(newFileName.trim())
-                                        setUploadPromptOpen(false)
-                                    }
-                                }}
-                            />
-                        </div>
-                        <div style={{ display: 'flex', gap: 12, justifyContent: 'flex-end', marginTop: 12 }}>
-                            <button className="btn-secondary" onClick={() => setUploadPromptOpen(false)}>Cancel</button>
-                            <button className="btn-primary" onClick={() => { if (newFileName.trim()) { onUpload(newFileName.trim()); setUploadPromptOpen(false); } }}>
-                                Attach
                             </button>
                         </div>
                     </div>

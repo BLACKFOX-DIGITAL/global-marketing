@@ -1,5 +1,5 @@
 'use client'
-import { useState, useEffect, useCallback } from 'react'
+import React, { useState, useEffect, useCallback } from 'react'
 import {
     Banknote, Calendar, Clock, CheckCircle2, Search,
     ShieldAlert, UserX, Download, TrendingDown, BarChart3, ChevronDown, ChevronUp
@@ -246,8 +246,8 @@ export default function PayrollDashboard() {
                                         ? Math.round(((report.attendedDays + report.approvedLeaveDays) / report.workingDaysInMonth) * 100)
                                         : 0
                                     return (
-                                        <>
-                                            <tr key={report.userId} style={{ borderBottom: isExpanded ? 'none' : '1px solid var(--border)', transition: 'all 0.2s', cursor: 'pointer' }} onClick={() => setExpandedRow(isExpanded ? null : report.userId)}>
+                                        <React.Fragment key={report.userId}>
+                                            <tr style={{ borderBottom: isExpanded ? 'none' : '1px solid var(--border)', transition: 'all 0.2s', cursor: 'pointer' }} onClick={() => setExpandedRow(isExpanded ? null : report.userId)}>
                                                 <td style={{ padding: '10px 20px', verticalAlign: 'middle' }}>
                                                     <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                                                         <div style={{ width: 28, height: 28, borderRadius: 8, background: 'linear-gradient(135deg, #4f46e5, #1e1b4b)', border: '1px solid rgba(99,102,241,0.25)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#818cf8', fontSize: 10, fontWeight: 900, flexShrink: 0 }}>
@@ -363,7 +363,7 @@ export default function PayrollDashboard() {
                                                     </td>
                                                 </tr>
                                             )}
-                                        </>
+                                        </React.Fragment>
                                     )
                                 })
                             )}

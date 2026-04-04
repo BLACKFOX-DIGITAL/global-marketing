@@ -30,6 +30,7 @@ export async function GET() {
     const recentWins = await prisma.opportunity.findMany({
         where: {
             stage: 'Closed Won',
+            isDeleted: false,
             updatedAt: { gte: thirtyDaysAgo },
             ...ownerFilter,
         },

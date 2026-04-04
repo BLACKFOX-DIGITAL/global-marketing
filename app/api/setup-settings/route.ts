@@ -1,10 +1,16 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { seedAchievements } from '@/lib/gamification'
+import { getCurrentUser } from '@/lib/auth'
 
 export async function GET() {
     if (process.env.NODE_ENV === 'production') {
         return new NextResponse('Not found', { status: 404 })
+    }
+
+    const user = await getCurrentUser()
+    if (!user || user.role !== 'Administrator') {
+        return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
 
     const defaults = [

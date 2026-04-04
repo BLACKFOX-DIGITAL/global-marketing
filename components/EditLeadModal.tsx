@@ -49,7 +49,7 @@ export default function EditLeadModal({ id, onSuccess, onClose }: { id: string, 
             contacts: Array<{ id: string, name: string, email: string | null, phone: string | null, position: string | null, socials: string | null }>
         }) => {
             let parsedSocials: { platform: string, url: string }[] = []
-            try { if (lead.socials) parsedSocials = JSON.parse(lead.socials) } catch { }
+            try { if (lead.socials) parsedSocials = JSON.parse(lead.socials) } catch (e) { console.error('Failed to parse lead socials', e) }
 
             setForm({
                 company: lead.company || '', website: lead.website || '', country: lead.country || '',
@@ -65,7 +65,7 @@ export default function EditLeadModal({ id, onSuccess, onClose }: { id: string, 
             if (lead.contacts && lead.contacts.length > 0) {
                 setContacts(lead.contacts.map((c: { id: string, name: string, email: string | null, phone: string | null, position: string | null, socials: string | null }, i: number) => {
                     let cSocials: { platform: string, url: string }[] = []
-                    try { if (c.socials) cSocials = JSON.parse(c.socials) } catch { }
+                    try { if (c.socials) cSocials = JSON.parse(c.socials) } catch (e) { console.error('Failed to parse contact socials', e) }
                     return {
                         id: c.id || i + 1, name: c.name || '',
                         emails: c.email ? c.email.split(',').map(e => e.trim()) : [''],

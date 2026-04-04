@@ -1,6 +1,9 @@
 'use client'
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect } from 'react'
+import useSWR from 'swr'
 import NotificationCenter from '@/components/NotificationCenter'
+
+const fetcher = (url: string) => fetch(url).then(res => res.json())
 import Link from 'next/link'
 import { Plus, CheckCircle, Calendar, LayoutList, Calendar as CalendarIcon, Building, Search, Pencil } from 'lucide-react'
 import { format, parseISO, isPast, isToday, isTomorrow, formatDistanceToNow } from 'date-fns'
@@ -293,10 +296,6 @@ function ViewTaskModal({ task, onClose, onToggle, onEdit, priorities }: { task: 
     )
 }
 
-import useSWR from 'swr'
-
-const fetcher = (url: string) => fetch(url).then(res => res.json())
-
 export default function TasksPage() {
     const [tab, setTab] = useState<TabType>('All')
     const [showModal, setShowModal] = useState(false)
@@ -307,7 +306,7 @@ export default function TasksPage() {
     const [editTaskId, setEditTaskId] = useState<string | null>(null)
     const [mounted, setMounted] = useState(false)
     const [page, setPage] = useState(1)
-    const [priorityFilter, setPriorityFilter] = useState('All Priority')
+    const [priorityFilter, setPriorityFilter] = useState('All Priorities')
 
     useEffect(() => {
         setMounted(true)
@@ -322,8 +321,6 @@ export default function TasksPage() {
     const priorities: Array<{ value: string; color: string | null }> = prioritiesData?.options || []
     const leads: Array<{ id: string; name: string; company: string | null }> = leadsData?.leads || (Array.isArray(leadsData) ? leadsData : [])
     
-    const loading = !tasksData || !prioritiesData || !leadsData
-
     async function toggleTask(id: string) {
         const task = tasks.find(t => t.id === id)
         const wasCompleted = task?.completed

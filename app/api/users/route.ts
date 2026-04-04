@@ -13,10 +13,13 @@ export async function GET() {
         ? { id: true, name: true, email: true, role: true, createdAt: true }
         : { id: true, name: true }
 
-    const users = await prisma.user.findMany({
-        select: selectFields,
-        orderBy: { name: 'asc' }
-    })
-
-    return NextResponse.json({ users })
+    try {
+        const users = await prisma.user.findMany({
+            select: selectFields,
+            orderBy: { name: 'asc' }
+        })
+        return NextResponse.json({ users })
+    } catch {
+        return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+    }
 }

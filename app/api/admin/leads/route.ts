@@ -10,9 +10,8 @@ const URL_RE = /^https?:\/\/.+/
 
 export async function POST(req: NextRequest) {
     const user = await getCurrentUser()
-    if (!user || user.role !== 'Administrator') {
-        return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
-    }
+    if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    if (user.role !== 'Administrator') return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
 
     try {
         const body = await req.json()
@@ -26,45 +25,20 @@ export async function POST(req: NextRequest) {
             return NextResponse.json({ error: 'Maximum 1000 leads per import' }, { status: 400 })
         }
 
-        // Validate assignTo user if provided
         if (assignTo) {
             const ownerExists = await prisma.user.findUnique({ where: { id: assignTo }, select: { id: true, role: true, isSuspended: true } })
-            if (!ownerExists) {
-                return NextResponse.json({ error: 'Assigned user not found' }, { status: 400 })
-            }
-            if (ownerExists.role === 'Administrator') {
-                return NextResponse.json({ error: 'Cannot assign leads to an Administrator' }, { status: 400 })
-            }
-            if (ownerExists.isSuspended) {
-                return NextResponse.json({ error: 'Cannot assign leads to a suspended user' }, { status: 400 })
-            }
+            if (!ownerExists) return NextResponse.json({ error: 'Assigned user not found' }, { status: 400 })
+            if (ownerExists.role === 'Administrator') return NextResponse.json({ error: 'Cannot assign leads to an Administrator' }, { status: 400 })
+            if (ownerExists.isSuspended) return NextResponse.json({ error: 'Cannot assign leads to a suspended user' }, { status: 400 })
         }
 
-        const results = {
-            success: 0,
-            failed: 0,
-            errors: [] as string[]
-        }
+        const results = { success: 0, failed: 0, errors: [] as string[] }
 
         for (const lead of leads) {
             try {
-                if (!lead.name || !lead.name.trim()) {
-                    results.failed++
-                    results.errors.push(`Lead missing name, skipped`)
-                    continue
-                }
-
-                if (lead.email && !EMAIL_RE.test(lead.email)) {
-                    results.failed++
-                    results.errors.push(`Invalid email for "${lead.name}", skipped`)
-                    continue
-                }
-
-                if (lead.website && !URL_RE.test(lead.website)) {
-                    results.failed++
-                    results.errors.push(`Invalid website URL for "${lead.name}", skipped`)
-                    continue
-                }
+                if (!lead.name || !lead.name.trim()) { results.failed++; results.errors.push(`Lead missing name, skipped`); continue }
+                if (lead.email && !EMAIL_RE.test(lead.email)) { results.failed++; results.errors.push(`Invalid email for "${lead.name}", skipped`); continue }
+                if (lead.website && !URL_RE.test(lead.website)) { results.failed++; results.errors.push(`Invalid website URL for "${lead.name}", skipped`); continue }
 
                 await prisma.lead.create({
                     data: {
@@ -82,39 +56,37 @@ export async function POST(req: NextRequest) {
                     }
                 })
                 results.success++
-            } catch (err) {
+            } catch {
                 results.failed++
                 results.errors.push(`Failed to import "${lead.name}": Internal error`)
             }
         }
 
         return NextResponse.json(results)
-    } catch (err) {
-        console.error('Lead Import Error:', err)
+    } catch {
         return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 })
     }
 }
 
 export async function GET(req: NextRequest) {
     const user = await getCurrentUser()
-    if (!user || user.role !== 'Administrator') {
-        return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
-    }
+    if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    if (user.role !== 'Administrator') return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
 
     const { searchParams } = new URL(req.url)
     const search = searchParams.get('search') || ''
     const countryFilter = searchParams.get('country') || ''
     const statusFilter = searchParams.get('status') || ''
     const ownerFilter = searchParams.get('ownerId') || ''
+    const isExport = searchParams.get('export') === 'true'
 
     const page = Math.max(1, parseInt(searchParams.get('page') || '1') || 1)
-    const limit = Math.min(100, Math.max(1, parseInt(searchParams.get('limit') || '20') || 20))
-    const skip = (page - 1) * limit
+    const limit = isExport ? 10000 : Math.min(100, Math.max(1, parseInt(searchParams.get('limit') || '20') || 20))
+    const skip = isExport ? 0 : (page - 1) * limit
     const sortBy = searchParams.get('sortBy') || 'updatedAt'
     const sortOrder = searchParams.get('sortOrder') || 'desc'
 
     const where: any = { isDeleted: false }
-
     if (search) {
         where.OR = [
             { name: { contains: search } },
@@ -123,7 +95,6 @@ export async function GET(req: NextRequest) {
             { phone: { contains: search } },
         ]
     }
-
     if (countryFilter) where.country = countryFilter
     if (statusFilter) where.status = statusFilter
     if (ownerFilter) where.ownerId = ownerFilter === 'pool' ? null : ownerFilter
@@ -131,15 +102,12 @@ export async function GET(req: NextRequest) {
     const validSortFields = ['name', 'company', 'status', 'updatedAt', 'owner', 'country']
     const finalSortBy = validSortFields.includes(sortBy) ? sortBy : 'updatedAt'
     const finalSortOrder = sortOrder === 'asc' ? 'asc' : 'desc'
+    const orderBy: any = finalSortBy === 'owner' ? { owner: { name: finalSortOrder } } : { [finalSortBy]: finalSortOrder }
 
-    const orderBy: any = {}
-    if (finalSortBy === 'owner') {
-        orderBy.owner = { name: finalSortOrder }
-    } else {
-        orderBy[finalSortBy] = finalSortOrder
-    }
+    const now = new Date()
+    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1)
 
-    const [leads, total, salesReps, countries] = await Promise.all([
+    const [leads, total, salesReps, countries, totalAll, unassigned, newThisMonth, statusBreakdown] = await Promise.all([
         prisma.lead.findMany({
             where,
             include: { owner: { select: { id: true, name: true } } },
@@ -156,7 +124,16 @@ export async function GET(req: NextRequest) {
             where: { country: { not: null }, isDeleted: false },
             select: { country: true },
             distinct: ['country']
-        })
+        }),
+        prisma.lead.count({ where: { isDeleted: false } }),
+        prisma.lead.count({ where: { isDeleted: false, ownerId: null } }),
+        prisma.lead.count({ where: { isDeleted: false, createdAt: { gte: startOfMonth } } }),
+        prisma.lead.groupBy({
+            by: ['status'],
+            where: { isDeleted: false },
+            _count: true,
+            orderBy: { _count: { status: 'desc' } }
+        }),
     ])
 
     return NextResponse.json({
@@ -166,6 +143,7 @@ export async function GET(req: NextRequest) {
         limit,
         totalPages: Math.ceil(total / limit),
         salesReps,
-        countries: countries.map(c => c.country)
+        countries: countries.map(c => c.country),
+        stats: { totalAll, unassigned, newThisMonth, statusBreakdown },
     })
 }

@@ -34,10 +34,3 @@ export function sanitizeObject<T extends Record<string, unknown>>(
     }
     return result
 }
-
-/**
- * Truncate a string to a max length (prevents overlong input attacks).
- */
-export function truncate(input: string, maxLength: number): string {
-    return input.length > maxLength ? input.slice(0, maxLength) : input
-}

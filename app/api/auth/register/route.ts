@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
-import bcrypt from 'bcryptjs'
 import { prisma } from '@/lib/prisma'
-import { getCurrentUser } from '@/lib/auth'
+import { getCurrentUser, hashPassword } from '@/lib/auth'
 
 // Registration is restricted to administrators.
 // Admins create accounts for new users; self-registration is not supported.
@@ -38,7 +37,7 @@ export async function POST(req: NextRequest) {
             return NextResponse.json({ error: 'Email already registered' }, { status: 409 })
         }
 
-        const hashed = await bcrypt.hash(password, 12)
+        const hashed = await hashPassword(password)
         const user = await prisma.user.create({
             data: {
                 name,

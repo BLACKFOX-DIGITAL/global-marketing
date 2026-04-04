@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
-import bcrypt from 'bcryptjs'
 import { prisma } from '@/lib/prisma'
-import { setAuthCookie, signToken } from '@/lib/auth'
+import { setAuthCookie, signToken, verifyPassword } from '@/lib/auth'
 import { rateLimit, getClientIp } from '@/lib/rateLimit'
 
 export async function POST(req: NextRequest) {
@@ -24,7 +23,7 @@ export async function POST(req: NextRequest) {
         if (user.isSuspended) {
             return NextResponse.json({ error: 'Account suspended' }, { status: 403 })
         }
-        const valid = await bcrypt.compare(password, user.password)
+        const valid = await verifyPassword(password, user.password)
         if (!valid) {
             return NextResponse.json({ error: 'Invalid credentials' }, { status: 401 })
         }
