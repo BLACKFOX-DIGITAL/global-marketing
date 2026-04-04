@@ -9,11 +9,13 @@ interface AttendanceRecord {
 }
 
 function formatDuration(seconds: number) {
-    const h = Math.floor(seconds / 3600)
-    const m = Math.floor((seconds % 3600) / 60)
-    const s = seconds % 60
+    const absSeconds = Math.abs(seconds)
+    const h = Math.floor(absSeconds / 3600)
+    const m = Math.floor((absSeconds % 3600) / 60)
+    const s = Math.floor(absSeconds % 60)
     return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`
 }
+
 
 function formatMinutes(mins: number) {
     const h = Math.floor(mins / 60)
@@ -79,15 +81,19 @@ export default function AttendancePage() {
         }).catch(() => setLoading(false))
     }, [])
 
-    // Running timer
+    // Running timer - re-calculate from punchIn on every tick to prevent drift and fix negativity
     useEffect(() => {
-        if (punchedIn) {
-            timerRef.current = setInterval(() => setElapsed(e => e + 1), 1000)
+        if (punchedIn && currentRecord) {
+            const start = new Date(currentRecord.punchIn).getTime()
+            timerRef.current = setInterval(() => {
+                setElapsed(Math.max(0, Math.floor((Date.now() - start) / 1000)))
+            }, 1000)
         } else {
             if (timerRef.current) clearInterval(timerRef.current)
         }
         return () => { if (timerRef.current) clearInterval(timerRef.current) }
-    }, [punchedIn])
+    }, [punchedIn, currentRecord])
+
 
     // Live clock
     useEffect(() => {
