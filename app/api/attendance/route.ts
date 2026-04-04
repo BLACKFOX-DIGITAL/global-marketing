@@ -59,20 +59,8 @@ export async function GET(req: NextRequest) {
         }),
     ])
 
-    // Sum of completed sessions
-    let totalMinutes = durationAgg._sum.duration || 0
-
-    // Add minutes from currently active session if it started today
-    const openActiveSession = await prisma.attendanceRecord.findFirst({
-        where: { userId: user.userId, punchOut: null, punchIn: { gte: since } },
-        orderBy: { punchIn: 'asc' }, // Pick the earliest today
-    })
-
-    if (openActiveSession) {
-        const liveMinutes = Math.floor((Date.now() - new Date(openActiveSession.punchIn).getTime()) / 60000)
-        totalMinutes += Math.max(0, liveMinutes)
-    }
-
+    // Sum of completed sessions only (active session is tracked client-side via elapsed timer)
+    const totalMinutes = durationAgg._sum.duration || 0
 
     return NextResponse.json({
         records,

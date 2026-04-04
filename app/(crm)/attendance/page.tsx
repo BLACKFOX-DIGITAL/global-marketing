@@ -81,18 +81,27 @@ export default function AttendancePage() {
         }).catch(() => setLoading(false))
     }, [])
 
-    // Running timer - re-calculate from punchIn on every tick to prevent drift and fix negativity
+    // Running timer - re-calculate from punchIn on every tick with timezone safety
     useEffect(() => {
         if (punchedIn && currentRecord) {
-            const start = new Date(currentRecord.punchIn).getTime()
+            // Ensure we parse the string correctly
+            const punchInStr = currentRecord.punchIn
+            const start = new Date(punchInStr).getTime()
+            
+            console.log(`[TIMER] Syncing: Now=${Date.now()}, Start=${start}, Diff=${Date.now() - start}`)
+
             timerRef.current = setInterval(() => {
-                setElapsed(Math.max(0, Math.floor((Date.now() - start) / 1000)))
+                const now = Date.now()
+                // If start is in the future compared to now, show 0 instead of negative
+                const diffSeconds = Math.max(0, Math.floor((now - start) / 1000))
+                setElapsed(diffSeconds)
             }, 1000)
         } else {
             if (timerRef.current) clearInterval(timerRef.current)
         }
         return () => { if (timerRef.current) clearInterval(timerRef.current) }
     }, [punchedIn, currentRecord])
+
 
 
     // Live clock
