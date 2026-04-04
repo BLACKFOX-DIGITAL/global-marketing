@@ -471,9 +471,39 @@ export default function LeadDetailContent({ id, linkPrefix = '' }: { id: string,
     const [notification, setNotification] = useState<{ message: string, type: 'success' | 'error' } | null>(null)
 
     const copyToClipboard = (text: string, label: string) => {
-        navigator.clipboard.writeText(text);
-        setNotification({ message: `${label} copied to clipboard`, type: 'success' });
+        if (!text) return;
+        
+        // Modern approach
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+            navigator.clipboard.writeText(text).then(() => {
+                setNotification({ message: `${label} copied to clipboard`, type: 'success' });
+            }).catch(() => {
+                // Fallback if modern API fails
+                copyFallback(text, label);
+            });
+        } else {
+            // Fallback for non-secure origins (HTTP)
+            copyFallback(text, label);
+        }
     };
+
+    const copyFallback = (text: string, label: string) => {
+        try {
+            const textArea = document.createElement("textarea");
+            textArea.value = text;
+            textArea.style.position = "fixed";  // avoid scrolling to bottom
+            document.body.appendChild(textArea);
+            textArea.focus();
+            textArea.select();
+            document.execCommand('copy');
+            document.body.removeChild(textArea);
+            setNotification({ message: `${label} copied to clipboard`, type: 'success' });
+        } catch (err) {
+            console.error('Fallback copy failed', err);
+            setNotification({ message: `Failed to copy ${label}`, type: 'error' });
+        }
+    };
+
 
     useEffect(() => {
         if (notification) {
@@ -707,11 +737,12 @@ export default function LeadDetailContent({ id, linkPrefix = '' }: { id: string,
                                         <h1 style={{ fontSize: 18, fontWeight: 700, margin: 0, color: 'var(--text-primary)', lineHeight: 1.1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{displayTitle}</h1>
                                         <button 
                                             onClick={() => copyToClipboard(displayTitle, 'Company Name')}
-                                            style={{ background: 'none', border: 'none', padding: 0, color: 'var(--text-muted)', cursor: 'pointer', display: 'flex', alignItems: 'center', opacity: 0.4 }} 
+                                            style={{ background: 'none', border: 'none', padding: 0, color: 'var(--text-muted)', cursor: 'pointer', display: 'flex', alignItems: 'center', opacity: 0.6 }} 
                                             className="hover-copy"
                                         >
                                             <Copy size={12} />
                                         </button>
+
                                     </div>
                                     <div style={{ display: 'flex', alignItems: 'center', gap: 6, color: 'var(--text-secondary)', fontSize: 11, marginTop: 4 }}>
                                         <User size={12} /> {lead.name}{lead.industry ? ` • ${lead.industry}` : ''}
@@ -745,7 +776,8 @@ export default function LeadDetailContent({ id, linkPrefix = '' }: { id: string,
                                                     style={{ color: 'var(--text-primary)', textDecoration: 'none', fontSize: 12, fontWeight: 500, display: 'block', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                                                     {email.trim()}
                                                 </Link>
-                                                <button onClick={() => copyToClipboard(email.trim(), 'Email')} style={{ background: 'none', border: 'none', padding: 0, color: 'var(--text-muted)', cursor: 'pointer', opacity: 0.4 }} className="hover-copy"><Copy size={10} /></button>
+                                                <button onClick={() => copyToClipboard(email.trim(), 'Email')} style={{ background: 'none', border: 'none', padding: 0, color: 'var(--text-muted)', cursor: 'pointer', opacity: 0.6 }} className="hover-copy"><Copy size={10} /></button>
+
                                             </div>
                                         )) : <span style={{ color: 'var(--text-muted)', fontSize: 12 }}>—</span>}
                                     </div>
@@ -763,7 +795,8 @@ export default function LeadDetailContent({ id, linkPrefix = '' }: { id: string,
                                                     style={{ color: 'var(--text-primary)', textDecoration: 'none', fontSize: 12, fontWeight: 500 }}>
                                                     {phone.trim()}
                                                 </Link>
-                                                <button onClick={() => copyToClipboard(phone.trim(), 'Phone')} style={{ background: 'none', border: 'none', padding: 0, color: 'var(--text-muted)', cursor: 'pointer', opacity: 0.4 }} className="hover-copy"><Copy size={10} /></button>
+                                                <button onClick={() => copyToClipboard(phone.trim(), 'Phone')} style={{ background: 'none', border: 'none', padding: 0, color: 'var(--text-muted)', cursor: 'pointer', opacity: 0.6 }} className="hover-copy"><Copy size={10} /></button>
+
                                             </div>
                                         )) : <span style={{ color: 'var(--text-muted)', fontSize: 12 }}>—</span>}
                                     </div>
@@ -781,8 +814,12 @@ export default function LeadDetailContent({ id, linkPrefix = '' }: { id: string,
                                 <div style={{ minWidth: 0 }}>
                                     <div style={{ fontSize: 9, color: 'var(--text-muted)', fontWeight: 700, textTransform: 'uppercase' }}>Website</div>
                                     {lead.website ? (
-                                        <Link href={lead.website.startsWith('http') ? lead.website : `https://${lead.website}`} target="_blank" style={{ color: 'var(--accent-primary)', textDecoration: 'none', fontSize: 12, fontWeight: 500, display: 'block', overflow: 'hidden', textOverflow: 'ellipsis' }}>{lead.website}</Link>
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                                            <Link href={lead.website.startsWith('http') ? lead.website : `https://${lead.website}`} target="_blank" style={{ color: 'var(--accent-primary)', textDecoration: 'none', fontSize: 12, fontWeight: 500, display: 'block', overflow: 'hidden', textOverflow: 'ellipsis' }}>{lead.website}</Link>
+                                            <button onClick={() => copyToClipboard(lead.website!, 'Website')} style={{ background: 'none', border: 'none', padding: 0, color: 'var(--text-muted)', cursor: 'pointer', opacity: 0.6 }} className="hover-copy"><Copy size={10} /></button>
+                                        </div>
                                     ) : <span style={{ color: 'var(--text-muted)', fontSize: 12 }}>—</span>}
+
                                 </div>
                             </div>
                         </div>
