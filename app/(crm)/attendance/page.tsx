@@ -161,7 +161,7 @@ export default function AttendancePage() {
                             {format(now, 'EEEE, MMMM d, yyyy')}
                         </div>
                         <div style={{ fontSize: 36, fontWeight: 700, color: 'var(--text-primary)', marginBottom: 32, fontVariantNumeric: 'tabular-nums' }}>
-                            {format(now, 'hh:mm a')}
+                            {format(now, 'hh:mm:ss a')}
                         </div>
 
                         {/* Timer display */}

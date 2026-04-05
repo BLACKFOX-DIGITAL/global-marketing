@@ -1,5 +1,5 @@
 'use client'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Zap, Eye, EyeOff, ArrowRight, ShieldAlert } from 'lucide-react'
 
 export default function LoginPage() {

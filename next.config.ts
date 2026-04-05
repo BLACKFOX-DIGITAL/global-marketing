@@ -20,15 +20,15 @@ const securityHeaders = [
             "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
             "font-src 'self' https://fonts.gstatic.com",
             "img-src 'self' data: blob:",
-            "connect-src 'self'",
+            isDev
+                ? "connect-src 'self' ws: wss:"
+                : "connect-src 'self'",
             "frame-ancestors 'none'",
         ].join('; ')
     },
 ]
 
 const nextConfig: NextConfig = {
-    turbopack: {},
-
     async headers() {
         return [
             {

@@ -70,14 +70,22 @@ export default function AttendanceLogPage() {
         return groups
     }, [records])
 
+    // Add estimated time for any active (not yet punched out) sessions
+    const correctedTotalMinutes = useMemo(() => {
+        const activeExtra = records
+            .filter(r => r.punchOut === null)
+            .reduce((sum, r) => sum + Math.round((Date.now() - new Date(r.punchIn).getTime()) / 60000), 0)
+        return totalMinutes + activeExtra
+    }, [records, totalMinutes])
+
     const toggleDay = (day: string) => setExpandedDays(prev => ({ ...prev, [day]: !prev[day] }))
 
 
 
     const currentPeriodObj = PERIODS.find(p => p.key === period)
     const targetMinutes = currentPeriodObj?.target || 0
-    const progressPercent = targetMinutes > 0 ? Math.min(100, Math.round((totalMinutes / targetMinutes) * 100)) : 0
-    const diffMinutes = totalMinutes - targetMinutes
+    const progressPercent = targetMinutes > 0 ? Math.min(100, Math.round((correctedTotalMinutes / targetMinutes) * 100)) : 0
+    const diffMinutes = correctedTotalMinutes - targetMinutes
     const isOvertime = diffMinutes > 0
 
     return (
@@ -99,7 +107,7 @@ export default function AttendanceLogPage() {
                             <div style={{ fontSize: 13, background: 'var(--bg-input)', padding: '4px 10px', borderRadius: 100, color: 'var(--text-muted)' }}>{currentPeriodObj?.label} Target: {formatMinutes(targetMinutes)}</div>
                         </div>
                         <div style={{ display: 'flex', alignItems: 'flex-end', gap: 12 }}>
-                            <div style={{ fontSize: 32, fontWeight: 700, lineHeight: 1 }}>{formatMinutes(totalMinutes)}</div>
+                            <div style={{ fontSize: 32, fontWeight: 700, lineHeight: 1 }}>{formatMinutes(correctedTotalMinutes)}</div>
                             <div style={{ fontSize: 13, color: 'var(--text-muted)', marginBottom: 4 }}>logged</div>
                         </div>
                         <div style={{ width: '100%', height: 8, background: 'var(--bg-input)', borderRadius: 100, overflow: 'hidden', marginTop: 4 }}>
@@ -120,7 +128,7 @@ export default function AttendanceLogPage() {
                     <div className="stat-card" style={{ padding: 20, margin: 0, border: '1px solid var(--border)' }}>
                         <div>
                             <div className="stat-card-label">Avg / Session</div>
-                            <div className="stat-card-value">{total > 0 ? formatMinutes(Math.round(totalMinutes / total)) : '—'}</div>
+                            <div className="stat-card-value">{total > 0 ? formatMinutes(Math.round(correctedTotalMinutes / total)) : '—'}</div>
                             <div className="stat-card-change" style={{ color: 'var(--text-muted)' }}>Over {total} sessions</div>
                         </div>
                         <div className="stat-card-icon" style={{ background: 'rgba(245,158,11,0.15)' }}><Clock size={20} color="#f59e0b" /></div>
@@ -175,7 +183,10 @@ export default function AttendanceLogPage() {
                         Object.entries(groupedRecords).map(([day, dayRecords]) => {
                             const dateObj = parseISO(day)
                             const isToday = format(new Date(), 'yyyy-MM-dd') === day
-                            const dayTotalMinutes = dayRecords.reduce((sum, r) => sum + (r.duration || 0), 0)
+                            const dayTotalMinutes = dayRecords.reduce((sum, r) => {
+                                if (r.duration !== null) return sum + r.duration
+                                return sum + Math.round((Date.now() - new Date(r.punchIn).getTime()) / 60000)
+                            }, 0)
                             const firstIn = dayRecords[dayRecords.length - 1].punchIn // items are ordered desc
 
                             const isExpanded = expandedDays[day]
