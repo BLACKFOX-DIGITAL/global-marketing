@@ -24,6 +24,13 @@ interface SalaryReport {
     projectedSalary: number
 }
 
+function csvCell(val: string | number): string {
+    const str = String(val)
+    return str.includes(',') || str.includes('"') || str.includes('\n')
+        ? `"${str.replace(/"/g, '""')}"`
+        : str
+}
+
 function exportToCSV(reports: SalaryReport[], month: string) {
     const headers = ['Name', 'Base Salary (৳)', 'Hourly Rate (৳)', 'Hours Worked', 'Days Present', 'Days Absent', 'Leave Days', 'Net Salary (৳)', 'Deduction (৳)']
     const rows = reports.map(r => [
@@ -37,7 +44,7 @@ function exportToCSV(reports: SalaryReport[], month: string) {
         r.finalSalary.toFixed(2),
         (r.baseSalary - r.finalSalary).toFixed(2)
     ])
-    const csv = [headers, ...rows].map(r => r.join(',')).join('\n')
+    const csv = [headers, ...rows].map(r => r.map(csvCell).join(',')).join('\n')
     const blob = new Blob([csv], { type: 'text/csv' })
     const url = URL.createObjectURL(blob)
     const a = document.createElement('a')
@@ -79,8 +86,9 @@ export default function PayrollDashboard() {
     useEffect(() => {
         setHistoryLoading(true)
         fetch('/api/admin/payroll/history?months=6')
-            .then(r => r.json())
+            .then(r => r.ok ? r.json() : Promise.reject(r.status))
             .then(d => { if (d.history) setHistory(d.history) })
+            .catch(err => console.error('Failed to load payroll history:', err))
             .finally(() => setHistoryLoading(false))
     }, [])
 

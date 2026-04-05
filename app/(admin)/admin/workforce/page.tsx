@@ -57,6 +57,8 @@ export default function WorkforceDashboard() {
     const [editNote, setEditNote] = useState('')
     const [saving, setSaving] = useState(false)
     const [saveError, setSaveError] = useState<string | null>(null)
+    const [leaveActionError, setLeaveActionError] = useState<string | null>(null)
+    const [leaveActioning, setLeaveActioning] = useState<string | null>(null)
 
     const fetchData = useCallback(async () => {
         setLoading(true)
@@ -77,6 +79,10 @@ export default function WorkforceDashboard() {
 
     async function handleSaveAttendance() {
         if (!editingAttendance) return
+        if (editPunchOut && new Date(editPunchOut) <= new Date(editPunchIn)) {
+            setSaveError('Clock-out must be after clock-in')
+            return
+        }
         setSaving(true)
         setSaveError(null)
         try {
@@ -96,10 +102,23 @@ export default function WorkforceDashboard() {
     }
 
     async function handleLeaveAction(id: string, newStatus: string) {
-        await fetch(`/api/leave/${id}`, {
-            method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ status: newStatus })
-        })
-        fetchData()
+        setLeaveActioning(id)
+        setLeaveActionError(null)
+        try {
+            const res = await fetch(`/api/leave/${id}`, {
+                method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ status: newStatus })
+            })
+            if (!res.ok) {
+                const d = await res.json()
+                setLeaveActionError(d.error || 'Failed to update leave request')
+            } else {
+                fetchData()
+            }
+        } catch {
+            setLeaveActionError('Connection error')
+        } finally {
+            setLeaveActioning(null)
+        }
     }
 
     const calcDays = (s: string, e: string) => {
@@ -111,7 +130,12 @@ export default function WorkforceDashboard() {
     }
 
     const punchedInIds = new Set(attendanceRecords.map(r => r.user.id))
-    const absentees = allUsers.filter(u => !punchedInIds.has(u.id))
+    const onLeaveIds = new Set(
+        leaveRequests
+            .filter(r => r.status === 'Approved' && parseISO(r.startDate) <= parseISO(attendanceDate) && parseISO(r.endDate) >= parseISO(attendanceDate))
+            .map(r => r.userId)
+    )
+    const absentees = allUsers.filter(u => !punchedInIds.has(u.id) && !onLeaveIds.has(u.id))
 
     const overdueCount = attendanceRecords.filter(r => !r.punchOut && differenceInHours(new Date(), parseISO(r.punchIn)) > 16).length
     const totalMinutes = attendanceRecords.reduce((acc, r) => acc + (r.duration || 0), 0)
@@ -158,6 +182,12 @@ export default function WorkforceDashboard() {
                     <Briefcase size={13} strokeWidth={2.5} /> Leave Requests {pendingLeaveCount > 0 && <span style={{ background: 'var(--accent-primary)', color: 'white', fontSize: 8, padding: '1px 5px', borderRadius: 6, fontWeight: 900 }}>{pendingLeaveCount}</span>}
                 </button>
             </div>
+
+            {leaveActionError && (
+                <div style={{ marginBottom: 12, padding: '8px 14px', borderRadius: 10, background: 'rgba(244,63,94,0.08)', border: '1px solid rgba(244,63,94,0.2)', color: '#f43f5e', fontSize: 11, fontWeight: 700 }}>
+                    {leaveActionError}
+                </div>
+            )}
 
             <div style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 16, overflow: 'hidden', backdropFilter: 'blur(20px)' }}>
                 {/* Toolbar */}
@@ -273,8 +303,8 @@ export default function WorkforceDashboard() {
                                                 <td style={{ padding: '6px 20px', verticalAlign: 'middle', textAlign: 'right' }}>
                                                     {req.status === 'Pending' ? (
                                                         <div style={{ display: 'flex', gap: 4, justifyContent: 'flex-end' }}>
-                                                            <button onClick={() => handleLeaveAction(req.id, 'Approved')} style={{ background: '#10b981', color: '#fff', border: 'none', padding: '3px 8px', borderRadius: 4, fontSize: 9, fontWeight: 900, cursor: 'pointer', textTransform: 'uppercase' }}>Approve</button>
-                                                            <button onClick={() => handleLeaveAction(req.id, 'Rejected')} style={{ background: '#f43f5e', color: '#fff', border: 'none', padding: '3px 8px', borderRadius: 4, fontSize: 9, fontWeight: 900, cursor: 'pointer', textTransform: 'uppercase' }}>Deny</button>
+                                                            <button onClick={() => handleLeaveAction(req.id, 'Approved')} disabled={leaveActioning === req.id} style={{ background: '#10b981', color: '#fff', border: 'none', padding: '3px 8px', borderRadius: 4, fontSize: 9, fontWeight: 900, cursor: leaveActioning === req.id ? 'wait' : 'pointer', textTransform: 'uppercase', opacity: leaveActioning === req.id ? 0.6 : 1 }}>Approve</button>
+                                                            <button onClick={() => handleLeaveAction(req.id, 'Rejected')} disabled={leaveActioning === req.id} style={{ background: '#f43f5e', color: '#fff', border: 'none', padding: '3px 8px', borderRadius: 4, fontSize: 9, fontWeight: 900, cursor: leaveActioning === req.id ? 'wait' : 'pointer', textTransform: 'uppercase', opacity: leaveActioning === req.id ? 0.6 : 1 }}>Deny</button>
                                                         </div>
                                                     ) : <span style={{ fontSize: 9, color: '#475569', fontWeight: 900, textTransform: 'uppercase' }}>Actioned</span>}
                                                 </td>

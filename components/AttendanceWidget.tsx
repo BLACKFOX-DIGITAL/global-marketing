@@ -17,13 +17,14 @@ export function AttendanceWidget() {
     const [punching, setPunching] = useState(false)
     const [lastRecords, setLastRecords] = useState<AttendanceRecord[]>([])
     const [loading, setLoading] = useState(true)
+    const [error, setError] = useState<string | null>(null)
 
     useEffect(() => {
         async function fetchStatus() {
             try {
                 const [statusRes, historyRes] = await Promise.all([
                     fetch('/api/attendance/status', { cache: 'no-store' }),
-                    fetch('/api/attendance?period=month&limit=5', { cache: 'no-store' })
+                    fetch('/api/attendance?period=month&limit=3', { cache: 'no-store' })
                 ])
                 
                 const status = await statusRes.json()
@@ -40,6 +41,7 @@ export function AttendanceWidget() {
                 }
             } catch (err) {
                 console.error('Failed to fetch attendance:', err)
+                setError('Failed to load attendance data')
             } finally {
                 setLoading(false)
             }
@@ -67,13 +69,15 @@ export function AttendanceWidget() {
             } else {
                 setPunchedIn(false)
                 setPunchRecord(null)
+                setElapsed(0)
                 // Refresh history
-                const hRes = await fetch('/api/attendance?period=month&limit=5', { cache: 'no-store' })
+                const hRes = await fetch('/api/attendance?period=month&limit=3', { cache: 'no-store' })
                 const history = await hRes.json()
-                if (history && Array.isArray(history.records)) setLastRecords(history.records.slice(0, 3))
+                if (history && Array.isArray(history.records)) setLastRecords(history.records)
             }
         } catch (err) {
             console.error('Punch failed:', err)
+            setError('Failed to update attendance')
         } finally {
             setPunching(false)
         }
@@ -85,6 +89,12 @@ export function AttendanceWidget() {
 
     const totalExpectedHours = 8
     const progressPercent = Math.min(100, (elapsed / (totalExpectedHours * 3600)) * 100)
+
+    if (error) return (
+        <div className="card glass" style={{ height: 200, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#ef4444', fontSize: 13 }}>
+            {error}
+        </div>
+    )
 
     if (loading) return (
         <div className="card glass" style={{ height: 200, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>

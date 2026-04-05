@@ -32,24 +32,33 @@ export default function AttendanceLogPage() {
     const [dateTo, setDateTo] = useState('')
     const [totalMinutes, setTotalMinutes] = useState(0)
     const [loading, setLoading] = useState(true)
+    const [fetchError, setFetchError] = useState(false)
     const [expandedDays, setExpandedDays] = useState<Record<string, boolean>>({})
+    const [tick, setTick] = useState(0)
 
     const fetchRecords = useCallback(async () => {
         setLoading(true)
-        const params = new URLSearchParams({ period, page: String(page), limit: '100' })
-        if (period === 'custom' && dateFrom) params.set('from', dateFrom)
-        if (period === 'custom' && dateTo) params.set('to', dateTo)
-        const res = await fetch(`/api/attendance?${params}`)
-        if (res.ok) {
-            const d = await res.json()
-            setRecords(d.records)
-            setTotal(d.total)
-            setTotalPages(d.totalPages)
-            setTotalMinutes(d.totalMinutes)
-            if (d.records.length > 0) {
-                const firstDay = format(parseISO(d.records[0].punchIn), 'yyyy-MM-dd')
-                setExpandedDays({ [firstDay]: true })
+        setFetchError(false)
+        try {
+            const params = new URLSearchParams({ period, page: String(page), limit: '100' })
+            if (period === 'custom' && dateFrom) params.set('from', dateFrom)
+            if (period === 'custom' && dateTo) params.set('to', dateTo)
+            const res = await fetch(`/api/attendance?${params}`)
+            if (res.ok) {
+                const d = await res.json()
+                setRecords(d.records)
+                setTotal(d.total)
+                setTotalPages(d.totalPages)
+                setTotalMinutes(d.totalMinutes)
+                if (d.records.length > 0) {
+                    const firstDay = format(parseISO(d.records[0].punchIn), 'yyyy-MM-dd')
+                    setExpandedDays({ [firstDay]: true })
+                }
+            } else {
+                setFetchError(true)
             }
+        } catch {
+            setFetchError(true)
         }
         setLoading(false)
     }, [period, page, dateFrom, dateTo])
@@ -59,6 +68,14 @@ export default function AttendanceLogPage() {
             fetchRecords()
         })
     }, [fetchRecords])
+
+    // Tick every minute to keep active session total live
+    useEffect(() => {
+        const hasActive = records.some(r => r.punchOut === null)
+        if (!hasActive) return
+        const interval = setInterval(() => setTick(t => t + 1), 60000)
+        return () => clearInterval(interval)
+    }, [records])
 
     const groupedRecords = useMemo(() => {
         const groups: Record<string, AttendanceRecord[]> = {}
@@ -70,13 +87,14 @@ export default function AttendanceLogPage() {
         return groups
     }, [records])
 
-    // Add estimated time for any active (not yet punched out) sessions
+    // Add estimated time for any active (not yet punched out) sessions — tick keeps it live
     const correctedTotalMinutes = useMemo(() => {
         const activeExtra = records
             .filter(r => r.punchOut === null)
             .reduce((sum, r) => sum + Math.round((Date.now() - new Date(r.punchIn).getTime()) / 60000), 0)
         return totalMinutes + activeExtra
-    }, [records, totalMinutes])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [records, totalMinutes, tick])
 
     const toggleDay = (day: string) => setExpandedDays(prev => ({ ...prev, [day]: !prev[day] }))
 
@@ -177,6 +195,8 @@ export default function AttendanceLogPage() {
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
                     {loading ? (
                         <div className="card" style={{ padding: 40, textAlign: 'center' }}><div className="spinner" style={{ margin: '0 auto' }} /></div>
+                    ) : fetchError ? (
+                        <div className="card" style={{ padding: 40, textAlign: 'center', color: '#ef4444' }}>Failed to load attendance records. Please try again.</div>
                     ) : Object.keys(groupedRecords).length === 0 ? (
                         <div className="card" style={{ padding: 40, textAlign: 'center', color: 'var(--text-muted)' }}>No attendance records found for this period.</div>
                     ) : (

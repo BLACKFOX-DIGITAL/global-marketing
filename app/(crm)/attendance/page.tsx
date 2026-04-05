@@ -58,6 +58,7 @@ export default function AttendancePage() {
     const [loading, setLoading] = useState(true)
     const [punching, setPunching] = useState(false)
     const [recentRecords, setRecentRecords] = useState<AttendanceRecord[]>([])
+    const [todaySessionCount, setTodaySessionCount] = useState(0)
     const [todayMinutes, setTodayMinutes] = useState(0)
     const [now, setNow] = useState(new Date())
     const timerRef = useRef<NodeJS.Timeout | null>(null)
@@ -77,6 +78,7 @@ export default function AttendancePage() {
             }
             setRecentRecords(log.records || [])
             setTodayMinutes(log.totalMinutes || 0)
+            setTodaySessionCount(log.total || 0)
             setLoading(false)
         }).catch(() => setLoading(false))
     }, [])
@@ -88,8 +90,6 @@ export default function AttendancePage() {
             const punchInStr = currentRecord.punchIn
             const start = new Date(punchInStr).getTime()
             
-            console.log(`[TIMER] Syncing: Now=${Date.now()}, Start=${start}, Diff=${Date.now() - start}`)
-
             timerRef.current = setInterval(() => {
                 const now = Date.now()
                 // If start is in the future compared to now, show 0 instead of negative
@@ -112,22 +112,28 @@ export default function AttendancePage() {
 
     async function handlePunch() {
         setPunching(true)
-        const res = await fetch('/api/attendance/punch', { method: 'POST' })
-        const data = await res.json()
-        if (data.action === 'punch_in') {
-            setPunchedIn(true)
-            setCurrentRecord(data.record)
-            setElapsed(0)
-        } else {
-            setPunchedIn(false)
-            setCurrentRecord(null)
-            setElapsed(0)
-            // Refresh records
-            const log = await fetch('/api/attendance?period=today&limit=5').then(r => r.json())
-            setRecentRecords(log.records || [])
-            setTodayMinutes(log.totalMinutes || 0)
+        try {
+            const res = await fetch('/api/attendance/punch', { method: 'POST' })
+            const data = await res.json()
+            if (data.action === 'punch_in') {
+                setPunchedIn(true)
+                setCurrentRecord(data.record)
+                setElapsed(0)
+            } else {
+                setPunchedIn(false)
+                setCurrentRecord(null)
+                setElapsed(0)
+                // Refresh records
+                const log = await fetch('/api/attendance?period=today&limit=5').then(r => r.json())
+                setRecentRecords(log.records || [])
+                setTodayMinutes(log.totalMinutes || 0)
+                setTodaySessionCount(log.total || 0)
+            }
+        } catch (err) {
+            console.error('Punch failed:', err)
+        } finally {
+            setPunching(false)
         }
-        setPunching(false)
     }
 
     if (loading) return (
@@ -242,7 +248,7 @@ export default function AttendancePage() {
                                     flex: 1, background: 'rgba(16,185,129,0.06)', borderRadius: 10, padding: '14px 12px', textAlign: 'center',
                                     border: '1px solid rgba(16,185,129,0.1)'
                                 }}>
-                                    <div style={{ fontSize: 20, fontWeight: 700, color: '#10b981' }}>{recentRecords.length}</div>
+                                    <div style={{ fontSize: 20, fontWeight: 700, color: '#10b981' }}>{todaySessionCount}</div>
                                     <div style={{ fontSize: 10, color: 'var(--text-muted)', marginTop: 2, fontWeight: 600, textTransform: 'uppercase' }}>Sessions</div>
                                 </div>
                             </div>
