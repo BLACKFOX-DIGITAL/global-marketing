@@ -19,6 +19,21 @@ export function sanitize(input: unknown): string {
 }
 
 /**
+ * Normalize a website URL to a consistent format for deduplication.
+ * Strips protocol (http/https), www., and trailing slashes, then lowercases.
+ * Example: "https://www.Acme.com/" → "acme.com"
+ */
+export function normalizeWebsite(url: unknown): string {
+    if (typeof url !== 'string') return ''
+    return url
+        .toLowerCase()
+        .replace(/^https?:\/\//, '')
+        .replace(/^www\./, '')
+        .replace(/\/$/, '')
+        .trim()
+}
+
+/**
  * Sanitize a specific set of string fields in an object.
  * Non-string fields (numbers, booleans, arrays) are left untouched.
  */

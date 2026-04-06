@@ -1,13 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { getCurrentUser } from '@/lib/auth'
-import { sanitize } from '@/lib/sanitize'
+import { sanitize, normalizeWebsite } from '@/lib/sanitize'
 import type { Prisma } from '@prisma/client'
 
 export const dynamic = 'force-dynamic'
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
-const URL_RE = /^https?:\/\/.+/
+const URL_RE = /^(https?:\/\/)?.+\..+/
 
 export async function POST(req: NextRequest) {
     const user = await getCurrentUser()
@@ -47,7 +47,7 @@ export async function POST(req: NextRequest) {
                         company: lead.company ? sanitize(lead.company.trim()) : null,
                         email: lead.email ? sanitize(lead.email.trim()) : null,
                         phone: lead.phone ? sanitize(lead.phone.trim()) : null,
-                        website: lead.website ? sanitize(lead.website.trim()) : null,
+                        website: lead.website ? normalizeWebsite(sanitize(lead.website.trim())) : null,
                         country: lead.country ? sanitize(lead.country.trim()) : null,
                         status: lead.status?.trim() || 'New',
                         notes: lead.notes ? sanitize(lead.notes.trim()) : null,

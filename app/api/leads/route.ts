@@ -3,7 +3,7 @@ import { prisma } from '@/lib/prisma'
 import { getCurrentUser, isManager } from '@/lib/auth'
 import { awardXP } from '@/lib/gamification'
 import { rateLimit, getClientIp } from '@/lib/rateLimit'
-import { sanitizeObject } from '@/lib/sanitize'
+import { sanitizeObject, normalizeWebsite } from '@/lib/sanitize'
 import { logger } from '@/lib/logger'
 import type { Prisma } from '@prisma/client'
 
@@ -104,19 +104,28 @@ export async function POST(req: NextRequest) {
             return NextResponse.json({ error: 'Website is required' }, { status: 400 })
         }
 
-        const orConditions = []
-        if (body.website) orConditions.push({ website: body.website })
+        // Normalize the website to a consistent format (strip protocol, www, trailing slash)
+        const normalizedWebsite = normalizeWebsite(body.website)
+
+        // Build duplicate check conditions — match against all stored variants
+        const websiteVariants = [
+            normalizedWebsite,
+            `http://${normalizedWebsite}`,
+            `https://${normalizedWebsite}`,
+            `http://www.${normalizedWebsite}`,
+            `https://www.${normalizedWebsite}`,
+        ]
+        const orConditions: { website?: { in: string[] }, email?: string }[] = [
+            { website: { in: websiteVariants } }
+        ]
         if (body.email) orConditions.push({ email: body.email })
-        
-        if (orConditions.length > 0) {
-            const existingLead = await prisma.lead.findFirst({ 
-                where: { OR: orConditions },
-                include: { owner: { select: { name: true } } }
-            })
-            if (existingLead) {
-                const ownerName = existingLead.owner?.name || 'the Unassigned Pool'
-                return NextResponse.json({ error: 'This lead already exists in the platform.' }, { status: 400 })
-            }
+
+        const existingLead = await prisma.lead.findFirst({
+            where: { isDeleted: false, OR: orConditions },
+            include: { owner: { select: { name: true } } }
+        })
+        if (existingLead) {
+            return NextResponse.json({ error: 'This lead already exists in the platform.' }, { status: 400 })
         }
 
         const lead = await prisma.lead.create({
@@ -125,7 +134,7 @@ export async function POST(req: NextRequest) {
                 company: body.company,
                 email: body.email,
                 phone: body.phone,
-                website: body.website,
+                website: normalizedWebsite,
                 country: body.country,
                 socials: body.socials,
                 status: 'New', // Always default to New for creating lead
