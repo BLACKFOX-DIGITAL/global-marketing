@@ -33,7 +33,7 @@ export function AttendanceWidget() {
                 if (status.punchedIn && status.record) {
                     setPunchedIn(true)
                     setPunchRecord(status.record)
-                    setElapsed(Math.floor((Date.now() - new Date(status.record.punchIn).getTime()) / 1000))
+                    setElapsed(status.elapsedSeconds ?? 0)
                 }
                 
                 if (history && Array.isArray(history.records)) {

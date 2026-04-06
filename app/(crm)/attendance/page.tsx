@@ -73,8 +73,7 @@ export default function AttendancePage() {
             if (status.punchedIn && status.record) {
                 setPunchedIn(true)
                 setCurrentRecord(status.record)
-                const start = new Date(status.record.punchIn).getTime()
-                setElapsed(Math.floor((Date.now() - start) / 1000))
+                setElapsed(status.elapsedSeconds ?? 0)
             }
             setRecentRecords(log.records || [])
             setTodayMinutes(log.totalMinutes || 0)
@@ -83,24 +82,17 @@ export default function AttendancePage() {
         }).catch(() => setLoading(false))
     }, [])
 
-    // Running timer - re-calculate from punchIn on every tick with timezone safety
+    // Running timer - simply increments elapsed by 1 each second (no timezone math)
     useEffect(() => {
-        if (punchedIn && currentRecord) {
-            // Ensure we parse the string correctly
-            const punchInStr = currentRecord.punchIn
-            const start = new Date(punchInStr).getTime()
-            
+        if (punchedIn) {
             timerRef.current = setInterval(() => {
-                const now = Date.now()
-                // If start is in the future compared to now, show 0 instead of negative
-                const diffSeconds = Math.max(0, Math.floor((now - start) / 1000))
-                setElapsed(diffSeconds)
+                setElapsed(e => e + 1)
             }, 1000)
         } else {
             if (timerRef.current) clearInterval(timerRef.current)
         }
         return () => { if (timerRef.current) clearInterval(timerRef.current) }
-    }, [punchedIn, currentRecord])
+    }, [punchedIn])
 
 
 

@@ -15,5 +15,9 @@ export async function GET() {
         orderBy: { punchIn: 'desc' },
     })
 
-    return NextResponse.json({ punchedIn: !!openRecord, record: openRecord })
+    const elapsedSeconds = openRecord
+        ? Math.max(0, Math.floor((Date.now() - new Date(openRecord.punchIn).getTime()) / 1000))
+        : 0
+
+    return NextResponse.json({ punchedIn: !!openRecord, record: openRecord, elapsedSeconds })
 }
