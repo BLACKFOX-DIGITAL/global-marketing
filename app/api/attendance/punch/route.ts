@@ -29,9 +29,10 @@ export async function POST() {
             // Return information about the main session we closed
             return { action: 'punch_out', recordsClosed: openRecords.length, record: updatedRecords[0] }
         } else {
-            // Start a new session
+            // Start a new session — explicitly pass punchIn so Node.js UTC is used,
+            // not SQLite's CURRENT_TIMESTAMP which may use server local time
             const record = await tx.attendanceRecord.create({
-                data: { userId: user.userId },
+                data: { userId: user.userId, punchIn: new Date() },
             })
             return { action: 'punch_in', record }
         }
