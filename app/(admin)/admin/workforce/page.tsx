@@ -10,7 +10,7 @@ import {
     X,
     UserX
 } from 'lucide-react'
-import { format, differenceInHours, isWeekend, addDays } from 'date-fns'
+import { format, parseISO, differenceInHours, isWeekend, addDays } from 'date-fns'
 
 // Ensures timestamps without 'Z' are parsed as UTC, not local time
 function toUTC(str: string): Date {
