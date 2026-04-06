@@ -15,6 +15,11 @@ const PERIODS = [
     { key: 'custom', label: 'Custom Range', target: 0 },
 ]
 
+// Ensures timestamps without 'Z' are parsed as UTC, not local time
+function toUTC(str: string): Date {
+    return new Date(str.endsWith('Z') ? str : str + 'Z')
+}
+
 function formatMinutes(mins: number) {
     const h = Math.floor(Math.abs(mins) / 60)
     const m = Math.floor(Math.abs(mins) % 60)
@@ -51,7 +56,7 @@ export default function AttendanceLogPage() {
                 setTotalPages(d.totalPages)
                 setTotalMinutes(d.totalMinutes)
                 if (d.records.length > 0) {
-                    const firstDay = format(parseISO(d.records[0].punchIn), 'yyyy-MM-dd')
+                    const firstDay = format(toUTC(d.records[0].punchIn), 'yyyy-MM-dd')
                     setExpandedDays({ [firstDay]: true })
                 }
             } else {
@@ -80,7 +85,7 @@ export default function AttendanceLogPage() {
     const groupedRecords = useMemo(() => {
         const groups: Record<string, AttendanceRecord[]> = {}
         records.forEach(rec => {
-            const day = format(parseISO(rec.punchIn), 'yyyy-MM-dd')
+            const day = format(toUTC(rec.punchIn), 'yyyy-MM-dd')
             if (!groups[day]) groups[day] = []
             groups[day].push(rec)
         })
@@ -91,7 +96,7 @@ export default function AttendanceLogPage() {
     const correctedTotalMinutes = useMemo(() => {
         const activeExtra = records
             .filter(r => r.punchOut === null)
-            .reduce((sum, r) => sum + Math.round((Date.now() - new Date(r.punchIn).getTime()) / 60000), 0)
+            .reduce((sum, r) => sum + Math.round((Date.now() - toUTC(r.punchIn).getTime()) / 60000), 0)
         return totalMinutes + activeExtra
     // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [records, totalMinutes, tick])
@@ -205,14 +210,14 @@ export default function AttendanceLogPage() {
                             const isToday = format(new Date(), 'yyyy-MM-dd') === day
                             const dayTotalMinutes = dayRecords.reduce((sum, r) => {
                                 if (r.duration !== null) return sum + r.duration
-                                return sum + Math.round((Date.now() - new Date(r.punchIn).getTime()) / 60000)
+                                return sum + Math.round((Date.now() - toUTC(r.punchIn).getTime()) / 60000)
                             }, 0)
                             const firstIn = dayRecords[dayRecords.length - 1].punchIn // items are ordered desc
 
                             const isExpanded = expandedDays[day]
 
                             // Check for missed punches (an active punch over 16h old)
-                            const hasAnomaly = dayRecords.some(r => !r.punchOut && differenceInHours(new Date(), parseISO(r.punchIn)) > 16)
+                            const hasAnomaly = dayRecords.some(r => !r.punchOut && differenceInHours(new Date(), toUTC(r.punchIn)) > 16)
 
                             return (
                                 <div key={day} className="card" style={{ padding: 0, overflow: 'hidden' }}>
@@ -238,7 +243,7 @@ export default function AttendanceLogPage() {
                                                     {hasAnomaly && <span style={{ color: '#ef4444', display: 'flex', alignItems: 'center', gap: 4, fontSize: 12 }}><AlertCircle size={14} /> Missing punch-out</span>}
                                                 </div>
                                                 <div style={{ fontSize: 13, color: 'var(--text-muted)', marginTop: 4 }}>
-                                                    {dayRecords.length} session{dayRecords.length > 1 ? 's' : ''} • First In: {format(parseISO(firstIn), 'hh:mm a')}
+                                                    {dayRecords.length} session{dayRecords.length > 1 ? 's' : ''} • First In: {format(toUTC(firstIn), 'hh:mm a')}
                                                 </div>
                                             </div>
                                         </div>
@@ -266,10 +271,10 @@ export default function AttendanceLogPage() {
                                                 <tbody>
                                                     {dayRecords.map((rec) => (
                                                         <tr key={rec.id}>
-                                                            <td style={{ paddingLeft: 80, fontSize: 13, color: 'var(--text-secondary)' }}>{format(parseISO(rec.punchIn), 'hh:mm a')}</td>
+                                                            <td style={{ paddingLeft: 80, fontSize: 13, color: 'var(--text-secondary)' }}>{format(toUTC(rec.punchIn), 'hh:mm a')}</td>
                                                             <td style={{ fontSize: 13, color: 'var(--text-secondary)' }}>
-                                                                {rec.punchOut ? format(parseISO(rec.punchOut), 'hh:mm a') : (
-                                                                    <span style={{ color: differenceInHours(new Date(), parseISO(rec.punchIn)) > 16 ? '#ef4444' : 'inherit' }}>—</span>
+                                                                {rec.punchOut ? format(toUTC(rec.punchOut), 'hh:mm a') : (
+                                                                    <span style={{ color: differenceInHours(new Date(), toUTC(rec.punchIn)) > 16 ? '#ef4444' : 'inherit' }}>—</span>
                                                                 )}
                                                             </td>
                                                             <td style={{ fontSize: 13, fontWeight: 600 }}>{rec.duration ? formatMinutes(rec.duration) : '—'}</td>

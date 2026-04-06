@@ -171,7 +171,7 @@ export function AttendanceWidget() {
                             <div key={rec.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '6px 10px', background: 'rgba(0,0,0,0.1)', borderRadius: 8, fontSize: 11 }}>
                                 <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                                     <Clock size={10} color="var(--text-muted)" />
-                                    <span style={{ fontWeight: 600 }}>{format(new Date(rec.punchIn), 'MMM d')}</span>
+                                    <span style={{ fontWeight: 600 }}>{format(new Date(rec.punchIn.endsWith('Z') ? rec.punchIn : rec.punchIn + 'Z'), 'MMM d')}</span>
                                 </div>
                                 <div style={{ fontWeight: 700, color: 'var(--text-secondary)' }}>
                                     {rec.duration ? `${Math.floor(rec.duration / 60)}h ${rec.duration % 60}m` : '—'}

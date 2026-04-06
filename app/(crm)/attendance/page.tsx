@@ -8,6 +8,11 @@ interface AttendanceRecord {
     id: string; punchIn: string; punchOut: string | null; duration: number | null
 }
 
+// Ensures DB timestamps (which may lack 'Z') are always parsed as UTC
+function toUTC(str: string): Date {
+    return new Date(str.endsWith('Z') ? str : str + 'Z')
+}
+
 function formatDuration(seconds: number) {
     const absSeconds = Math.abs(seconds)
     const h = Math.floor(absSeconds / 3600)
@@ -213,7 +218,7 @@ export default function AttendancePage() {
 
                         {punchedIn && currentRecord && (
                             <div style={{ marginTop: 16, fontSize: 12, color: 'var(--text-muted)' }}>
-                                Clocked in at {format(new Date(currentRecord.punchIn), 'hh:mm a')}
+                                Clocked in at {format(toUTC(currentRecord.punchIn), 'hh:mm a')}
                             </div>
                         )}
                     </div>
@@ -256,8 +261,8 @@ export default function AttendancePage() {
                                 <div key={rec.id} style={{ padding: '10px 18px', borderBottom: '1px solid var(--border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                                     <div>
                                         <div style={{ fontSize: 13, fontWeight: 500 }}>
-                                            {format(new Date(rec.punchIn), 'hh:mm a')}
-                                            {rec.punchOut && <span style={{ color: 'var(--text-muted)' }}> → {format(new Date(rec.punchOut), 'hh:mm a')}</span>}
+                                            {format(toUTC(rec.punchIn), 'hh:mm a')}
+                                            {rec.punchOut && <span style={{ color: 'var(--text-muted)' }}> → {format(toUTC(rec.punchOut), 'hh:mm a')}</span>}
                                         </div>
                                     </div>
                                     <div style={{ fontSize: 12, fontWeight: 600, color: rec.punchOut ? '#10b981' : '#f59e0b' }}>

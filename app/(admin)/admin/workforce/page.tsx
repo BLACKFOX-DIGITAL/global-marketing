@@ -10,7 +10,12 @@ import {
     X,
     UserX
 } from 'lucide-react'
-import { format, parseISO, differenceInHours, isWeekend, addDays } from 'date-fns'
+import { format, differenceInHours, isWeekend, addDays } from 'date-fns'
+
+// Ensures timestamps without 'Z' are parsed as UTC, not local time
+function toUTC(str: string): Date {
+    return new Date(str.endsWith('Z') ? str : str + 'Z')
+}
 
 interface User { id: string; name: string; email: string; role: string }
 interface AttendanceRecord { id: string; punchIn: string; punchOut: string | null; duration: number | null; notes: string | null; user: User }
@@ -137,7 +142,7 @@ export default function WorkforceDashboard() {
     )
     const absentees = allUsers.filter(u => !punchedInIds.has(u.id) && !onLeaveIds.has(u.id))
 
-    const overdueCount = attendanceRecords.filter(r => !r.punchOut && differenceInHours(new Date(), parseISO(r.punchIn)) > 16).length
+    const overdueCount = attendanceRecords.filter(r => !r.punchOut && differenceInHours(new Date(), toUTC(r.punchIn)) > 16).length
     const totalMinutes = attendanceRecords.reduce((acc, r) => acc + (r.duration || 0), 0)
     const avgHours = attendanceRecords.length > 0 ? (totalMinutes / 60 / attendanceRecords.length).toFixed(1) : '0.0'
     const pendingLeaveCount = leaveRequests.filter(r => r.status === 'Pending').length
@@ -242,7 +247,7 @@ export default function WorkforceDashboard() {
                                     <tr><td colSpan={6} style={{ padding: 60, textAlign: 'center', color: '#475569', fontWeight: 800, fontSize: 12 }}>No records for this date</td></tr>
                                 ) : (
                                     attendanceRecords.map(r => {
-                                        const isOverdue = !r.punchOut && differenceInHours(new Date(), parseISO(r.punchIn)) > 16
+                                        const isOverdue = !r.punchOut && differenceInHours(new Date(), toUTC(r.punchIn)) > 16
                                         return (
                                             <tr key={r.id} style={{ borderBottom: '1px solid var(--border)', transition: 'all 0.2s' }}>
                                                 <td style={{ padding: '6px 20px', verticalAlign: 'middle' }}>
@@ -254,10 +259,10 @@ export default function WorkforceDashboard() {
                                                         </div>
                                                     </div>
                                                 </td>
-                                                <td style={{ padding: '6px 20px', verticalAlign: 'middle', fontSize: 12, color: '#94a3b8', fontWeight: 700 }}>{format(parseISO(r.punchIn), 'hh:mm a')}</td>
+                                                <td style={{ padding: '6px 20px', verticalAlign: 'middle', fontSize: 12, color: '#94a3b8', fontWeight: 700 }}>{format(toUTC(r.punchIn), 'hh:mm a')}</td>
                                                 <td style={{ padding: '6px 20px', verticalAlign: 'middle' }}>
                                                     <div style={{ fontSize: 10.5, fontWeight: 900, color: r.punchOut ? '#94a3b8' : isOverdue ? '#f43f5e' : '#10b981', display: 'flex', alignItems: 'center', gap: 5 }}>
-                                                        {r.punchOut ? format(parseISO(r.punchOut), 'hh:mm a') : <><div style={{ width: 5, height: 5, borderRadius: '50%', background: isOverdue ? '#f43f5e' : '#10b981', animation: 'pulse 2s infinite' }} />{isOverdue ? 'Overdue' : 'Still Clocked In'}</>}
+                                                        {r.punchOut ? format(toUTC(r.punchOut), 'hh:mm a') : <><div style={{ width: 5, height: 5, borderRadius: '50%', background: isOverdue ? '#f43f5e' : '#10b981', animation: 'pulse 2s infinite' }} />{isOverdue ? 'Overdue' : 'Still Clocked In'}</>}
                                                     </div>
                                                 </td>
                                                 <td style={{ padding: '6px 20px', verticalAlign: 'middle', fontSize: 12, fontWeight: 800, color: '#f1f5f9' }}>{r.duration ? `${Math.floor(r.duration / 60)}h ${r.duration % 60}m` : '—'}</td>
