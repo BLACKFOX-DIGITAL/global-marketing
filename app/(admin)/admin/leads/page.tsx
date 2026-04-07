@@ -2,8 +2,9 @@
 import { useState, useEffect, useCallback, useMemo } from 'react'
 import {
     Users, Search, Upload, X, Target, Database,
-    ChevronLeft, ChevronRight, MoreHorizontal, Filter,
-    Download, UserPlus, Trash2, LayoutGrid, Plus, BarChart3
+    ChevronLeft, ChevronRight, ChevronsUpDown, Filter,
+    Download, UserPlus, Trash2, LayoutGrid, Plus, BarChart3,
+    Check
 } from 'lucide-react'
 import { useRef } from 'react'
 import { format, parseISO } from 'date-fns'
@@ -243,7 +244,7 @@ export default function LeadOperationsHub() {
     const activeFilterCount = [filterCountry, filterStatus, filterOwnerId].filter(Boolean).length
 
     const SortIcon = ({ field }: { field: string }) => {
-        if (sortBy !== field) return <MoreHorizontal size={14} style={{ opacity: 0.3, marginLeft: 8 }} />
+        if (sortBy !== field) return <ChevronsUpDown size={14} style={{ opacity: 0.3, marginLeft: 8 }} />
         return sortOrder === 'asc'
             ? <ChevronLeft size={14} style={{ transform: 'rotate(90deg)', marginLeft: 8 }} />
             : <ChevronRight size={14} style={{ transform: 'rotate(90deg)', marginLeft: 8 }} />
@@ -392,13 +393,14 @@ export default function LeadOperationsHub() {
                             <thead style={{ background: 'rgba(255,255,255,0.02)', borderBottom: '1px solid var(--border)', position: 'sticky', top: 0, zIndex: 10 }}>
                                 <tr style={{ color: 'var(--text-muted)', fontSize: 10, textTransform: 'uppercase', letterSpacing: '1px' }}>
                                     <th style={{ padding: '12px 20px', width: 60, textAlign: 'center' }}>
-                                        <input type="checkbox" checked={leads.length > 0 && selectedIds.size === leads.length} onChange={toggleSelectAll} style={{ width: 15, height: 15, cursor: 'pointer', accentColor: 'var(--accent-primary)' }} />
+                                        <div onClick={toggleSelectAll} style={{ margin: '0 auto', width: 16, height: 16, borderRadius: 4, background: leads.length > 0 && selectedIds.size === leads.length ? 'var(--accent-primary)' : 'rgba(255,255,255,0.05)', border: leads.length > 0 && selectedIds.size === leads.length ? '1px solid var(--accent-primary)' : '1px solid rgba(255,255,255,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', transition: 'all 0.15s' }}>
+                                            {leads.length > 0 && selectedIds.size === leads.length && <Check size={12} strokeWidth={3} color="#fff" />}
+                                        </div>
                                     </th>
-                                    <th onClick={() => handleSort('company')} style={{ padding: '12px 16px', fontWeight: 800, cursor: 'pointer', width: 320 }}><div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>Company / Lead <SortIcon field="company" /></div></th>
+                                    <th onClick={() => handleSort('company')} style={{ padding: '12px 16px', fontWeight: 800, cursor: 'pointer' }}><div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>Company / Lead <SortIcon field="company" /></div></th>
                                     <th onClick={() => handleSort('status')} style={{ padding: '12px 16px', fontWeight: 800, cursor: 'pointer', width: 150 }}><div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>Status <SortIcon field="status" /></div></th>
                                     <th onClick={() => handleSort('owner')} style={{ padding: '12px 16px', fontWeight: 800, cursor: 'pointer', width: 220 }}><div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>Owner <SortIcon field="owner" /></div></th>
-                                    <th onClick={() => handleSort('updatedAt')} style={{ padding: '12px 16px', fontWeight: 800, cursor: 'pointer', width: 140 }}><div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>Last Activity <SortIcon field="updatedAt" /></div></th>
-                                    <th style={{ padding: '12px 16px' }}></th>
+                                    <th onClick={() => handleSort('updatedAt')} style={{ padding: '12px 16px', fontWeight: 800, cursor: 'pointer', width: 160 }}><div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>Last Activity <SortIcon field="updatedAt" /></div></th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -412,9 +414,11 @@ export default function LeadOperationsHub() {
                                     return (
                                         <tr key={l.id} className="lead-row" style={{ background: isSelected ? 'rgba(99,102,241,0.05)' : 'transparent', borderBottom: '1px solid var(--border)', transition: 'all 0.2s' }}>
                                             <td style={{ padding: '8px 20px', textAlign: 'center', verticalAlign: 'middle', width: 60 }}>
-                                                <input type="checkbox" checked={isSelected} onChange={() => toggleSelect(l.id)} style={{ width: 14, height: 14, cursor: 'pointer', accentColor: 'var(--accent-primary)' }} />
+                                                <div onClick={() => toggleSelect(l.id)} style={{ margin: '0 auto', width: 16, height: 16, borderRadius: 4, background: isSelected ? 'var(--accent-primary)' : 'rgba(255,255,255,0.05)', border: isSelected ? '1px solid var(--accent-primary)' : '1px solid rgba(255,255,255,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', transition: 'all 0.15s' }}>
+                                                    {isSelected && <Check size={12} strokeWidth={3} color="#fff" />}
+                                                </div>
                                             </td>
-                                            <td style={{ padding: '8px 16px', verticalAlign: 'middle', width: 320 }}>
+                                            <td style={{ padding: '8px 16px', verticalAlign: 'middle' }}>
                                                 <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                                                     <div style={{ width: 28, height: 28, borderRadius: 8, background: 'linear-gradient(135deg, #1e293b, #0f172a)', border: '1px solid rgba(255,255,255,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 10, fontWeight: 900, color: '#f8fafc', flexShrink: 0 }}>
                                                         {(l.company || 'L')[0].toUpperCase()}
@@ -433,10 +437,9 @@ export default function LeadOperationsHub() {
                                                     </div>
                                                 ) : <span style={{ color: '#475569', fontSize: 11, fontWeight: 700 }}>Unassigned</span>}
                                             </td>
-                                            <td style={{ padding: '8px 16px', verticalAlign: 'middle', width: 140 }}>
+                                            <td style={{ padding: '8px 16px', verticalAlign: 'middle', width: 160 }}>
                                                 <div style={{ fontSize: 11, color: '#64748b', fontWeight: 700 }}>{format(parseISO(l.updatedAt), 'MMM dd, yyyy')}</div>
                                             </td>
-                                            <td style={{ padding: '8px 16px' }}></td>
                                         </tr>
                                     )
                                 })}
