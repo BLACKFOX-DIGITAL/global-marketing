@@ -28,7 +28,8 @@ export async function GET() {
         name: l.name,
         company: l.company,
         deletedAt: l.deletedAt,
-        deletedBy: l.deletedBy, // Note: You might want to fetch user names if needed
+        deletedBy: l.deletedBy,
+        ownerName: l.owner?.name || null,
         status: l.status
     }))
 
@@ -39,6 +40,7 @@ export async function GET() {
         company: o.company,
         deletedAt: o.deletedAt,
         deletedBy: o.deletedBy,
+        ownerName: o.owner?.name || null,
         status: o.stage
     }))
 

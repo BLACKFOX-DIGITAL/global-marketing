@@ -1,6 +1,6 @@
 'use client'
 import { useState, useCallback, useEffect } from 'react'
-import { AlertTriangle, RotateCcw, Trash2 } from 'lucide-react'
+import { AlertTriangle, RotateCcw, Trash2, Eye } from 'lucide-react'
 import { format, parseISO } from 'date-fns'
 
 interface DeletedLead {
@@ -10,6 +10,7 @@ interface DeletedLead {
     company: string | null
     deletedAt: string
     deletedBy: string | null
+    ownerName: string | null
     status: string
 }
 
@@ -71,18 +72,19 @@ export default function DeletionReview() {
                 <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', minWidth: 800 }}>
                     <thead style={{ background: 'rgba(255,255,255,0.02)', borderBottom: '1px solid var(--border)' }}>
                         <tr style={{ color: 'var(--text-muted)', fontSize: 10, textTransform: 'uppercase', letterSpacing: '1px' }}>
-                            <th style={{ padding: '12px 20px', fontWeight: 800, width: 320 }}>Name</th>
+                            <th style={{ padding: '12px 20px', fontWeight: 800, width: 250 }}>Name</th>
                             <th style={{ padding: '12px 20px', fontWeight: 800, width: 120 }}>Type</th>
-                            <th style={{ padding: '12px 20px', fontWeight: 800, width: 180 }}>Company</th>
+                            <th style={{ padding: '12px 20px', fontWeight: 800, width: 150 }}>Company</th>
+                            <th style={{ padding: '12px 20px', fontWeight: 800, width: 150 }}>Owner</th>
                             <th style={{ padding: '12px 20px', fontWeight: 800, width: 180 }}>Deleted At</th>
                             <th style={{ padding: '12px 20px', fontWeight: 800 }}>Actions</th>
                         </tr>
                     </thead>
                     <tbody>
                         {loading ? (
-                            <tr><td colSpan={4} style={{ textAlign: 'center', padding: 80 }}><div className="spinner" /></td></tr>
+                            <tr><td colSpan={6} style={{ textAlign: 'center', padding: 80 }}><div className="spinner" /></td></tr>
                         ) : deletedLeads.length === 0 ? (
-                            <tr><td colSpan={5} style={{ textAlign: 'center', padding: 80, color: '#475569', fontSize: 12, fontWeight: 700 }}>No items pending deletion</td></tr>
+                            <tr><td colSpan={6} style={{ textAlign: 'center', padding: 80, color: '#475569', fontSize: 12, fontWeight: 700 }}>No items pending deletion</td></tr>
                         ) : (
                             deletedLeads.map((lead) => (
                                 <tr key={lead.id} style={{ borderBottom: '1px solid var(--border)', transition: 'all 0.2s', background: 'transparent' }}>
@@ -100,8 +102,11 @@ export default function DeletionReview() {
                                             {lead.type}
                                         </div>
                                     </td>
-                                    <td style={{ padding: '8px 20px', verticalAlign: 'middle', width: 180 }}>
+                                    <td style={{ padding: '8px 20px', verticalAlign: 'middle', width: 150 }}>
                                         <div style={{ fontWeight: 700, fontSize: 12, color: 'var(--text-secondary)' }}>{lead.company || '—'}</div>
+                                    </td>
+                                    <td style={{ padding: '8px 20px', verticalAlign: 'middle', width: 150 }}>
+                                        <div style={{ fontWeight: 700, fontSize: 12, color: 'var(--text-secondary)' }}>{lead.ownerName || 'Unassigned'}</div>
                                     </td>
                                     <td style={{ padding: '8px 20px', verticalAlign: 'middle', width: 180 }}>
                                         <div style={{ fontSize: 11, fontWeight: 800, color: '#f1f5f9' }}>{format(parseISO(lead.deletedAt), 'MMM dd, HH:mm')}</div>
@@ -109,6 +114,14 @@ export default function DeletionReview() {
                                     </td>
                                     <td style={{ padding: '8px 20px', verticalAlign: 'middle' }}>
                                         <div style={{ display: 'flex', gap: 8 }}>
+                                            <a
+                                                href={`/admin/${lead.type === 'Lead' ? 'leads' : 'opportunities'}/${lead.id}`}
+                                                target="_blank"
+                                                rel="noreferrer"
+                                                style={{ padding: '4px 12px', fontSize: 10, borderRadius: 6, border: '1px solid rgba(56, 189, 248, 0.2)', color: '#38bdf8', background: 'rgba(56, 189, 248, 0.05)', fontWeight: 800, display: 'flex', alignItems: 'center', gap: 4, textDecoration: 'none', transition: 'all 0.2s' }}
+                                            >
+                                                <Eye size={11} strokeWidth={2.5} /> View
+                                            </a>
                                             <button
                                                 onClick={() => handleRestore(lead.id)}
                                                 disabled={processingId === lead.id}
