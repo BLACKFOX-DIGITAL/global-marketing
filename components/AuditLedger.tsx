@@ -62,6 +62,14 @@ function getActionColor(action: string) {
     return '#64748b'
 }
 
+function formatActionLabel(action: string) {
+    if (!action) return '—'
+    return action
+        .split('_')
+        .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+        .join(' ')
+}
+
 export default function AuditLedger() {
     const [loading, setLoading] = useState(true)
     const [logs, setLogs] = useState<AuditLog[]>([])
@@ -143,7 +151,7 @@ export default function AuditLedger() {
                 />
                 <KpiCard
                     label="Top Action"
-                    value={stats?.topAction ?? '—'}
+                    value={stats?.topAction ? formatActionLabel(stats.topAction) : '—'}
                     sub="most frequent event"
                     icon={BarChart3}
                     color="#f59e0b"
@@ -210,7 +218,7 @@ export default function AuditLedger() {
                         style={{ background: 'transparent', border: 'none', color: '#f1f5f9', fontSize: 11, fontWeight: 700, outline: 'none', cursor: 'pointer', minWidth: 130 }}>
                         <option value="" style={{ background: '#0f172a' }}>All Actions</option>
                         {actionTypes.map(at => (
-                            <option key={at.action} value={at.action} style={{ background: '#0f172a' }}>{at.action} ({at._count})</option>
+                            <option key={at.action} value={at.action} style={{ background: '#0f172a' }}>{formatActionLabel(at.action)} ({at._count})</option>
                         ))}
                     </select>
                 </div>
@@ -293,7 +301,7 @@ export default function AuditLedger() {
                                         </td>
                                         <td style={{ padding: '10px 20px', verticalAlign: 'middle' }}>
                                             <span style={{ fontSize: 9, fontWeight: 900, padding: '3px 10px', borderRadius: 6, background: `${col}12`, color: col, border: `1px solid ${col}30`, display: 'inline-block', textTransform: 'uppercase', letterSpacing: '0.6px' }}>
-                                                {log.action}
+                                                {formatActionLabel(log.action)}
                                             </span>
                                         </td>
                                         <td style={{ padding: '10px 20px', verticalAlign: 'middle', fontSize: 12, color: '#94a3b8', fontWeight: 600, lineHeight: 1.5, maxWidth: 350 }}>
