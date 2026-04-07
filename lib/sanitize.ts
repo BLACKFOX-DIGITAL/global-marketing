@@ -19,18 +19,27 @@ export function sanitize(input: unknown): string {
 }
 
 /**
- * Normalize a website URL to a consistent format for deduplication.
- * Strips protocol (http/https), www., and trailing slashes, then lowercases.
- * Example: "https://www.Acme.com/" → "acme.com"
+ * Normalize a website URL to just the bare domain for deduplication.
+ * Strips protocol, www., paths, query strings, and hash fragments.
+ * Example: "https://www.Acme.com/about?ref=1" → "acme.com"
  */
 export function normalizeWebsite(url: unknown): string {
     if (typeof url !== 'string') return ''
-    return url
-        .toLowerCase()
-        .replace(/^https?:\/\//, '')
-        .replace(/^www\./, '')
-        .replace(/\/$/, '')
-        .trim()
+    const s = url.trim().toLowerCase()
+    if (!s) return ''
+    const withProto = s.startsWith('http://') || s.startsWith('https://') ? s : 'https://' + s
+    try {
+        const parsed = new URL(withProto)
+        return parsed.hostname.replace(/^www\./, '')
+    } catch {
+        // Fallback: strip manually
+        return s
+            .replace(/^https?:\/\//, '')
+            .replace(/^www\./, '')
+            .split('/')[0]
+            .split('?')[0]
+            .split('#')[0]
+    }
 }
 
 /**

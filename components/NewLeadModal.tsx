@@ -41,7 +41,16 @@ export default function NewLeadModal({ onSuccess, onClose }: { onSuccess: () => 
     const [showIndustryDropdown, setShowIndustryDropdown] = useState(false)
     const [activePositionIdx, setActivePositionIdx] = useState<number | null>(null)
 
-    const cleanWebsite = (url: string) => url.toLowerCase().replace(/^https?:\/\//, '').replace(/^www\./, '').replace(/\/$/, '')
+    const cleanWebsite = (url: string) => {
+        const s = url.trim().toLowerCase()
+        if (!s) return ''
+        const withProto = s.startsWith('http://') || s.startsWith('https://') ? s : 'https://' + s
+        try {
+            return new URL(withProto).hostname.replace(/^www\./, '')
+        } catch {
+            return s.replace(/^https?:\/\//, '').replace(/^www\./, '').split('/')[0].split('?')[0].split('#')[0]
+        }
+    }
 
     useEffect(() => {
         const timeout = setTimeout(() => {
