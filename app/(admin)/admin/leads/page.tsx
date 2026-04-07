@@ -288,7 +288,7 @@ export default function LeadOperationsHub() {
             </div>
 
             {/* Status Breakdown Chart */}
-            {activeTab === 'leads' && chartData.length > 0 && (
+            {chartData.length > 0 && (
                 <div style={{ background: 'rgba(15,23,42,0.45)', backdropFilter: 'blur(40px)', border: '1px solid rgba(255,255,255,0.06)', borderRadius: 18, padding: '16px 20px', marginBottom: 18 }}>
                     <h3 style={{ fontSize: 12, fontWeight: 900, margin: '0 0 16px 0', color: '#64748b', textTransform: 'uppercase', letterSpacing: '1px', display: 'flex', alignItems: 'center', gap: 6 }}>
                         <BarChart3 size={13} /> Lead Status Breakdown
@@ -326,17 +326,20 @@ export default function LeadOperationsHub() {
             </div>
 
             {activeTab === 'leads' && (
-                <div style={{ display: 'flex', gap: 12, marginBottom: 16, alignItems: 'center' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 8, padding: '7px 12px', flex: 1, maxWidth: 320 }}>
-                        <Search size={16} color="var(--text-muted)" style={{ marginRight: 8 }} />
-                        <input placeholder="Search leads..." value={search} onChange={e => { setSearch(e.target.value); setPage(1) }} style={{ background: 'transparent', border: 'none', color: 'var(--text-primary)', outline: 'none', width: '100%', fontSize: 13 }} />
+                <div style={{ background: 'rgba(15,23,42,0.45)', backdropFilter: 'blur(20px)', border: '1px solid rgba(255,255,255,0.06)', borderRadius: 14, padding: '10px 16px', display: 'flex', gap: 12, alignItems: 'center', flexWrap: 'wrap', marginBottom: 16 }}>
+                    
+                    {/* Search */}
+                    <div style={{ display: 'flex', alignItems: 'center', background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 8, padding: '6px 12px', gap: 8, flex: 1, minWidth: 200, maxWidth: 400 }}>
+                        <Search size={14} color="#475569" />
+                        <input placeholder="Search leads..." value={search} onChange={e => { setSearch(e.target.value); setPage(1) }} style={{ background: 'transparent', border: 'none', color: '#f1f5f9', outline: 'none', width: '100%', fontSize: 12 }} />
                     </div>
 
                     {/* Filter dropdown */}
                     <div style={{ position: 'relative' }} ref={filterRef}>
-                        <button onClick={() => setShowFilters(!showFilters)} style={{ background: activeFilterCount > 0 ? 'var(--accent-glow)' : 'var(--bg-card)', border: activeFilterCount > 0 ? '1px solid var(--accent-primary)' : '1px solid var(--border)', color: activeFilterCount > 0 ? 'var(--accent-primary)' : 'var(--text-primary)', padding: '8px', borderRadius: 8, fontSize: 12, fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', position: 'relative' }}>
-                            <Filter size={16} />
-                            {activeFilterCount > 0 && <span style={{ position: 'absolute', top: -4, right: -4, width: 16, height: 16, background: 'var(--accent-primary)', borderRadius: '50%', border: '2px solid var(--bg-card)', fontSize: 8, fontWeight: 900, color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>{activeFilterCount}</span>}
+                        <button onClick={() => setShowFilters(!showFilters)} style={{ background: activeFilterCount > 0 ? 'rgba(99,102,241,0.1)' : 'rgba(0,0,0,0.3)', border: activeFilterCount > 0 ? '1px solid rgba(99,102,241,0.3)' : '1px solid rgba(255,255,255,0.08)', color: activeFilterCount > 0 ? '#818cf8' : '#e2e8f0', padding: '6px 12px', borderRadius: 8, fontSize: 11, fontWeight: 700, display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer', transition: 'all 0.2s' }}>
+                            <Filter size={12} />
+                            <span style={{ textTransform: 'uppercase', letterSpacing: '0.5px' }}>Filters</span>
+                            {activeFilterCount > 0 && <span style={{ background: '#6366f1', color: '#fff', borderRadius: '50%', width: 16, height: 16, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 9 }}>{activeFilterCount}</span>}
                         </button>
                         {showFilters && (
                             <div style={{ position: 'absolute', top: 'calc(100% + 10px)', left: 0, width: 280, background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 16, padding: 20, zIndex: 50, boxShadow: '0 20px 40px rgba(0,0,0,0.3)', animation: 'slideDown 0.2s ease-out' }}>
@@ -374,9 +377,9 @@ export default function LeadOperationsHub() {
 
                     <div style={{ flex: 1 }} />
 
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                        <span style={{ fontSize: 13, color: 'var(--text-muted)' }}>Show:</span>
-                        <select value={limit} onChange={e => { setLimit(Number(e.target.value)); setPage(1) }} style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 8, padding: '4px 8px', fontSize: 13, color: 'var(--text-primary)', outline: 'none' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, borderLeft: '1px solid rgba(255,255,255,0.06)', paddingLeft: 16, marginLeft: 'auto' }}>
+                        <span style={{ fontSize: 10, color: '#64748b', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.5px' }}>Show:</span>
+                        <select value={limit} onChange={e => { setLimit(Number(e.target.value)); setPage(1) }} style={{ background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 6, padding: '4px 8px', fontSize: 11, fontWeight: 700, color: '#f1f5f9', outline: 'none', cursor: 'pointer' }}>
                             <option value={10}>10</option>
                             <option value={20}>20</option>
                             <option value={50}>50</option>
