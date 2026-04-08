@@ -41,6 +41,14 @@ export default function NewLeadModal({ onSuccess, onClose }: { onSuccess: () => 
     const [showIndustryDropdown, setShowIndustryDropdown] = useState(false)
     const [activePositionIdx, setActivePositionIdx] = useState<number | null>(null)
 
+    const allPhones = [
+        ...form.phones,
+        ...contacts.flatMap(c => c.phones)
+    ].map(p => p.trim()).filter(Boolean);
+    const phoneCounts = allPhones.reduce((acc, p) => { acc[p] = (acc[p] || 0) + 1; return acc; }, {} as Record<string, number>);
+    const isPhoneDup = (p: string) => p.trim() && phoneCounts[p.trim()] > 1;
+    const hasDuplicatePhones = Object.values(phoneCounts).some(count => count > 1);
+
     const cleanWebsite = (url: string) => {
         const s = url.trim().toLowerCase()
         if (!s) return ''
@@ -346,13 +354,16 @@ export default function NewLeadModal({ onSuccess, onClose }: { onSuccess: () => 
                                     </div>
                                     <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
                                         {form.phones.map((phone, idx) => (
-                                            <div key={idx} style={{ display: 'flex', alignItems: 'center', gap: 3 }}>
-                                                <input type="tel" placeholder="+1 (555) 000-0000" value={phone} onChange={e => {
-                                                    const n = [...form.phones]; n[idx] = e.target.value; setForm(f => ({ ...f, phones: n }))
-                                                }} style={{ flex: 1 }} />
-                                                {form.phones.length > 1 && (
-                                                    <button type="button" onClick={() => setForm(f => ({ ...f, phones: f.phones.filter((_, i) => i !== idx) }))} style={{ color: 'var(--text-muted)', background: 'none', border: 'none', cursor: 'pointer', padding: 2 }}><X size={12} /></button>
-                                                )}
+                                            <div key={idx} style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                                                <div style={{ display: 'flex', alignItems: 'center', gap: 3 }}>
+                                                    <input type="tel" placeholder="+1 (555) 000-0000" value={phone} onChange={e => {
+                                                        const n = [...form.phones]; n[idx] = e.target.value; setForm(f => ({ ...f, phones: n }))
+                                                    }} style={{ flex: 1, borderColor: isPhoneDup(phone) ? '#ef4444' : undefined }} />
+                                                    {form.phones.length > 1 && (
+                                                        <button type="button" onClick={() => setForm(f => ({ ...f, phones: f.phones.filter((_, i) => i !== idx) }))} style={{ color: 'var(--text-muted)', background: 'none', border: 'none', cursor: 'pointer', padding: 2 }}><X size={12} /></button>
+                                                    )}
+                                                </div>
+                                                {isPhoneDup(phone) && <div style={{ color: '#ef4444', fontSize: 10, marginLeft: 2 }}>Duplicate number</div>}
                                             </div>
                                         ))}
                                     </div>
@@ -594,13 +605,16 @@ export default function NewLeadModal({ onSuccess, onClose }: { onSuccess: () => 
                                             </div>
                                             <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
                                                 {contact.phones.map((phone, pIdx) => (
-                                                    <div key={pIdx} style={{ display: 'flex', alignItems: 'center', gap: 3 }}>
-                                                        <input type="tel" placeholder="+1 (555) 000-0000" value={phone} onChange={e => {
-                                                            const n = [...contacts]; n[i].phones[pIdx] = e.target.value; setContacts(n)
-                                                        }} style={{ flex: 1 }} />
-                                                        {contact.phones.length > 1 && (
-                                                            <button type="button" onClick={() => { const n = [...contacts]; n[i].phones = n[i].phones.filter((_, idx) => idx !== pIdx); setContacts(n) }} style={{ color: 'var(--text-muted)', background: 'none', border: 'none', cursor: 'pointer', padding: 2 }}><X size={12} /></button>
-                                                        )}
+                                                    <div key={pIdx} style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                                                        <div style={{ display: 'flex', alignItems: 'center', gap: 3 }}>
+                                                            <input type="tel" placeholder="+1 (555) 000-0000" value={phone} onChange={e => {
+                                                                const n = [...contacts]; n[i].phones[pIdx] = e.target.value; setContacts(n)
+                                                            }} style={{ flex: 1, borderColor: isPhoneDup(phone) ? '#ef4444' : undefined }} />
+                                                            {contact.phones.length > 1 && (
+                                                                <button type="button" onClick={() => { const n = [...contacts]; n[i].phones = n[i].phones.filter((_, idx) => idx !== pIdx); setContacts(n) }} style={{ color: 'var(--text-muted)', background: 'none', border: 'none', cursor: 'pointer', padding: 2 }}><X size={12} /></button>
+                                                            )}
+                                                        </div>
+                                                        {isPhoneDup(phone) && <div style={{ color: '#ef4444', fontSize: 10, marginLeft: 2 }}>Duplicate number</div>}
                                                     </div>
                                                 ))}
                                             </div>
@@ -677,7 +691,7 @@ export default function NewLeadModal({ onSuccess, onClose }: { onSuccess: () => 
                         borderTop: '1px solid var(--border)'
                     }}>
                         <button type="button" onClick={onClose} className="btn-secondary">Cancel</button>
-                        <button type="submit" className="btn-primary" disabled={loading} style={{ minWidth: 130 }}>
+                        <button type="submit" className="btn-primary" disabled={loading || hasDuplicatePhones} style={{ minWidth: 130, opacity: (loading || hasDuplicatePhones) ? 0.7 : 1, cursor: hasDuplicatePhones ? 'not-allowed' : 'pointer' }}>
                             {loading ? <div className="spinner" /> : 'Create Lead ✓'}
                         </button>
                     </div>
