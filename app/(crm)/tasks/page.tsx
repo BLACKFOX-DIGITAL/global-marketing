@@ -481,7 +481,7 @@ export default function TasksPage() {
                                             </div>
 
                                             <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexShrink: 0, justifyContent: 'flex-end', width: 260 }}>
-                                                {task.dueDate && (
+                                                {(task.dueDate || isToday(parseISO(task.createdAt))) && (
                                                     <div style={{
                                                         display: 'flex', alignItems: 'center', gap: 7, fontSize: 13,
                                                         color: isOverdue ? '#ef4444' : 'var(--text-secondary)',
@@ -491,8 +491,8 @@ export default function TasksPage() {
                                                         <Calendar size={14} style={{ opacity: 0.6 }} />
                                                         <span style={{ fontVariantNumeric: 'tabular-nums' }}>
                                                             {(() => {
-                                                                if (!mounted) return format(parseISO(task.dueDate), 'MMM d')
-                                                                const d = parseISO(task.dueDate)
+                                                                if (!mounted) return task.dueDate ? format(parseISO(task.dueDate), 'MMM d') : 'Today'
+                                                                const d = task.dueDate ? parseISO(task.dueDate) : parseISO(task.createdAt)
                                                                 if (isToday(d)) return (
                                                                     <span style={{ color: 'var(--accent-primary)', fontWeight: 800, display: 'flex', alignItems: 'center', gap: 5 }}>
                                                                         <span style={{ width: 5, height: 5, borderRadius: '50%', background: 'var(--accent-primary)', boxShadow: '0 0 8px var(--accent-primary)' }} />
