@@ -491,7 +491,12 @@ export default function TasksPage() {
                                                         <Calendar size={14} style={{ opacity: 0.6 }} />
                                                         <span style={{ fontVariantNumeric: 'tabular-nums' }}>
                                                             {!mounted ? format(parseISO(task.dueDate), 'MMM d') : (
-                                                                isToday(parseISO(task.dueDate)) ? 'Today' :
+                                                                isToday(parseISO(task.dueDate)) ? (
+                                                                    <span style={{ color: 'var(--accent-primary)', fontWeight: 800, display: 'flex', alignItems: 'center', gap: 5 }}>
+                                                                        <span style={{ width: 5, height: 5, borderRadius: '50%', background: 'var(--accent-primary)', boxShadow: '0 0 8px var(--accent-primary)' }} />
+                                                                        Today
+                                                                    </span>
+                                                                ) :
                                                                     isTomorrow(parseISO(task.dueDate)) ? 'Tomorrow' :
                                                                         isPast(parseISO(task.dueDate)) && !task.completed ? formatDistanceToNow(parseISO(task.dueDate)) + ' ago' :
                                                                             format(parseISO(task.dueDate), 'MMM d')
