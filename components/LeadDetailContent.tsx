@@ -99,6 +99,19 @@ const MAIL_OUTCOME_OPTIONS = [
 
 const OUTCOME_STATUSES = ['Lost', 'Converted']
 
+const parseSocialLinks = (socials: string | null): string[] => {
+    if (!socials) return [];
+    try {
+        const parsed = JSON.parse(socials);
+        if (Array.isArray(parsed)) {
+            return parsed.map((s: any) => typeof s === 'string' ? s : s.url || '').filter(Boolean);
+        }
+    } catch {
+        // Not a JSON array, fallback to comma separated parsing
+    }
+    return socials.split(',').filter(Boolean);
+}
+
 // Extract only the scalar fields safe to send to the PUT endpoint.
 // Sending the full lead object (with contacts[], tasks[], activityLogs[] etc.) causes the
 // API to delete + recreate all contacts on every save, which is destructive.
@@ -828,7 +841,7 @@ export default function LeadDetailContent({ id, linkPrefix = '' }: { id: string,
                                     <div style={{ fontSize: 9, color: 'var(--text-muted)', fontWeight: 700, textTransform: 'uppercase' }}>Socials</div>
                                     {lead.socials ? (
                                         <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-                                            {lead.socials.split(',').map((social) => (
+                                            {parseSocialLinks(lead.socials).map((social) => (
                                                 <div key={social.trim()} style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
                                                     <Link href={social.trim().startsWith('http') ? social.trim() : `https://${social.trim()}`} target="_blank" style={{ color: 'var(--accent-primary)', textDecoration: 'none', fontSize: 12, fontWeight: 500, display: 'block', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                                                         {social.trim().replace(/^https?:\/\//, '').replace(/^www\./, '')}
@@ -1060,7 +1073,7 @@ export default function LeadDetailContent({ id, linkPrefix = '' }: { id: string,
                                     )}
                                     {c.socials && (
                                         <div style={{ display: 'flex', flexDirection: 'column', gap: 2, marginTop: 4 }}>
-                                            {c.socials.split(',').map((social) => (
+                                            {parseSocialLinks(c.socials).map((social) => (
                                                 <div key={social.trim()} style={{ fontSize: 11, color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: 4 }}>
                                                     <Globe size={10} />
                                                     <Link href={social.trim().startsWith('http') ? social.trim() : `https://${social.trim()}`} target="_blank" style={{ color: 'var(--accent-primary)', textDecoration: 'none', cursor: 'pointer', display: 'block', overflow: 'hidden', textOverflow: 'ellipsis' }}>
