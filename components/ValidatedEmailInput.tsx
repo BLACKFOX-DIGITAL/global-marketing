@@ -13,9 +13,10 @@ interface ValidatedEmailInputProps {
     onChange: (value: string) => void
     placeholder?: string
     style?: React.CSSProperties
+    isDuplicate?: boolean
 }
 
-export default function ValidatedEmailInput({ value, onChange, placeholder = 'email@example.com', style }: ValidatedEmailInputProps) {
+export default function ValidatedEmailInput({ value, onChange, placeholder = 'email@example.com', style, isDuplicate }: ValidatedEmailInputProps) {
     const [state, setState] = useState<ValidationState>('idle')
     const [reason, setReason] = useState('')
     const abortRef = useRef<AbortController | null>(null)
@@ -111,9 +112,10 @@ export default function ValidatedEmailInput({ value, onChange, placeholder = 'em
         onChange(newVal)
     }, [onChange])
 
-    const borderColor = state === 'invalid' ? 'rgba(239,68,68,0.4)' :
-        state === 'valid' ? 'rgba(34,197,94,0.3)' :
-            state === 'unknown' ? 'rgba(234,179,8,0.3)' : undefined
+    const borderColor = isDuplicate ? 'rgba(239, 68, 68, 0.8)' :
+        state === 'invalid' ? 'rgba(239, 68, 68, 0.4)' :
+            state === 'valid' ? 'rgba(34, 197, 94, 0.3)' :
+                state === 'unknown' ? 'rgba(234, 179, 8, 0.3)' : undefined
 
     const iconBg = state === 'valid' ? 'rgba(34,197,94,0.15)' :
         state === 'unknown' ? 'rgba(234,179,8,0.15)' :

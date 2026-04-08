@@ -46,8 +46,16 @@ export default function NewLeadModal({ onSuccess, onClose }: { onSuccess: () => 
         ...contacts.flatMap(c => c.phones)
     ].map(p => p.trim()).filter(Boolean);
     const phoneCounts = allPhones.reduce((acc, p) => { acc[p] = (acc[p] || 0) + 1; return acc; }, {} as Record<string, number>);
-    const isPhoneDup = (p: string) => p.trim() && phoneCounts[p.trim()] > 1;
+    const isPhoneDup = (p: string) => !!(p.trim() && phoneCounts[p.trim()] > 1);
     const hasDuplicatePhones = Object.values(phoneCounts).some(count => count > 1);
+
+    const allEmails = [
+        ...form.emails,
+        ...contacts.flatMap(c => c.emails)
+    ].map(e => e.trim().toLowerCase()).filter(Boolean);
+    const emailCounts = allEmails.reduce((acc, e) => { acc[e] = (acc[e] || 0) + 1; return acc; }, {} as Record<string, number>);
+    const isEmailDup = (e: string) => !!(e.trim() && emailCounts[e.trim().toLowerCase()] > 1);
+    const hasDuplicateEmails = Object.values(emailCounts).some(count => count > 1);
 
     const cleanWebsite = (url: string) => {
         const s = url.trim().toLowerCase()
@@ -332,17 +340,21 @@ export default function NewLeadModal({ onSuccess, onClose }: { onSuccess: () => 
                                     </div>
                                     <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
                                         {form.emails.map((email, idx) => (
-                                            <div key={idx} style={{ display: 'flex', alignItems: 'center', gap: 3 }}>
-                                                <ValidatedEmailInput
-                                                    placeholder="info@acme.com"
-                                                    value={email}
-                                                    onChange={val => {
-                                                        const n = [...form.emails]; n[idx] = val; setForm(f => ({ ...f, emails: n }))
-                                                    }}
-                                                />
-                                                {form.emails.length > 1 && (
-                                                    <button type="button" onClick={() => setForm(f => ({ ...f, emails: f.emails.filter((_, i) => i !== idx) }))} style={{ color: 'var(--text-muted)', background: 'none', border: 'none', cursor: 'pointer', padding: 2 }}><X size={12} /></button>
-                                                )}
+                                            <div key={idx} style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                                                <div style={{ display: 'flex', alignItems: 'center', gap: 3 }}>
+                                                    <ValidatedEmailInput
+                                                        placeholder="info@acme.com"
+                                                        value={email}
+                                                        isDuplicate={isEmailDup(email)}
+                                                        onChange={val => {
+                                                            const n = [...form.emails]; n[idx] = val; setForm(f => ({ ...f, emails: n }))
+                                                        }}
+                                                    />
+                                                    {form.emails.length > 1 && (
+                                                        <button type="button" onClick={() => setForm(f => ({ ...f, emails: f.emails.filter((_, i) => i !== idx) }))} style={{ color: 'var(--text-muted)', background: 'none', border: 'none', cursor: 'pointer', padding: 2 }}><X size={12} /></button>
+                                                    )}
+                                                </div>
+                                                {isEmailDup(email) && <div style={{ color: '#ef4444', fontSize: 10, marginLeft: 2 }}>Duplicate email</div>}
                                             </div>
                                         ))}
                                     </div>
@@ -583,17 +595,21 @@ export default function NewLeadModal({ onSuccess, onClose }: { onSuccess: () => 
                                             </div>
                                             <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
                                                 {contact.emails.map((email, eIdx) => (
-                                                    <div key={eIdx} style={{ display: 'flex', alignItems: 'center', gap: 3 }}>
-                                                        <ValidatedEmailInput
-                                                            placeholder="contact@acme.com"
-                                                            value={email}
-                                                            onChange={val => {
-                                                                const n = [...contacts]; n[i].emails[eIdx] = val; setContacts(n)
-                                                            }}
-                                                        />
-                                                        {contact.emails.length > 1 && (
-                                                            <button type="button" onClick={() => { const n = [...contacts]; n[i].emails = n[i].emails.filter((_, idx) => idx !== eIdx); setContacts(n) }} style={{ color: 'var(--text-muted)', background: 'none', border: 'none', cursor: 'pointer', padding: 2 }}><X size={12} /></button>
-                                                        )}
+                                                    <div key={eIdx} style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                                                        <div style={{ display: 'flex', alignItems: 'center', gap: 3 }}>
+                                                            <ValidatedEmailInput
+                                                                placeholder="contact@acme.com"
+                                                                value={email}
+                                                                isDuplicate={isEmailDup(email)}
+                                                                onChange={val => {
+                                                                    const n = [...contacts]; n[i].emails[eIdx] = val; setContacts(n)
+                                                                }}
+                                                            />
+                                                            {contact.emails.length > 1 && (
+                                                                <button type="button" onClick={() => { const n = [...contacts]; n[i].emails = n[i].emails.filter((_, idx) => idx !== eIdx); setContacts(n) }} style={{ color: 'var(--text-muted)', background: 'none', border: 'none', cursor: 'pointer', padding: 2 }}><X size={12} /></button>
+                                                            )}
+                                                        </div>
+                                                        {isEmailDup(email) && <div style={{ color: '#ef4444', fontSize: 10, marginLeft: 2 }}>Duplicate email</div>}
                                                     </div>
                                                 ))}
                                             </div>
@@ -691,7 +707,7 @@ export default function NewLeadModal({ onSuccess, onClose }: { onSuccess: () => 
                         borderTop: '1px solid var(--border)'
                     }}>
                         <button type="button" onClick={onClose} className="btn-secondary">Cancel</button>
-                        <button type="submit" className="btn-primary" disabled={loading || hasDuplicatePhones} style={{ minWidth: 130, opacity: (loading || hasDuplicatePhones) ? 0.7 : 1, cursor: hasDuplicatePhones ? 'not-allowed' : 'pointer' }}>
+                        <button type="submit" className="btn-primary" disabled={loading || hasDuplicatePhones || hasDuplicateEmails} style={{ minWidth: 130, opacity: (loading || hasDuplicatePhones || hasDuplicateEmails) ? 0.7 : 1, cursor: (hasDuplicatePhones || hasDuplicateEmails) ? 'not-allowed' : 'pointer' }}>
                             {loading ? <div className="spinner" /> : 'Create Lead ✓'}
                         </button>
                     </div>
