@@ -822,6 +822,24 @@ export default function LeadDetailContent({ id, linkPrefix = '' }: { id: string,
 
                                 </div>
                             </div>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 10, minWidth: 120 }}>
+                                <div style={{ width: 28, height: 28, borderRadius: 6, background: 'rgba(139,92,246,0.08)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Globe size={13} color="#8b5cf6" /></div>
+                                <div style={{ minWidth: 0 }}>
+                                    <div style={{ fontSize: 9, color: 'var(--text-muted)', fontWeight: 700, textTransform: 'uppercase' }}>Socials</div>
+                                    {lead.socials ? (
+                                        <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                                            {lead.socials.split(',').map((social) => (
+                                                <div key={social.trim()} style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                                                    <Link href={social.trim().startsWith('http') ? social.trim() : `https://${social.trim()}`} target="_blank" style={{ color: 'var(--accent-primary)', textDecoration: 'none', fontSize: 12, fontWeight: 500, display: 'block', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                                                        {social.trim().replace(/^https?:\/\//, '').replace(/^www\./, '')}
+                                                    </Link>
+                                                    <button onClick={() => copyToClipboard(social.trim(), 'Social Link')} style={{ background: 'none', border: 'none', padding: 0, color: 'var(--text-muted)', cursor: 'pointer', opacity: 0.6 }} className="hover-copy"><Copy size={10} /></button>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    ) : <span style={{ color: 'var(--text-muted)', fontSize: 12 }}>—</span>}
+                                </div>
+                            </div>
                         </div>
                     </div>
 
@@ -1036,6 +1054,19 @@ export default function LeadDetailContent({ id, linkPrefix = '' }: { id: string,
                                                     <Phone size={10} />
                                                     <span onClick={() => copyToClipboard(phone.trim(), 'Phone')} style={{ cursor: 'pointer' }}>{phone.trim()}</span>
                                                     <span className="hover-copy" style={{ cursor: 'pointer', marginLeft: 4 }} onClick={() => copyToClipboard(phone.trim(), 'Phone')}><Copy size={10} /></span>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    )}
+                                    {c.socials && (
+                                        <div style={{ display: 'flex', flexDirection: 'column', gap: 2, marginTop: 4 }}>
+                                            {c.socials.split(',').map((social) => (
+                                                <div key={social.trim()} style={{ fontSize: 11, color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: 4 }}>
+                                                    <Globe size={10} />
+                                                    <Link href={social.trim().startsWith('http') ? social.trim() : `https://${social.trim()}`} target="_blank" style={{ color: 'var(--accent-primary)', textDecoration: 'none', cursor: 'pointer', display: 'block', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                                                        {social.trim().replace(/^https?:\/\//, '').replace(/^www\./, '')}
+                                                    </Link>
+                                                    <span className="hover-copy" style={{ cursor: 'pointer', marginLeft: 4 }} onClick={() => copyToClipboard(social.trim(), 'Social Link')}><Copy size={10} /></span>
                                                 </div>
                                             ))}
                                         </div>
