@@ -113,18 +113,20 @@ export function AttendanceWidget() {
             minHeight: 380,
             flex: 1
         }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                    <div style={{ width: 40, height: 40, borderRadius: 12, background: punchedIn ? 'rgba(16, 185, 129, 0.1)' : 'rgba(16, 185, 129, 0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#10b981' }}>
-                        <Timer size={22} />
-                    </div>
-                    <div>
-                        <h3 style={{ fontSize: 16, fontWeight: 700, margin: 0 }}>Today&apos;s Attendance</h3>
-                        <p style={{ fontSize: 11, color: 'var(--text-muted)', margin: 0 }}>{punchedIn ? 'In Progress' : 'Not started'}</p>
-                    </div>
+            <div style={{ display: 'flex', alignItems: 'flex-start', gap: 14 }}>
+                <div style={{ width: 42, height: 42, borderRadius: 12, background: 'rgba(16, 185, 129, 0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#10b981', flexShrink: 0, marginTop: 2 }}>
+                    <Timer size={24} />
                 </div>
-                <div style={{ textAlign: 'right' }}>
-                    <div style={{ fontSize: 24, fontWeight: 800, fontVariantNumeric: 'tabular-nums', color: punchedIn ? '#10b981' : 'var(--text-muted)' }}>
+                <div style={{ flex: 1 }}>
+                    <h3 style={{ fontSize: 16, fontWeight: 700, margin: 0 }}>Today&apos;s Attendance</h3>
+                    <p style={{ fontSize: 11, color: 'var(--text-muted)', margin: 0, marginBottom: 8 }}>{punchedIn ? 'In Progress' : 'Not started'}</p>
+                    <div style={{ 
+                        fontSize: 28, 
+                        fontWeight: 900, 
+                        fontVariantNumeric: 'tabular-nums', 
+                        color: punchedIn ? '#10b981' : 'var(--text-muted)',
+                        letterSpacing: '-0.5px'
+                    }}>
                         {timerH}:{timerM}:{timerS}
                     </div>
                 </div>
