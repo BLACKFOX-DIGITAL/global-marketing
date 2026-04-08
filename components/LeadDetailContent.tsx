@@ -23,8 +23,13 @@ function setEmailCache(key: string, value: { state: 'loading' | 'valid' | 'unkno
 function EmailBadge({ email }: { email: string }) {
     const [state, setState] = useState<'loading' | 'valid' | 'unknown' | 'invalid'>('loading')
     useEffect(() => {
-        const trimmed = email.trim().toLowerCase()
-        if (!trimmed) return
+        // Handle multiple emails by taking the first one for the badge status
+        const firstEmail = email.split(',')[0] || ''
+        const trimmed = firstEmail.trim().toLowerCase()
+        if (!trimmed) {
+            setState('unknown')
+            return
+        }
 
         let mounted = true
 
