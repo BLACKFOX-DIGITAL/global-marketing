@@ -117,8 +117,8 @@ export async function PUT(req: NextRequest) {
                 await logActivity({
                     userId: newOwnerId,
                     type: 'SYSTEM',
-                    action: 'REASSIGNED',
-                    description: `Lead manually reassigned by administrator.`,
+                    action: 'SENT_TO_POOL',
+                    description: `Lead manually reassigned by administrator to another rep.`,
                     leadId: lead.id
                 })
             }
