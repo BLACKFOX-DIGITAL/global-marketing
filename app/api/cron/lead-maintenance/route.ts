@@ -34,19 +34,21 @@ export async function GET(req: Request) {
         const recycleDays = parseInt(config['RECYCLE_DAYS'] || '60')
         const sixtyDaysAgo = subDays(now, recycleDays)
 
-        // Priority-based reclaim windows (in days)
-        const priorityWindows: Record<string, { warn: number; reclaim: number }> = {
+        const priorityWindows: Record<string, { warn: number; reclaim: number; graceDays: number }> = {
             'High': { 
                 warn: parseInt(config['WARN_HIGH'] || '5'), 
-                reclaim: parseInt(config['RECLAIM_HIGH'] || '7') 
+                reclaim: parseInt(config['RECLAIM_HIGH'] || '7'),
+                graceDays: parseInt(config['RECLAIM_HIGH'] || '7') - parseInt(config['WARN_HIGH'] || '5')
             },
             'Medium': { 
                 warn: parseInt(config['WARN_MEDIUM'] || '12'), 
-                reclaim: parseInt(config['RECLAIM_MEDIUM'] || '14') 
+                reclaim: parseInt(config['RECLAIM_MEDIUM'] || '14'),
+                graceDays: parseInt(config['RECLAIM_MEDIUM'] || '14') - parseInt(config['WARN_MEDIUM'] || '12')
             },
             'Low': { 
                 warn: parseInt(config['WARN_LOW'] || '19'), 
-                reclaim: parseInt(config['RECLAIM_LOW'] || '21') 
+                reclaim: parseInt(config['RECLAIM_LOW'] || '21'),
+                graceDays: parseInt(config['RECLAIM_LOW'] || '21') - parseInt(config['WARN_LOW'] || '19')
             },
         }
 
@@ -81,78 +83,82 @@ export async function GET(req: Request) {
             recirculatedCount++
         }
 
-        // 2. Priority-Based Stale Lead Reclaim
-        // Uses lastMeaningfulActivityAt (calls/emails only) — notes do NOT reset the clock
+        // 2. Priority-Based Stale Lead Maintenance (Warnings & Reclaims)
         let reclaimedCount = 0
         let warningsIssued = 0
 
-        for (const [priority, { warn, reclaim }] of Object.entries(priorityWindows)) {
+        for (const [priority, { warn, reclaim, graceDays }] of Object.entries(priorityWindows)) {
             const reclaimCutoff = subDays(now, reclaim)
             const warnCutoff = subDays(now, warn)
 
-            // Reclaim leads that have had no meaningful activity beyond the priority window
-            const staleLeads = await prisma.lead.findMany({
+            // Find all active leads in or past the warning window
+            const alertCandidates = await prisma.lead.findMany({
                 where: {
                     ownerId: { not: null },
                     priority,
                     status: { notIn: ['Lost', 'Won', 'Converted', 'Active Client', 'Open Pool'] },
                     OR: [
-                        { lastMeaningfulActivityAt: { lt: reclaimCutoff } },
+                        { lastMeaningfulActivityAt: { lt: warnCutoff } },
                         {
                             lastMeaningfulActivityAt: null,
-                            lastActivityAt: { lt: reclaimCutoff }
+                            lastActivityAt: { lt: warnCutoff }
                         }
                     ]
-                }
-            })
-
-            for (const lead of staleLeads) {
-                await prisma.lead.update({
-                    where: { id: lead.id },
-                    data: {
-                        ownerId: null,
-                        status: 'Open Pool',
-                        previousOwnerId: lead.ownerId,
-                        isClaimedFromPool: false,
-                        lastActivityAt: new Date(),
+                },
+                include: {
+                    tasks: {
+                        where: { 
+                            title: { startsWith: 'WARNING: Auto-Reclaim' },
+                            completed: false 
+                        },
+                        orderBy: { createdAt: 'desc' },
+                        take: 1
                     }
-                })
-                await logActivity({
-                    userId: lead.ownerId!,
-                    type: 'SYSTEM',
-                    action: 'RECLAIMED',
-                    description: `${priority}-priority lead reclaimed after ${reclaim} days without a meaningful sales action (call/email).`,
-                    leadId: lead.id
-                })
-                reclaimedCount++
-            }
-
-            // Issue warnings for leads approaching the reclaim cutoff
-            const warningLeads = await prisma.lead.findMany({
-                where: {
-                    ownerId: { not: null },
-                    priority,
-                    status: { notIn: ['Lost', 'Won', 'Converted', 'Active Client', 'Open Pool'] },
-                    OR: [
-                        { lastMeaningfulActivityAt: { lt: warnCutoff, gte: reclaimCutoff } },
-                        {
-                            lastMeaningfulActivityAt: null,
-                            lastActivityAt: { lt: warnCutoff, gte: reclaimCutoff }
-                        }
-                    ]
                 }
             })
 
-            for (const lead of warningLeads) {
-                const existing = await prisma.task.findFirst({
-                    where: { leadId: lead.id, title: { startsWith: 'WARNING: Auto-Reclaim' } }
-                })
-                if (!existing) {
-                    const daysLeft = reclaim - warn
+            for (const lead of alertCandidates) {
+                const activityDate = lead.lastMeaningfulActivityAt || lead.lastActivityAt
+                const existingWarning = lead.tasks[0]
+                const daysInactive = Math.floor((now.getTime() - activityDate.getTime()) / (1000 * 60 * 60 * 24))
+
+                // SCENARIO A: Lead is past RECLAIM age
+                if (daysInactive >= reclaim) {
+                    // Check if it's had a warning for the required grace period
+                    if (existingWarning && existingWarning.createdAt <= subDays(now, graceDays)) {
+                        // All conditions met: Warning exists and has aged enough. Reclaim it.
+                        await prisma.lead.update({
+                            where: { id: lead.id },
+                            data: {
+                                ownerId: null,
+                                status: 'Open Pool',
+                                previousOwnerId: lead.ownerId,
+                                isClaimedFromPool: false,
+                                lastActivityAt: new Date(),
+                            }
+                        })
+                        await logActivity({
+                            userId: lead.ownerId!,
+                            type: 'SYSTEM',
+                            action: 'RECLAIMED',
+                            description: `${priority}-priority lead reclaimed after ${daysInactive} days without activity (Mandatory grace period satisfied).`,
+                            leadId: lead.id
+                        })
+                        reclaimedCount++
+                        continue // Lead is gone, skip warning creation
+                    } 
+                    // If it's past reclaim but NO warning exists, we MUST warn first (Scenario B handles this)
+                }
+
+                // SCENARIO B: Issue Warning (either because it's in the window or past reclaim without previous notice)
+                if (!existingWarning) {
+                    const daysLeft = Math.max(graceDays, reclaim - daysInactive)
+                    
+                    // Create Task
                     await prisma.task.create({
                         data: {
                             title: `WARNING: Auto-Reclaim in ${daysLeft * 24} hours`,
-                            description: `This ${priority}-priority lead has had no real sales activity (calls/emails) for ${warn} days. It will be moved to the Open Pool in ${daysLeft} days unless you log a call or send an email. Notes alone do not count.`,
+                            description: `This ${priority}-priority lead has had no real sales activity for ${daysInactive} days. It will be moved to the Open Pool in ${daysLeft} days unless you log a call or send an email.`,
                             priority: 'High',
                             taskType: 'System Warning',
                             status: 'Pending',
@@ -161,6 +167,18 @@ export async function GET(req: Request) {
                             leadId: lead.id
                         }
                     })
+
+                    // Create Notification for the Bell/Notification Center
+                    await prisma.notification.create({
+                        data: {
+                            userId: lead.ownerId!,
+                            title: '⏳ Lead at Risk of Reclaim',
+                            message: `Lead "${lead.company || lead.name}" will be moved to the pool in ${daysLeft} days due to inactivity.`,
+                            type: 'SYSTEM_WARNING',
+                            link: `/leads/${lead.id}`
+                        }
+                    })
+
                     warningsIssued++
                 }
             }

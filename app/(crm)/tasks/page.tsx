@@ -16,6 +16,7 @@ const TASK_TYPES = [
     { value: 'Meeting', icon: '🤝', color: '#f59e0b' },
     { value: 'Follow-up', icon: '🔄', color: '#10b981' },
     { value: 'Send Proposal', icon: '📄', color: '#8b5cf6' },
+    { value: 'System Warning', icon: '⚠️', color: '#f43f5e' },
     { value: 'Other', icon: '📌', color: '#94a3b8' },
 ]
 

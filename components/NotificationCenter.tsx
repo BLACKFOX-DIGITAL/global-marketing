@@ -65,6 +65,7 @@ export default function NotificationCenter() {
         switch (type) {
             case 'SUCCESS': return <CheckCircle size={14} color="#10b981" />
             case 'WARNING': return <AlertTriangle size={14} color="#f59e0b" />
+            case 'SYSTEM_WARNING': return <AlertCircle size={14} color="#f43f5e" />
             case 'URGENT': return <AlertCircle size={14} color="#ef4444" />
             default: return <Info size={14} color="#6366f1" />
         }

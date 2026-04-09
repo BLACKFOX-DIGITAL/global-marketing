@@ -35,8 +35,9 @@ const SETTINGS_GROUPS = [
         ]
     },
     {
-        name: 'Connections',
+        name: 'System',
         categories: [
+            { id: 'DATA_MANAGEMENT', label: 'Database & Backup', icon: Database },
             { id: 'EMAIL_INTEGRATION', label: 'Email Integration', icon: Mail }
         ]
     }
@@ -64,36 +65,59 @@ export default function AdminSettings() {
         XP_LEAD_CREATED: '5', XP_TASK_CREATED: '3',
     })
 
-    const [adding, setAdding] = useState(false)
-    const [newValue, setNewValue] = useState('')
-    const [newColor, setNewColor] = useState('#3b82f6')
+    const [importFile, setImportFile] = useState<File | null>(null)
+    const [importStatus, setImportStatus] = useState<'idle' | 'uploading' | 'success' | 'error'>('idle')
 
-    const [editingId, setEditingId] = useState<string | null>(null)
-    const [editValue, setEditValue] = useState('')
-    const [editColor, setEditColor] = useState('')
+    async function handleExport() {
+        setProcessing('export')
+        try {
+            window.location.href = '/api/admin/database'
+        } catch (err) {
+            alert('Export failed')
+        } finally {
+            setProcessing(null)
+        }
+    }
 
-    const [editingUser, setEditingUser] = useState<TeamMember | null>(null)
-    const [editUserName, setEditUserName] = useState('')
-    const [editUserEmail, setEditUserEmail] = useState('')
-    const [editUserRole, setEditUserRole] = useState('')
-    const [editUserSalary, setEditUserSalary] = useState(0)
-    const [editUserSenderEmail, setEditUserSenderEmail] = useState('')
-    const [editUserPassword, setEditUserPassword] = useState('')
-
-    const [newUserName, setNewUserName] = useState('')
-    const [newUserEmail, setNewUserEmail] = useState('')
-    const [newUserPassword, setNewUserPassword] = useState('')
-    const [newUserRole, setNewUserRole] = useState('Sales Rep')
-    const [newUserSalary, setNewUserSalary] = useState(0)
-
-    const [templateId, setTemplateId] = useState<string | null>(null)
-    const [templateName, setTemplateName] = useState('')
-    const [templateSubject, setTemplateSubject] = useState('')
-    const [templateBody, setTemplateBody] = useState('')
-
-    const [holidayName, setHolidayName] = useState('')
-    const [holidayDate, setHolidayDate] = useState('')
-    const [holidayDesc, setHolidayDesc] = useState('')
+    async function handleImport() {
+        if (!importFile) return
+        
+        setModalConfirm({
+            title: 'Wipe & Restore Database?',
+            message: 'DANGER: This will permanently DELETE all current data and replace it with the records in this backup file. This cannot be undone. Are you absolutely sure?',
+            type: 'danger',
+            onConfirm: async () => {
+                setImportStatus('uploading')
+                setProcessing('import')
+                setModalConfirm(null)
+                
+                try {
+                    const text = await importFile.text()
+                    const json = JSON.parse(text)
+                    
+                    const res = await fetch('/api/admin/database', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(json)
+                    })
+                    
+                    if (res.ok) {
+                        setImportStatus('success')
+                        alert('Database restored successfully! The page will now reload.')
+                        window.location.reload()
+                    } else {
+                        throw new Error(await res.text())
+                    }
+                } catch (err) {
+                    console.error(err)
+                    setImportStatus('error')
+                    alert('Import failed: Check console for details.')
+                } finally {
+                    setProcessing(null)
+                }
+            }
+        })
+    }
 
     async function fetchData() {
         setLoading(true)
@@ -378,6 +402,8 @@ export default function AdminSettings() {
                                 !adding && <button onClick={() => { setAdding(true); setTemplateId(null); setTemplateName(''); setTemplateSubject(''); setTemplateBody('') }} style={{ padding: '6px 14px', borderRadius: 8, fontSize: 11, fontWeight: 900, background: 'var(--accent-primary)', border: 'none', color: '#fff', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6, textTransform: 'uppercase', letterSpacing: '0.5px' }}><Plus size={14} strokeWidth={3} /> New Template</button>
                             ) : activeCategory === 'HOLIDAYS' ? (
                                 !adding && <button onClick={() => setAdding(true)} style={{ padding: '6px 14px', borderRadius: 8, fontSize: 11, fontWeight: 900, background: 'var(--accent-primary)', border: 'none', color: '#fff', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6, textTransform: 'uppercase', letterSpacing: '0.5px' }}><Plus size={14} strokeWidth={3} /> Add Holiday</button>
+                            ) : activeCategory === 'DATA_MANAGEMENT' ? (
+                                null
                             ) : (
                                 !adding && <button onClick={() => setAdding(true)} style={{ padding: '6px 14px', borderRadius: 8, fontSize: 11, fontWeight: 900, background: 'var(--accent-primary)', border: 'none', color: '#fff', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6, textTransform: 'uppercase', letterSpacing: '0.5px' }}><Plus size={14} strokeWidth={3} /> Add Option</button>
                             )}
@@ -387,6 +413,76 @@ export default function AdminSettings() {
                     <div style={{ padding: 24 }}>
                         {loading ? (
                             <div style={{ display: 'flex', justifyContent: 'center', padding: 40 }}><div className="spinner" /></div>
+                        ) : activeCategory === 'DATA_MANAGEMENT' ? (
+                            <div style={{ maxWidth: 800, display: 'flex', flexDirection: 'column', gap: 32 }}>
+                                
+                                {/* Export Section */}
+                                <div style={{ background: 'rgba(255,255,255,0.01)', border: '1px solid var(--border)', borderRadius: 16, padding: 24 }}>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 16 }}>
+                                        <div style={{ width: 40, height: 40, borderRadius: 12, background: 'rgba(99, 102, 241, 0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--accent-primary)' }}>
+                                            <Database size={20} />
+                                        </div>
+                                        <div>
+                                            <h3 style={{ fontSize: 15, fontWeight: 800, margin: 0, color: '#f8fafc' }}>Export Database</h3>
+                                            <p style={{ fontSize: 12, color: '#64748b', margin: 0 }}>Create a portable JSON backup of all leads, team data, and settings.</p>
+                                        </div>
+                                    </div>
+                                    <button 
+                                        onClick={handleExport}
+                                        disabled={processing === 'export'}
+                                        style={{ width: '100%', padding: '12px', borderRadius: 10, background: 'var(--accent-primary)', border: 'none', color: '#fff', fontWeight: 900, fontSize: 13, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10, transition: 'all 0.2s', textTransform: 'uppercase', letterSpacing: '0.5px' }}
+                                    >
+                                        {processing === 'export' ? <div className="spinner" style={{ width: 16, height: 16 }} /> : <Plus size={18} strokeWidth={2.5} />}
+                                        Download JSON Backup
+                                    </button>
+                                </div>
+
+                                {/* Import Section (Danger Zone) */}
+                                <div style={{ border: '1px solid rgba(239, 68, 68, 0.2)', background: 'linear-gradient(135deg, rgba(239, 68, 68, 0.05), transparent)', borderRadius: 16, padding: 24 }}>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 16 }}>
+                                        <div style={{ width: 40, height: 40, borderRadius: 12, background: 'rgba(239, 68, 68, 0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#ef4444' }}>
+                                            <ShieldAlert size={20} />
+                                        </div>
+                                        <div>
+                                            <h3 style={{ fontSize: 15, fontWeight: 800, margin: 0, color: '#ef4444' }}>Restore Database (Danger Zone)</h3>
+                                            <p style={{ fontSize: 12, color: '#64748b', margin: 0 }}>Importing will wipe all current data and replace it with the backup file.</p>
+                                        </div>
+                                    </div>
+                                    
+                                    <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                                        <div style={{ position: 'relative', border: '2px dashed var(--border)', borderRadius: 12, padding: '32px 20px', textAlign: 'center', transition: 'all 0.2s' }}>
+                                            <input 
+                                                type="file" 
+                                                accept=".json"
+                                                onChange={e => setImportFile(e.target.files?.[0] || null)}
+                                                style={{ position: 'absolute', inset: 0, opacity: 0, cursor: 'pointer' }}
+                                            />
+                                            <Plus size={24} style={{ color: '#475569', marginBottom: 8, opacity: 0.5 }} />
+                                            <div style={{ fontSize: 13, fontWeight: 700, color: '#94a3b8' }}>
+                                                {importFile ? importFile.name : 'Click or drag CFM backup file here'}
+                                            </div>
+                                            <div style={{ fontSize: 10, color: '#475569', marginTop: 4 }}>Maximum file size: 50MB</div>
+                                        </div>
+
+                                        <button 
+                                            disabled={!importFile || processing === 'import'}
+                                            onClick={handleImport}
+                                            style={{ 
+                                                width: '100%', padding: '12px', borderRadius: 10, 
+                                                background: !importFile ? 'rgba(0,0,0,0.2)' : '#ef4444', 
+                                                border: 'none', color: '#fff', fontWeight: 900, 
+                                                fontSize: 13, cursor: importFile ? 'pointer' : 'not-allowed',
+                                                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10,
+                                                opacity: !importFile ? 0.5 : 1, transition: 'all 0.2s',
+                                                textTransform: 'uppercase', letterSpacing: '0.5px'
+                                            }}
+                                        >
+                                            {processing === 'import' ? <div className="spinner" style={{ width: 16, height: 16, borderColor: '#fff' }} /> : <Zap size={18} strokeWidth={2.5} />}
+                                            Wipe and Restore from File
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
                         ) : activeCategory === 'LEAD_POOL' ? (
                             <div style={{ maxWidth: 800, display: 'flex', flexDirection: 'column', gap: 24 }}>
                                 <div>
