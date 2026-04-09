@@ -68,6 +68,37 @@ export default function AdminSettings() {
     const [importFile, setImportFile] = useState<File | null>(null)
     const [importStatus, setImportStatus] = useState<'idle' | 'uploading' | 'success' | 'error'>('idle')
 
+    const [adding, setAdding] = useState(false)
+    const [newValue, setNewValue] = useState('')
+    const [newColor, setNewColor] = useState('#3b82f6')
+
+    const [editingId, setEditingId] = useState<string | null>(null)
+    const [editValue, setEditValue] = useState('')
+    const [editColor, setEditColor] = useState('')
+
+    const [editingUser, setEditingUser] = useState<TeamMember | null>(null)
+    const [editUserName, setEditUserName] = useState('')
+    const [editUserEmail, setEditUserEmail] = useState('')
+    const [editUserRole, setEditUserRole] = useState('')
+    const [editUserSalary, setEditUserSalary] = useState(0)
+    const [editUserSenderEmail, setEditUserSenderEmail] = useState('')
+    const [editUserPassword, setEditUserPassword] = useState('')
+
+    const [newUserName, setNewUserName] = useState('')
+    const [newUserEmail, setNewUserEmail] = useState('')
+    const [newUserPassword, setNewUserPassword] = useState('')
+    const [newUserRole, setNewUserRole] = useState('Sales Rep')
+    const [newUserSalary, setNewUserSalary] = useState(0)
+
+    const [templateId, setTemplateId] = useState<string | null>(null)
+    const [templateName, setTemplateName] = useState('')
+    const [templateSubject, setTemplateSubject] = useState('')
+    const [templateBody, setTemplateBody] = useState('')
+
+    const [holidayName, setHolidayName] = useState('')
+    const [holidayDate, setHolidayDate] = useState('')
+    const [holidayDesc, setHolidayDesc] = useState('')
+
     async function handleExport() {
         setProcessing('export')
         try {
