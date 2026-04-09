@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { getCurrentUser } from '@/lib/auth'
+import { logActivity } from '@/lib/activity'
 
 export async function GET(req: NextRequest) {
     const user = await getCurrentUser()
@@ -67,14 +68,61 @@ export async function PUT(req: NextRequest) {
             return NextResponse.json({ error: 'Cannot assign leads to a suspended user' }, { status: 400 })
         }
 
-        // Perform the bulk update for Leads
-        const updatedLeads = await prisma.lead.updateMany({
+        // Fetch leads before updating so we know which owners are losing leads
+        const leadsBeforeUpdate = await prisma.lead.findMany({
             where: { id: { in: leadIds }, isDeleted: false },
-            data: { ownerId: newOwnerId }
+            select: { id: true, name: true, company: true, ownerId: true }
         })
 
-        // NOTE: In a robust CRM, you might also want to ask if the associated Opportunities and Tasks should be reassigned.
-        // For simplicity and safety in this MVP, we only reassign the Lead itself.
+        // Perform the bulk update — also reset lastActivityAt so reps aren't immediately warned
+        const updatedLeads = await prisma.lead.updateMany({
+            where: { id: { in: leadIds }, isDeleted: false },
+            data: { ownerId: newOwnerId, lastActivityAt: new Date() }
+        })
+
+        // Notify the new owner once with a summary
+        const assignedToNew = leadsBeforeUpdate.filter(l => l.ownerId !== newOwnerId)
+        if (assignedToNew.length > 0) {
+            await prisma.notification.create({
+                data: {
+                    userId: newOwnerId,
+                    title: '📋 Leads Assigned to You',
+                    message: `${assignedToNew.length} lead(s) have been assigned to you by an administrator.`,
+                    type: 'SYSTEM_WARNING',
+                }
+            })
+        }
+
+        // Notify each previous owner that lost leads, grouped by owner
+        const previousOwnerMap = new Map<string, number>()
+        for (const lead of leadsBeforeUpdate) {
+            if (lead.ownerId && lead.ownerId !== newOwnerId) {
+                previousOwnerMap.set(lead.ownerId, (previousOwnerMap.get(lead.ownerId) ?? 0) + 1)
+            }
+        }
+        for (const [oldOwnerId, count] of previousOwnerMap) {
+            await prisma.notification.create({
+                data: {
+                    userId: oldOwnerId,
+                    title: '📤 Leads Reassigned',
+                    message: `${count} of your lead(s) have been reassigned to another rep by an administrator.`,
+                    type: 'SYSTEM_WARNING',
+                }
+            })
+        }
+
+        // Log activity on each lead so the history is traceable
+        for (const lead of leadsBeforeUpdate) {
+            if (lead.ownerId !== newOwnerId) {
+                await logActivity({
+                    userId: newOwnerId,
+                    type: 'SYSTEM',
+                    action: 'REASSIGNED',
+                    description: `Lead manually reassigned by administrator.`,
+                    leadId: lead.id
+                })
+            }
+        }
 
         return NextResponse.json({ success: true, count: updatedLeads.count })
     } catch {

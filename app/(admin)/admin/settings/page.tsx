@@ -68,6 +68,17 @@ export default function AdminSettings() {
     const [importFile, setImportFile] = useState<File | null>(null)
     const [importStatus, setImportStatus] = useState<'idle' | 'uploading' | 'success' | 'error'>('idle')
 
+    const [maintenanceRunning, setMaintenanceRunning] = useState(false)
+    const [maintenanceResult, setMaintenanceResult] = useState<{
+        ranAt: string
+        preRecycleWarningsIssued: number
+        recirculatedCount: number
+        reclaimedCount: number
+        warningsIssued: number
+        finalWarningsIssued: number
+        error?: string
+    } | null>(null)
+
     const [adding, setAdding] = useState(false)
     const [newValue, setNewValue] = useState('')
     const [newColor, setNewColor] = useState('#3b82f6')
@@ -148,6 +159,19 @@ export default function AdminSettings() {
                 }
             }
         })
+    }
+
+    async function handleRunMaintenance() {
+        setMaintenanceRunning(true)
+        try {
+            const res = await fetch('/api/admin/run-maintenance', { method: 'POST' })
+            const data = await res.json()
+            setMaintenanceResult(data)
+        } catch {
+            setMaintenanceResult({ ranAt: new Date().toISOString(), preRecycleWarningsIssued: 0, recirculatedCount: 0, reclaimedCount: 0, warningsIssued: 0, finalWarningsIssued: 0, error: 'Network error — could not reach server.' })
+        } finally {
+            setMaintenanceRunning(false)
+        }
     }
 
     async function fetchData() {
@@ -563,6 +587,56 @@ export default function AdminSettings() {
                                             <span style={{ fontSize: 10, fontWeight: 900, color: '#475569' }}>MAX</span>
                                         </div>
                                     </div>
+                                </div>
+
+                                {/* Manual Maintenance Runner */}
+                                <div style={{ background: 'rgba(255,255,255,0.01)', border: '1px solid var(--border)', borderRadius: 12, padding: 20 }}>
+                                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
+                                        <div>
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
+                                                <div style={{ width: 4, height: 16, background: 'var(--accent-primary)', borderRadius: 2 }} />
+                                                <h4 style={{ fontSize: 13, fontWeight: 800, color: '#f8fafc', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Maintenance Job</h4>
+                                            </div>
+                                            <p style={{ fontSize: 10, color: '#64748b', fontWeight: 600, paddingLeft: 12 }}>Manually trigger the lead reclaim &amp; recirculation job. Runs automatically daily on production.</p>
+                                        </div>
+                                        <button
+                                            onClick={handleRunMaintenance}
+                                            disabled={maintenanceRunning}
+                                            style={{ padding: '8px 18px', borderRadius: 8, border: 'none', background: maintenanceRunning ? '#1e293b' : 'var(--accent-primary)', color: maintenanceRunning ? '#475569' : '#fff', fontSize: 11, fontWeight: 900, cursor: maintenanceRunning ? 'not-allowed' : 'pointer', textTransform: 'uppercase', letterSpacing: '0.5px', whiteSpace: 'nowrap', flexShrink: 0 }}
+                                        >
+                                            {maintenanceRunning ? 'Running...' : 'Run Now'}
+                                        </button>
+                                    </div>
+
+                                    {maintenanceResult && (
+                                        <div style={{ borderTop: '1px solid var(--border)', paddingTop: 12, marginTop: 4 }}>
+                                            {maintenanceResult.error ? (
+                                                <div style={{ padding: '10px 14px', borderRadius: 8, background: 'rgba(244, 63, 94, 0.08)', border: '1px solid rgba(244, 63, 94, 0.2)', fontSize: 11, color: '#f43f5e', fontWeight: 700 }}>
+                                                    {maintenanceResult.error}
+                                                </div>
+                                            ) : (
+                                                <>
+                                                    <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 8 }}>
+                                                        {[
+                                                            { label: 'Pre-Recycle Warned', value: maintenanceResult.preRecycleWarningsIssued, color: '#f59e0b' },
+                                                            { label: 'Warnings Issued', value: maintenanceResult.warningsIssued, color: '#f59e0b' },
+                                                            { label: 'Final Warnings', value: maintenanceResult.finalWarningsIssued, color: '#f97316' },
+                                                            { label: 'Reclaimed', value: maintenanceResult.reclaimedCount, color: '#f43f5e' },
+                                                            { label: 'Recirculated', value: maintenanceResult.recirculatedCount, color: '#a78bfa' },
+                                                        ].map(stat => (
+                                                            <div key={stat.label} style={{ flex: '1 1 auto', minWidth: 100, background: 'rgba(0,0,0,0.2)', borderRadius: 8, padding: '8px 12px', textAlign: 'center', border: `1px solid ${stat.value > 0 ? stat.color + '40' : 'var(--border)'}` }}>
+                                                                <div style={{ fontSize: 18, fontWeight: 900, color: stat.value > 0 ? stat.color : '#334155' }}>{stat.value}</div>
+                                                                <div style={{ fontSize: 9, fontWeight: 900, color: '#475569', textTransform: 'uppercase', letterSpacing: '0.5px' }}>{stat.label}</div>
+                                                            </div>
+                                                        ))}
+                                                    </div>
+                                                    <div style={{ fontSize: 9, color: '#334155', fontWeight: 700, textAlign: 'right' }}>
+                                                        Last run: {new Date(maintenanceResult.ranAt).toLocaleString()}
+                                                    </div>
+                                                </>
+                                            )}
+                                        </div>
+                                    )}
                                 </div>
                             </div>
                         ) : activeCategory === 'GAMIFICATION' ? (

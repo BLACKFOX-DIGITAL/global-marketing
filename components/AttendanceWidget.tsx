@@ -19,34 +19,38 @@ export function AttendanceWidget() {
     const [loading, setLoading] = useState(true)
     const [error, setError] = useState<string | null>(null)
 
-    useEffect(() => {
-        async function fetchStatus() {
-            try {
-                const [statusRes, historyRes] = await Promise.all([
-                    fetch('/api/attendance/status', { cache: 'no-store' }),
-                    fetch('/api/attendance?period=month&limit=3', { cache: 'no-store' })
-                ])
-                
-                const status = await statusRes.json()
-                const history = await historyRes.json()
-                
-                if (status.punchedIn && status.record) {
-                    setPunchedIn(true)
-                    setPunchRecord(status.record)
-                    setElapsed(status.elapsedSeconds ?? 0)
-                }
-                
-                if (history && Array.isArray(history.records)) {
-                    setLastRecords(history.records.slice(0, 3))
-                }
-            } catch (err) {
-                console.error('Failed to fetch attendance:', err)
-                setError('Failed to load attendance data')
-            } finally {
-                setLoading(false)
+    async function fetchStatus() {
+        setLoading(true)
+        setError(null)
+        try {
+            const [statusRes, historyRes] = await Promise.all([
+                fetch('/api/attendance/status', { cache: 'no-store' }),
+                fetch('/api/attendance?period=month&limit=3', { cache: 'no-store' })
+            ])
+
+            const status = await statusRes.json()
+            const history = await historyRes.json()
+
+            if (status.punchedIn && status.record) {
+                setPunchedIn(true)
+                setPunchRecord(status.record)
+                setElapsed(status.elapsedSeconds ?? 0)
             }
+
+            if (history && Array.isArray(history.records)) {
+                setLastRecords(history.records.slice(0, 3))
+            }
+        } catch (err) {
+            console.error('Failed to fetch attendance:', err)
+            setError('Failed to load attendance data')
+        } finally {
+            setLoading(false)
         }
+    }
+
+    useEffect(() => {
         fetchStatus()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [])
 
     useEffect(() => {
@@ -91,8 +95,14 @@ export function AttendanceWidget() {
     const progressPercent = Math.min(100, (elapsed / (totalExpectedHours * 3600)) * 100)
 
     if (error) return (
-        <div className="card glass" style={{ height: 200, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#ef4444', fontSize: 13 }}>
-            {error}
+        <div className="card glass" style={{ height: 200, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 12, color: '#ef4444', fontSize: 13 }}>
+            <span>{error}</span>
+            <button
+                onClick={() => fetchStatus()}
+                style={{ fontSize: 11, fontWeight: 700, color: 'var(--accent-primary)', background: 'rgba(99,102,241,0.1)', border: '1px solid rgba(99,102,241,0.2)', borderRadius: 6, padding: '5px 12px', cursor: 'pointer' }}
+            >
+                Retry
+            </button>
         </div>
     )
 

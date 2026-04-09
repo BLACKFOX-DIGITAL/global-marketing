@@ -1,5 +1,5 @@
 'use client'
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import useSWR from 'swr'
 import NotificationCenter from '@/components/NotificationCenter'
 
@@ -42,6 +42,19 @@ interface CreateTaskModalProps {
 function SearchableLeadPicker({ leads, value, onChange }: { leads: any[], value: string, onChange: (val: string) => void }) {
     const [search, setSearch] = useState('')
     const [isOpen, setIsOpen] = useState(false)
+    const containerRef = useRef<HTMLDivElement>(null)
+
+    useEffect(() => {
+        if (!isOpen) return
+        function handleOutsideClick(e: MouseEvent) {
+            if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
+                setIsOpen(false)
+                setSearch('')
+            }
+        }
+        document.addEventListener('mousedown', handleOutsideClick)
+        return () => document.removeEventListener('mousedown', handleOutsideClick)
+    }, [isOpen])
 
     const selectedLead = leads.find(l => l.id === value)
     const filteredLeads = leads.filter(l =>
@@ -50,7 +63,7 @@ function SearchableLeadPicker({ leads, value, onChange }: { leads: any[], value:
     ).slice(0, 10)
 
     return (
-        <div style={{ position: 'relative' }}>
+        <div ref={containerRef} style={{ position: 'relative' }}>
             <div
                 onClick={() => setIsOpen(!isOpen)}
                 style={{
@@ -308,26 +321,57 @@ export default function TasksPage() {
     const [mounted, setMounted] = useState(false)
     const [page, setPage] = useState(1)
     const [priorityFilter, setPriorityFilter] = useState('All Priorities')
+    const [errorToast, setErrorToast] = useState<string | null>(null)
+    const [deletingId, setDeletingId] = useState<string | null>(null)
 
     useEffect(() => {
         setMounted(true)
     }, [])
 
-    const { data: tasksData, mutate: fetchTasks } = useSWR(`/api/tasks?status=${tab}&priority=${priorityFilter}&page=${page}&limit=10`, fetcher, { keepPreviousData: true })
+    useEffect(() => {
+        if (!errorToast) return
+        const timer = setTimeout(() => setErrorToast(null), 4000)
+        return () => clearTimeout(timer)
+    }, [errorToast])
+
+    const { data: tasksData, mutate: fetchTasks, error: tasksError } = useSWR(`/api/tasks?status=${tab}&priority=${priorityFilter}&page=${page}&limit=10`, fetcher, { keepPreviousData: true })
+    const { data: calendarTasksData, mutate: fetchCalendarTasks } = useSWR(view === 'calendar' ? `/api/tasks?status=${tab}&priority=${priorityFilter}&page=1&limit=500` : null, fetcher, { keepPreviousData: true })
     const { data: prioritiesData } = useSWR('/api/admin/settings?category=TASK_PRIORITY', fetcher, { keepPreviousData: true })
-    const { data: leadsData } = useSWR('/api/leads?limit=100', fetcher, { keepPreviousData: true })
+    const { data: leadsData } = useSWR('/api/leads?limit=500', fetcher, { keepPreviousData: true })
 
     const tasks: Task[] = Array.isArray(tasksData?.tasks) ? tasksData.tasks : []
+    const calendarTasks: Task[] = Array.isArray(calendarTasksData?.tasks) ? calendarTasksData.tasks : tasks
     const pagination = tasksData?.pagination || { total: 0, page: 1, limit: 10, totalPages: 1 }
     const priorities: Array<{ value: string; color: string | null }> = prioritiesData?.options || []
     const leads: Array<{ id: string; name: string; company: string | null }> = leadsData?.leads || (Array.isArray(leadsData) ? leadsData : [])
-    
+
     async function toggleTask(id: string) {
         const task = tasks.find(t => t.id === id)
-        const wasCompleted = task?.completed
+        if (!task) return
+        const wasCompleted = task.completed
+
+        // Optimistic update
+        fetchTasks((prev: any) => {
+            if (!prev) return prev
+            return {
+                ...prev,
+                tasks: prev.tasks.map((t: Task) => t.id === id ? { ...t, completed: !t.completed } : t)
+            }
+        }, { revalidate: false })
+
         const res = await fetch(`/api/tasks/${id}/toggle`, { method: 'PATCH' })
-        
-        if (!wasCompleted && res.ok) {
+
+        if (!res.ok) {
+            // Revert on failure
+            fetchTasks((prev: any) => {
+                if (!prev) return prev
+                return {
+                    ...prev,
+                    tasks: prev.tasks.map((t: Task) => t.id === id ? { ...t, completed: wasCompleted } : t)
+                }
+            }, { revalidate: false })
+            setErrorToast('Failed to update task. Please try again.')
+        } else if (!wasCompleted) {
             try {
                 const data = await res.json()
                 const { handleGamificationResult } = await import('@/lib/confetti')
@@ -338,9 +382,12 @@ export default function TasksPage() {
                 const { celebrateSmall } = await import('@/lib/confetti')
                 celebrateSmall()
             }
+            fetchTasks()
+        } else {
+            fetchTasks()
         }
-        
-        fetchTasks()
+
+        if (view === 'calendar') fetchCalendarTasks()
     }
 
     function deleteTaskAsk(id: string) {
@@ -350,12 +397,19 @@ export default function TasksPage() {
     async function executeDeleteTask() {
         if (!deleteConfirmId) return
         const idToDelete = deleteConfirmId
-        setDeleteConfirmId(null)
-        await fetch(`/api/tasks/${idToDelete}`, { method: 'DELETE' })
-        fetchTasks()
+        setDeletingId(idToDelete)
+        const res = await fetch(`/api/tasks/${idToDelete}`, { method: 'DELETE' })
+        setDeletingId(null)
+        if (!res.ok) {
+            setErrorToast('Failed to delete task. Please try again.')
+        } else {
+            setDeleteConfirmId(null)
+            fetchTasks()
+            if (view === 'calendar') fetchCalendarTasks()
+        }
     }
 
-    const getTaskTypeInfo = (type: string) => TASK_TYPES.find(t => t.value === type) || TASK_TYPES[5]
+    const getTaskTypeInfo = (type: string) => TASK_TYPES.find(t => t.value === type) || TASK_TYPES[6]
 
     return (
         <>
@@ -415,7 +469,7 @@ export default function TasksPage() {
 
                 {view === 'calendar' ? (
                     <TaskCalendar
-                        tasks={tasks}
+                        tasks={calendarTasks}
                         priorities={priorities}
                         onDateClick={(date) => {
                             setSelectedDate(format(date, 'yyyy-MM-dd'));
@@ -425,7 +479,13 @@ export default function TasksPage() {
                     />
                 ) : (
                     <div className="card" style={{ padding: 0 }}>
-                        {!tasksData ? (
+                        {tasksError ? (
+                            <div style={{ textAlign: 'center', padding: 48, color: 'var(--text-muted)' }}>
+                                <div style={{ fontSize: 28, marginBottom: 12 }}>⚠️</div>
+                                <div style={{ fontSize: 15, fontWeight: 600, marginBottom: 8 }}>Failed to load tasks</div>
+                                <button className="btn-secondary" style={{ fontSize: 13 }} onClick={() => fetchTasks()}>Retry</button>
+                            </div>
+                        ) : !tasksData ? (
                             <div style={{ display: 'flex', justifyContent: 'center', padding: 40 }}><div className="spinner" style={{ width: 28, height: 28 }} /></div>
                         ) : tasks.length === 0 ? (
                             <div style={{ textAlign: 'center', padding: 48, color: 'var(--text-muted)' }}>
@@ -445,11 +505,12 @@ export default function TasksPage() {
                                             alignItems: 'center',
                                             gap: 12,
                                             minHeight: 52,
-                                            transition: 'all 0.2s ease'
-                                        }}>
+                                            transition: 'all 0.2s ease',
+                                            cursor: 'pointer'
+                                        }} onClick={() => setViewTask(task)}>
                                             <button
                                                 className={`task-check ${task.completed ? 'checked' : ''}`}
-                                                onClick={() => toggleTask(task.id)}
+                                                onClick={e => { e.stopPropagation(); toggleTask(task.id); }}
                                                 style={{
                                                     width: 22, height: 22,
                                                     background: task.completed ? 'var(--accent-primary)' : 'transparent',
@@ -475,7 +536,7 @@ export default function TasksPage() {
                                                     {task.title}
                                                 </div>
                                                 {task.lead && (
-                                                    <Link href={`/leads/${task.lead.id}`} style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 12, color: 'var(--accent-secondary)', marginTop: 2, textDecoration: 'none' }}>
+                                                    <Link href={`/leads/${task.lead.id}`} onClick={e => e.stopPropagation()} style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 12, color: 'var(--accent-secondary)', marginTop: 2, textDecoration: 'none' }}>
                                                         <Building size={11} /> {task.lead.name} {task.lead.company ? `· ${task.lead.company}` : ''}
                                                     </Link>
                                                 )}
@@ -518,11 +579,11 @@ export default function TasksPage() {
                                                 </div>
                                                 <div style={{ width: 64, display: 'flex', justifyContent: 'center', gap: 4, flexShrink: 0 }}>
                                                     {!task.completed && (
-                                                        <button className="btn-ghost" onClick={() => setEditTaskId(task.id)} style={{ borderRadius: '50%', color: 'var(--accent-primary)' }}>
+                                                        <button className="btn-ghost" onClick={e => { e.stopPropagation(); setEditTaskId(task.id); }} style={{ borderRadius: '50%', color: 'var(--accent-primary)' }}>
                                                             <Pencil size={14} />
                                                         </button>
                                                     )}
-                                                    <button className="btn-ghost" onClick={() => deleteTaskAsk(task.id)} style={{ borderRadius: '50%', color: '#ef4444' }}>✕</button>
+                                                    <button className="btn-ghost" onClick={e => { e.stopPropagation(); deleteTaskAsk(task.id); }} style={{ borderRadius: '50%', color: '#ef4444' }}>✕</button>
                                                 </div>
                                             </div>
                                         </div>
@@ -598,6 +659,19 @@ export default function TasksPage() {
                 />
             )}
 
+            {errorToast && (
+                <div style={{
+                    position: 'fixed', bottom: 24, left: '50%', transform: 'translateX(-50%)',
+                    background: '#1e1e2e', border: '1px solid #ef4444', color: '#ef4444',
+                    padding: '12px 20px', borderRadius: 10, fontSize: 13, fontWeight: 600,
+                    boxShadow: '0 8px 24px rgba(0,0,0,0.3)', zIndex: 9999,
+                    display: 'flex', alignItems: 'center', gap: 10
+                }}>
+                    <span>⚠️</span> {errorToast}
+                    <button onClick={() => setErrorToast(null)} style={{ marginLeft: 8, background: 'none', border: 'none', color: '#ef4444', cursor: 'pointer', fontSize: 16, lineHeight: 1 }}>✕</button>
+                </div>
+            )}
+
             {deleteConfirmId && (
                 <div className="modal-overlay" onClick={e => e.target === e.currentTarget && setDeleteConfirmId(null)}>
                     <div className="modal" style={{ maxWidth: 400 }}>
@@ -612,8 +686,8 @@ export default function TasksPage() {
                         </div>
                         <div style={{ display: 'flex', gap: 12, justifyContent: 'center' }}>
                             <button className="btn-secondary" onClick={() => setDeleteConfirmId(null)} style={{ flex: 1, padding: '12px 0' }}>Cancel</button>
-                            <button className="btn-primary" onClick={executeDeleteTask} style={{ flex: 1, padding: '12px 0', background: '#ef4444', borderColor: '#ef4444' }}>
-                                Yes, Delete Task
+                            <button className="btn-primary" onClick={executeDeleteTask} disabled={!!deletingId} style={{ flex: 1, padding: '12px 0', background: '#ef4444', borderColor: '#ef4444' }}>
+                                {deletingId ? <div className="spinner" /> : 'Yes, Delete Task'}
                             </button>
                         </div>
                     </div>

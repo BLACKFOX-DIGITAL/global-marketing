@@ -46,7 +46,16 @@ function PriorityBadge({ priority, options }: { priority: string, options?: Arra
 
 import useSWR, { useSWRConfig } from 'swr'
 
-const fetcher = (url: string) => fetch(url).then(res => res.json())
+const fetcher = async (url: string) => {
+    const res = await fetch(url)
+    if (!res.ok) {
+        const err: any = new Error('API error')
+        err.status = res.status
+        try { err.data = await res.json() } catch {}
+        throw err
+    }
+    return res.json()
+}
 
 const CALL_OUTCOME_OPTIONS = [
     { value: 'connected_interested', label: 'Connected - Interested', icon: '✅', color: '#22c55e' },
@@ -69,17 +78,29 @@ export default function DashboardPage() {
     const [activeActionPopup, setActiveActionPopup] = useState<{ leadId: string, type: 'call' | 'mail' } | null>(null)
     const [editTaskId, setEditTaskId] = useState<string | null>(null)
     const [taskTab, setTaskTab] = useState<'today' | 'upcoming'>('today')
-    
+    const [togglingTask, setTogglingTask] = useState<string | null>(null)
+    const [actionPending, setActionPending] = useState<string | null>(null)
+    const [toasts, setToasts] = useState<{ id: number; msg: string; type: 'success' | 'error' }[]>([])
+
+    const showToast = (msg: string, type: 'success' | 'error' = 'success') => {
+        const id = Date.now()
+        setToasts(t => [...t, { id, msg, type }])
+        setTimeout(() => setToasts(t => t.filter(x => x.id !== id)), 3500)
+    }
+
     // Lightweight bootstrap: auth + settings + gamification (cached 5 min)
     const { data: init, error: initError } = useSWR('/api/dashboard/init', fetcher, {
         keepPreviousData: true,
         refreshInterval: 300_000,
+        onError: (err) => { if (err.status === 401) router.replace('/login') },
     })
 
     // Heavy KPI data: leads, tasks, pipeline, goals (refreshes every 30 sec)
-    const { data: statsData, error: statsError } = useSWR('/api/dashboard/stats', fetcher, {
+    const { data: statsData, error: statsError, mutate: mutateStats } = useSWR('/api/dashboard/stats', fetcher, {
         keepPreviousData: true,
         refreshInterval: 30_000,
+        errorRetryCount: 3,
+        errorRetryInterval: 5000,
     })
 
     useEffect(() => {
@@ -111,6 +132,24 @@ export default function DashboardPage() {
         </div>
     )
 
+    if (initError && !init) return (
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100vh', flexDirection: 'column', gap: 16 }}>
+            <div style={{ fontSize: 32 }}>⚠️</div>
+            <div style={{ fontSize: 15, fontWeight: 700, color: 'var(--text-primary)' }}>Failed to load workspace</div>
+            <div style={{ fontSize: 13, color: 'var(--text-muted)' }}>
+                {initError.status === 401 ? 'Session expired — redirecting to login...' : 'Could not connect to server. Check your connection and try again.'}
+            </div>
+            {initError.status !== 401 && (
+                <button
+                    onClick={() => mutate('/api/dashboard/init')}
+                    style={{ padding: '8px 20px', borderRadius: 8, background: 'var(--accent-primary)', color: 'white', border: 'none', fontWeight: 700, fontSize: 13, cursor: 'pointer' }}
+                >
+                    Retry
+                </button>
+            )}
+        </div>
+    )
+
     const data: DashboardData | null = statsData || null
     const settings: { leadStatuses: Array<{ value: string, color: string | null }>; stages: Array<{ value: string, color: string | null }>; priorities: Array<{ value: string, color: string | null }> } = init?.settings || { leadStatuses: [], stages: [], priorities: [] }
     const goalsData: { goals: Array<{ id: string, category: string, targetValue: number }>; progress: Record<string, number> } | null = statsData?.goals || null
@@ -118,61 +157,84 @@ export default function DashboardPage() {
     const userName = init?.user?.name ? init.user.name.split(' ')[0] : 'User'
 
     const holidays = data?.holidays || []
-    const maxPipelineCount = Math.max(...(data?.pipelineByStage?.map((s: any) => s._count) || [1]))
+    const pipelineArray = data?.pipelineByStage ?? []
+    const maxPipelineCount = pipelineArray.length > 0 ? Math.max(...pipelineArray.map((s: any) => s._count)) : 0
     const totalPipelineDeals = data?.pipelineByStage?.reduce((sum: number, s: any) => sum + s._count, 0) || 0
     const hour = new Date().getHours()
     const greeting = hour < 12 ? 'Good morning' : hour < 18 ? 'Good afternoon' : 'Good evening'
 
     const handleToggleTask = async (taskId: string) => {
+        if (togglingTask === taskId) return
+        setTogglingTask(taskId)
         try {
-            await fetch(`/api/tasks/${taskId}/toggle`, { method: 'PATCH' })
+            const res = await fetch(`/api/tasks/${taskId}/toggle`, { method: 'PATCH' })
+            if (!res.ok) throw new Error(`${res.status}`)
             mutate('/api/dashboard/stats')
-        } catch (err) {
-            console.error('Failed to toggle task:', err)
+        } catch {
+            showToast('Failed to update task', 'error')
+        } finally {
+            setTogglingTask(null)
         }
     }
 
     const handleLogCallStep = async (leadId: string, outcome: string, phone: string) => {
         setActiveActionPopup(null)
+        const pendingKey = `${leadId}:call`
+        if (actionPending === pendingKey) return
+        setActionPending(pendingKey)
         try {
-            await fetch(`/api/leads/${leadId}/call-attempt`, {
+            const res = await fetch(`/api/leads/${leadId}/call-attempt`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ outcome, note: `Dashboard log: ${outcome}` })
             })
+            if (!res.ok) throw new Error(`${res.status}`)
             mutate('/api/dashboard/stats')
             mutate((key: any) => typeof key === 'string' && (key.includes('/api/leads') || key.includes('/api/dashboard')))
-        } catch (err) {
-            console.error('Failed to log call:', err)
+            showToast('Call logged')
+        } catch {
+            showToast('Failed to log call', 'error')
+        } finally {
+            setActionPending(null)
         }
     }
 
     const handleLogMailStep = async (leadId: string, outcome: string, email: string) => {
         setActiveActionPopup(null)
+        const pendingKey = `${leadId}:mail`
+        if (actionPending === pendingKey) return
+        setActionPending(pendingKey)
         try {
-            await fetch(`/api/leads/${leadId}/mail-attempt`, {
+            const res = await fetch(`/api/leads/${leadId}/mail-attempt`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ outcome, note: `Dashboard log: ${outcome}` })
             })
+            if (!res.ok) throw new Error(`${res.status}`)
             mutate('/api/dashboard/stats')
             mutate((key: any) => typeof key === 'string' && (key.includes('/api/leads') || key.includes('/api/dashboard')))
-        } catch (err) {
-            console.error('Failed to log mail:', err)
+            showToast('Mail logged')
+        } catch {
+            showToast('Failed to log mail', 'error')
+        } finally {
+            setActionPending(null)
         }
     }
 
     const handleUpdateStatus = async (leadId: string, status: string) => {
         try {
-            await fetch(`/api/leads/${leadId}`, {
+            const res = await fetch(`/api/leads/${leadId}`, {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ status })
             })
+            if (!res.ok) throw new Error(`${res.status}`)
             mutate('/api/dashboard/stats')
             mutate((key: any) => typeof key === 'string' && (key.includes('/api/leads') || key.includes('/api/dashboard')))
-        } catch (err) {
-            console.error('Failed to update status:', err)
+            showToast('Status updated')
+        } catch {
+            showToast('Failed to update status', 'error')
+            mutate('/api/dashboard/stats')
         }
     }
 
@@ -222,10 +284,23 @@ export default function DashboardPage() {
                 backdropFilter: 'blur(12px)'
             }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                    <div style={{ width: 8, height: 8, borderRadius: '50%', background: '#10b981', boxShadow: '0 0 8px #10b981' }} />
+                    <div style={{ width: 8, height: 8, borderRadius: '50%', background: statsError ? '#ef4444' : '#10b981', boxShadow: `0 0 8px ${statsError ? '#ef4444' : '#10b981'}` }} />
                     <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-secondary)' }}>Live Dashboard</span>
+                    {statsError && !statsData && (
+                        <span style={{ fontSize: 11, color: '#ef4444', fontWeight: 600 }}>— data unavailable</span>
+                    )}
                 </div>
-                <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>{format(new Date(), 'EEEE, MMMM d yyyy')}</div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+                    {statsError && !statsData && (
+                        <button
+                            onClick={() => mutateStats()}
+                            style={{ fontSize: 11, color: 'var(--accent-primary)', background: 'rgba(99,102,241,0.1)', border: '1px solid rgba(99,102,241,0.2)', borderRadius: 6, padding: '4px 10px', cursor: 'pointer', fontWeight: 700 }}
+                        >
+                            Retry
+                        </button>
+                    )}
+                    <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>{format(new Date(), 'EEEE, MMMM d yyyy')}</div>
+                </div>
             </div>
 
             <div className="crm-content" style={{ padding: '20px 24px', maxWidth: 1600, margin: '0' }}>
@@ -396,14 +471,16 @@ export default function DashboardPage() {
                                             borderBottom: idx < (data?.todaysTasks.length || 0) - 1 ? '1px solid var(--border)' : 'none',
                                             transition: 'background 0.15s'
                                         }}>
-                                            <button 
+                                            <button
                                                 onClick={() => handleToggleTask(task.id)}
+                                                disabled={togglingTask === task.id}
                                                 style={{
                                                     width: 18, height: 18, borderRadius: 6, flexShrink: 0, marginTop: 2,
                                                     border: `2px solid ${task.completed ? '#10b981' : 'var(--border)'}`,
                                                     background: task.completed ? '#10b981' : 'transparent',
                                                     display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                                    cursor: 'pointer', outline: 'none', padding: 0
+                                                    cursor: togglingTask === task.id ? 'wait' : 'pointer', outline: 'none', padding: 0,
+                                                    opacity: togglingTask === task.id ? 0.5 : 1
                                                 }}
                                             >
                                                 {task.completed && <Check size={10} color="white" strokeWidth={4} />}
@@ -492,10 +569,10 @@ export default function DashboardPage() {
                             <h3 style={{ margin: 0, fontSize: 14, fontWeight: 700 }}>Deals by Stage</h3>
                         </div>
                         <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-                            {data?.pipelineByStage.length === 0 ? (
+                            {pipelineArray.length === 0 ? (
                                 <div style={{ color: 'var(--text-muted)', fontSize: 13, textAlign: 'center', padding: 24 }}>No pipeline data</div>
                             ) : (
-                                data?.pipelineByStage.map(stage => {
+                                pipelineArray.map((stage: any) => {
                                     const stgConf = settings.stages.find(s => s.value === stage.stage)
                                     const color = stgConf?.color || 'var(--accent-primary)'
                                     const pct = maxPipelineCount > 0 ? Math.round((stage._count / maxPipelineCount) * 100) : 0
@@ -707,6 +784,22 @@ export default function DashboardPage() {
                     priorities={settings.priorities}
                 />
             )}
+
+            {/* Toast notifications */}
+            <div style={{ position: 'fixed', bottom: 24, right: 24, zIndex: 9999, display: 'flex', flexDirection: 'column', gap: 8, pointerEvents: 'none' }}>
+                {toasts.map(t => (
+                    <div key={t.id} style={{
+                        padding: '10px 16px', borderRadius: 10, fontSize: 13, fontWeight: 600,
+                        background: t.type === 'error' ? '#ef4444' : '#10b981',
+                        color: 'white',
+                        boxShadow: '0 4px 16px rgba(0,0,0,0.3)',
+                        animation: 'fadeSlideUp 0.25s ease both',
+                        pointerEvents: 'auto'
+                    }}>
+                        {t.msg}
+                    </div>
+                ))}
+            </div>
         </div>
     )
 }

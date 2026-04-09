@@ -139,7 +139,7 @@ function toLeadPayload(lead: Lead) {
     }
 }
 
-function Stepper({ lead, onRefresh, onConvert, availableStatuses }: { lead: Lead, onRefresh: () => void, onConvert: () => void, availableStatuses: { value: string, color: string | null }[] }) {
+function Stepper({ lead, onRefresh, onConvert, onNotify, availableStatuses }: { lead: Lead, onRefresh: () => void, onConvert: () => void, onNotify: (msg: string, type: 'success' | 'error') => void, availableStatuses: { value: string, color: string | null }[] }) {
     const [activePopup, setActivePopup] = useState<string | null>(null)
     const [note, setNote] = useState('')
     const [dueDate, setDueDate] = useState('')
@@ -194,36 +194,42 @@ function Stepper({ lead, onRefresh, onConvert, availableStatuses }: { lead: Lead
             setShowDatePicker(true)
             return
         }
-        
+
         setSubmitting(true)
         try {
-            await fetch(`/api/leads/${lead.id}/call-attempt`, {
+            const res = await fetch(`/api/leads/${lead.id}/call-attempt`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ outcome, note: note || undefined, dueDate: dueDate || undefined }),
             })
+            if (!res.ok) throw new Error('Failed to log call')
             setActivePopup(null)
             setNote('')
             setDueDate('')
             setShowDatePicker(false)
+            onNotify('Call outcome logged', 'success')
             onRefresh()
-        } catch (err) { console.error(err) }
-        finally { setSubmitting(false) }
+        } catch {
+            onNotify('Failed to log call outcome. Please try again.', 'error')
+        } finally { setSubmitting(false) }
     }
 
     const logMailAttempt = async (outcome: string) => {
         setSubmitting(true)
         try {
-            await fetch(`/api/leads/${lead.id}/mail-attempt`, {
+            const res = await fetch(`/api/leads/${lead.id}/mail-attempt`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ outcome, note: note || undefined }),
             })
+            if (!res.ok) throw new Error('Failed to log mail')
             setActivePopup(null)
             setNote('')
+            onNotify('Mail outcome logged', 'success')
             onRefresh()
-        } catch (err) { console.error(err) }
-        finally { setSubmitting(false) }
+        } catch {
+            onNotify('Failed to log mail outcome. Please try again.', 'error')
+        } finally { setSubmitting(false) }
     }
 
     const handleDirectStatus = async (newStatus: string) => {
@@ -476,6 +482,9 @@ export default function LeadDetailContent({ id, linkPrefix = '' }: { id: string,
     const [newTask, setNewTask] = useState({ title: '', taskType: 'Follow-up', dueDate: '', priority: 'Medium' })
     const [creatingTask, setCreatingTask] = useState(false)
     const [priorities, setPriorities] = useState<{ value: string; color: string | null }[]>([])
+    // Sync the new-task priority to the first loaded option when priorities arrive
+    // and the current default ('Medium') isn't actually available.
+    const [newTaskPriorityInit, setNewTaskPriorityInit] = useState(false)
     const [savingNotes, setSavingNotes] = useState<'idle' | 'saving' | 'saved'>('idle')
     // Track the last notes value that was saved so we only auto-save on actual changes.
     const savedNotesRef = useRef<string | null | undefined>(undefined)
@@ -545,9 +554,12 @@ export default function LeadDetailContent({ id, linkPrefix = '' }: { id: string,
                 celebrateBig()
                 // Small delay so user sees confetti before navigating
                 setTimeout(() => router.push(`${linkPrefix}/opportunities`), 800)
+            } else {
+                const data = await res.json().catch(() => ({}))
+                setNotification({ message: data.error || 'Failed to convert lead. Please try again.', type: 'error' })
             }
-        } catch (err) {
-            console.error(err)
+        } catch {
+            setNotification({ message: 'Failed to convert lead. Please try again.', type: 'error' })
         } finally {
             setConverting(false)
         }
@@ -595,33 +607,47 @@ export default function LeadDetailContent({ id, linkPrefix = '' }: { id: string,
     const reassignLead = async (userId: string) => {
         if (!lead) return
         try {
-            await fetch(`/api/leads/${id}`, {
+            const res = await fetch(`/api/leads/${id}`, {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ ...toLeadPayload(lead), ownerId: userId })
             })
+            if (!res.ok) throw new Error('Failed to reassign')
             await fetchLeadAndOptions()
             setNotification({ message: 'Lead reassigned successfully', type: 'success' })
-        } catch (e) { console.error(e) }
+        } catch {
+            setNotification({ message: 'Failed to reassign lead. Please try again.', type: 'error' })
+        }
     }
 
     const handleCreateTask = async (e: React.FormEvent) => {
         e.preventDefault()
         if (!newTask.title.trim()) return
         setCreatingTask(true)
-        await fetch('/api/tasks', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ ...newTask, leadId: id })
-        })
-        setNewTask({ title: '', taskType: 'Follow-up', dueDate: '', priority: 'Medium' })
-        setCreatingTask(false)
-        await fetchLeadAndOptions()
+        try {
+            const res = await fetch('/api/tasks', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ ...newTask, leadId: id })
+            })
+            if (!res.ok) throw new Error('Failed to create task')
+            setNewTask(f => ({ title: '', taskType: f.taskType, dueDate: '', priority: f.priority }))
+            await fetchLeadAndOptions()
+        } catch {
+            setNotification({ message: 'Failed to create task. Please try again.', type: 'error' })
+        } finally {
+            setCreatingTask(false)
+        }
     }
 
     const handleToggleTask = async (taskId: string) => {
-        await fetch(`/api/tasks/${taskId}/toggle`, { method: 'PATCH' })
-        await fetchLeadAndOptions()
+        try {
+            const res = await fetch(`/api/tasks/${taskId}/toggle`, { method: 'PATCH' })
+            if (!res.ok) throw new Error('Failed to toggle task')
+            await fetchLeadAndOptions()
+        } catch {
+            setNotification({ message: 'Failed to update task. Please try again.', type: 'error' })
+        }
     }
 
     const handleUpdateLead = useCallback(async (updates: Partial<Lead>) => {
@@ -694,6 +720,17 @@ export default function LeadDetailContent({ id, linkPrefix = '' }: { id: string,
     useEffect(() => {
         fetchLeadAndOptions()
     }, [fetchLeadAndOptions])
+
+    // Once priorities load, snap the default to the first option if current default isn't in the list
+    useEffect(() => {
+        if (priorities.length > 0 && !newTaskPriorityInit) {
+            setNewTaskPriorityInit(true)
+            setNewTask(f => ({
+                ...f,
+                priority: priorities.some(p => p.value === f.priority) ? f.priority : priorities[0].value
+            }))
+        }
+    }, [priorities, newTaskPriorityInit])
 
     if (loading) return <div style={{ display: 'flex', justifyContent: 'center', padding: 100 }}><div className="spinner" style={{ width: 32, height: 32 }} /></div>
     
@@ -776,9 +813,14 @@ export default function LeadDetailContent({ id, linkPrefix = '' }: { id: string,
                         <div style={{ marginTop: 16, padding: '12px 0 0 0', borderTop: '1px solid var(--border)' }}>
                             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
                                 <div style={{ fontSize: 10, fontWeight: 800, color: 'var(--text-muted)', letterSpacing: '0.8px', textTransform: 'uppercase' }}>Pipeline Progress</div>
-                                <div style={{ background: 'rgba(99, 102, 241, 0.1)', color: 'var(--accent-secondary)', padding: '2px 10px', borderRadius: 6, fontSize: 11, fontWeight: 700 }}>{lead.status}</div>
+                                {(() => {
+                                    const statusColor = statuses.find(s => s.value === lead.status)?.color || 'var(--accent-primary)'
+                                    return (
+                                        <div style={{ background: `${statusColor}18`, color: statusColor, padding: '2px 10px', borderRadius: 6, fontSize: 11, fontWeight: 700, border: `1px solid ${statusColor}30` }}>{lead.status}</div>
+                                    )
+                                })()}
                             </div>
-                            <Stepper lead={lead} onRefresh={fetchLeadAndOptions} onConvert={handleConvert} availableStatuses={statuses} />
+                            <Stepper lead={lead} onRefresh={fetchLeadAndOptions} onConvert={handleConvert} onNotify={(msg, type) => setNotification({ message: msg, type })} availableStatuses={statuses} />
                         </div>
 
                         <div style={{ marginTop: 16, borderTop: '1px solid var(--border)', paddingTop: 16, display: 'flex', gap: 20, flexWrap: 'wrap' }}>
@@ -864,9 +906,12 @@ export default function LeadDetailContent({ id, linkPrefix = '' }: { id: string,
                     {/* Tabs Section */}
                     <div className="card" style={{ padding: 0, minHeight: 0, display: 'flex', flexDirection: 'column' }}>
                         <div style={{ borderBottom: '1px solid var(--border)', display: 'flex', gap: 0, padding: '0 20px' }}>
-                            {[
-                                { key: 'tasks' as const, icon: <CheckSquare size={14} />, label: 'Tasks' },
-                            ].map(t => (
+                            {(() => {
+                                const overdueCount = lead.tasks?.filter(t => !t.completed && t.dueDate && new Date(t.dueDate) < new Date()).length ?? 0
+                                return [
+                                    { key: 'tasks' as const, icon: <CheckSquare size={14} />, label: 'Tasks', badge: overdueCount },
+                                ]
+                            })().map(t => (
                                 <button key={t.key}
                                     onClick={() => setActiveTab(t.key)}
                                     style={{
@@ -877,6 +922,9 @@ export default function LeadDetailContent({ id, linkPrefix = '' }: { id: string,
                                     }}
                                 >
                                     {t.icon} {t.label}
+                                    {'badge' in t && t.badge > 0 && (
+                                        <span style={{ background: '#ef4444', color: '#fff', fontSize: 9, fontWeight: 800, borderRadius: 8, padding: '1px 5px', marginLeft: 2, lineHeight: 1.6 }}>{t.badge}</span>
+                                    )}
                                 </button>
                             ))}
                         </div>
@@ -907,7 +955,10 @@ export default function LeadDetailContent({ id, linkPrefix = '' }: { id: string,
                                                 style={{ flex: 1, height: 34, fontSize: 12 }} />
                                             <select value={newTask.priority} onChange={e => setNewTask(f => ({ ...f, priority: e.target.value }))}
                                                 style={{ width: 90, height: 34, fontSize: 11 }}>
-                                                {priorities.map(p => <option key={p.value} value={p.value}>{p.value}</option>)}
+                                                {priorities.length === 0
+                                                    ? <option value="" disabled>Loading…</option>
+                                                    : priorities.map(p => <option key={p.value} value={p.value}>{p.value}</option>)
+                                                }
                                             </select>
                                             <input type="datetime-local" value={newTask.dueDate}
                                                 onChange={e => setNewTask(f => ({ ...f, dueDate: e.target.value }))}
@@ -1175,7 +1226,10 @@ export default function LeadDetailContent({ id, linkPrefix = '' }: { id: string,
             {/* In-app Notification (Toast) */}
             {notification && (
                 <div style={{ position: 'fixed', bottom: 32, left: '50%', transform: 'translateX(-50%)', background: 'var(--bg-card)', border: '1px solid var(--border)', padding: '12px 24px', borderRadius: 12, display: 'flex', alignItems: 'center', gap: 12, zIndex: 1000, boxShadow: '0 8px 32px rgba(0,0,0,0.15)', animation: 'slideUp 0.3s ease-out' }}>
-                    <div style={{ width: 24, height: 24, borderRadius: '50%', background: 'rgba(34,197,94,0.1)', color: '#22c55e', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><CheckCircle size={14} /></div>
+                    {notification.type === 'error'
+                        ? <div style={{ width: 24, height: 24, borderRadius: '50%', background: 'rgba(239,68,68,0.1)', color: '#ef4444', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><AlertCircle size={14} /></div>
+                        : <div style={{ width: 24, height: 24, borderRadius: '50%', background: 'rgba(34,197,94,0.1)', color: '#22c55e', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><CheckCircle size={14} /></div>
+                    }
                     <span style={{ fontSize: 14, fontWeight: 500, color: 'var(--text-primary)' }}>{notification.message}</span>
                 </div>
             )}
