@@ -102,6 +102,7 @@ export default function EditTaskModal({ taskId, onClose, onSuccess, leads, prior
         dueDate: '',
         leadId: '',
     })
+    const [leadDisplay, setLeadDisplay] = useState<string | null>(null)
     const [loading, setLoading] = useState(true)
     const [submitting, setSubmitting] = useState(false)
     const [error, setError] = useState('')
@@ -121,6 +122,12 @@ export default function EditTaskModal({ taskId, onClose, onSuccess, leads, prior
                         dueDate: data.dueDate ? new Date(data.dueDate).toISOString().slice(0, 16) : '',
                         leadId: data.leadId || '',
                     })
+                    if (data.lead) {
+                        setLeadDisplay(data.lead.company
+                            ? `${data.lead.name} (${data.lead.company})`
+                            : data.lead.name
+                        )
+                    }
                 }
                 setLoading(false)
             })
@@ -182,14 +189,17 @@ export default function EditTaskModal({ taskId, onClose, onSuccess, leads, prior
                 )}
 
                 <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-                    <div className="form-group">
-                        <label className="form-label">Associated Lead</label>
-                        <SearchableLeadPicker
-                            leads={leads}
-                            value={form.leadId}
-                            onChange={val => setForm(f => ({ ...f, leadId: val }))}
-                        />
-                    </div>
+                    {leadDisplay && (
+                        <div className="form-group">
+                            <label className="form-label">Associated Lead</label>
+                            <div style={{
+                                padding: '10px 12px', borderRadius: 10, border: '1px solid var(--border)',
+                                background: 'var(--bg-input)', fontSize: 13, color: 'var(--text-secondary)'
+                            }}>
+                                {leadDisplay}
+                            </div>
+                        </div>
+                    )}
 
                     <div className="form-group">
                         <label className="form-label">Task Type</label>
@@ -245,7 +255,7 @@ export default function EditTaskModal({ taskId, onClose, onSuccess, leads, prior
 
                     <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end', marginTop: 8 }}>
                         <button type="button" className="btn-secondary" onClick={onClose}>Cancel</button>
-                        <button type="submit" className="btn-primary" disabled={submitting || !form.leadId}>
+                        <button type="submit" className="btn-primary" disabled={submitting}>
                             {submitting ? <div className="spinner" /> : 'Save Changes'}
                         </button>
                     </div>

@@ -31,24 +31,23 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
             }
         })
 
-        // Find the matching statuses from SystemOption avoiding hardcoded strict matches
+        // Find the matching statuses from SystemOption — never fall back to hardcoded strings,
+        // because if the admin has renamed or removed those statuses the lead would get an
+        // orphaned status value that breaks filtering and the reclaim system.
         const statusOptions = await prisma.systemOption.findMany({ where: { category: 'LEAD_STATUS' } })
-        
+
         const callStatusOpt = statusOptions.find(o => o.value.toLowerCase().includes('call'))
-        const callStatus = callStatusOpt ? callStatusOpt.value : 'Called'
-        
         const lostStatusOpt = statusOptions.find(o => o.value.toLowerCase() === 'lost' || o.value.toLowerCase().includes('lost'))
-        const lostStatus = lostStatusOpt ? lostStatusOpt.value : 'Lost'
-        
-        
+
         // Increment call count and update last outcome
         const lead = await prisma.lead.update({
             where: { id },
             data: {
                 callCount: { increment: 1 },
                 lastCallOutcome: outcome,
-                ...(outcome === 'connected_interested' ? { status: callStatus, callOutcome: 'Talked' } : {}),
-                ...(outcome === 'connected_not_interested' ? { status: lostStatus, callOutcome: 'Talked' } : {}),
+                // Only update status if a matching system option exists; otherwise leave it unchanged
+                ...(outcome === 'connected_interested' && callStatusOpt ? { status: callStatusOpt.value, callOutcome: 'Talked' } : {}),
+                ...(outcome === 'connected_not_interested' && lostStatusOpt ? { status: lostStatusOpt.value, callOutcome: 'Talked' } : {}),
                 lastActivityAt: new Date(),
                 lastMeaningfulActivityAt: new Date(), // Real sales action — resets reclaim clock
             }

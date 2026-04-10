@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { getCurrentUser, isManager } from '@/lib/auth'
+import { logActivity } from '@/lib/activity'
 import type { Prisma } from '@prisma/client'
 
 export const dynamic = 'force-dynamic'
@@ -54,11 +55,27 @@ export async function POST(req: NextRequest) {
             return NextResponse.json({ error: 'Title is required' }, { status: 400 })
         }
 
+        // Resolve stage: use provided value, else first configured stage, else error
+        let stage = body.stage
+        if (!stage) {
+            const firstStage = await prisma.systemOption.findFirst({
+                where: { category: 'OPPORTUNITY_STAGE' },
+                orderBy: { order: 'asc' }
+            })
+            if (!firstStage) {
+                return NextResponse.json(
+                    { error: 'No opportunity stages configured. Ask an administrator to add stages in Settings.' },
+                    { status: 400 }
+                )
+            }
+            stage = firstStage.value
+        }
+
         const opportunity = await prisma.opportunity.create({
             data: {
                 title: body.title,
                 company: body.company,
-                stage: body.stage || 'Test Job Received',
+                stage,
                 probability: body.probability || 20,
                 closeDate: body.closeDate ? new Date(body.closeDate) : null,
                 notes: body.notes,
@@ -77,6 +94,15 @@ export async function POST(req: NextRequest) {
         // Create initial stage history
         await prisma.stageHistory.create({
             data: { stage: opportunity.stage, opportunityId: opportunity.id },
+        })
+
+        await logActivity({
+            userId: user.userId,
+            type: 'OPPORTUNITY',
+            action: 'CREATED',
+            description: `Created opportunity: ${opportunity.title}`,
+            opportunityId: opportunity.id,
+            leadId: opportunity.leadId ?? undefined
         })
 
         return NextResponse.json({ ...opportunity }, { status: 201 })

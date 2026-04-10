@@ -127,9 +127,10 @@ export async function GET(req: Request) {
                     lastActivityAt: new Date(),
                 }
             })
-            // Close any open system warning tasks for this lead
+            // Close all open tasks for this lead — rep no longer owns it, orphaned tasks
+            // would appear in their task list pointing to a lead they can't access
             await prisma.task.updateMany({
-                where: { leadId: lead.id, taskType: 'System Warning', completed: false },
+                where: { leadId: lead.id, completed: false },
                 data: { completed: true, completedAt: new Date(), status: 'Completed' }
             })
             await logActivity({
@@ -176,8 +177,10 @@ export async function GET(req: Request) {
                 include: {
                     tasks: {
                         where: {
-                            taskType: 'System Warning',
-                            completed: false
+                            taskType: 'System Warning'
+                            // Include both completed and incomplete — if a rep manually marks a
+                            // warning complete, we still need to detect it so the reclaim proceeds
+                            // instead of issuing a duplicate warning.
                         },
                         orderBy: { createdAt: 'desc' }
                     }
@@ -204,9 +207,10 @@ export async function GET(req: Request) {
                                 lastActivityAt: new Date(),
                             }
                         })
-                        // Close all open system warning tasks so the rep's task list is clean
+                        // Close all open tasks — rep no longer owns the lead, orphaned tasks
+                        // would appear in their list pointing to a lead they can't access
                         await prisma.task.updateMany({
-                            where: { leadId: lead.id, taskType: 'System Warning', completed: false },
+                            where: { leadId: lead.id, completed: false },
                             data: { completed: true, completedAt: new Date(), status: 'Completed' }
                         })
                         await logActivity({

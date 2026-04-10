@@ -14,7 +14,13 @@ export async function GET(req: NextRequest) {
     const status = searchParams.get('status') || ''
 
     const skip = (page - 1) * limit
-    const where: Prisma.LeadWhereInput = { ownerId: null, isDeleted: false }
+    // Default to 'Open Pool' — only show leads that are actively pooled.
+    // Without this, edge-case leads with ownerId: null but wrong statuses could leak in.
+    const where: Prisma.LeadWhereInput = {
+        ownerId: null,
+        isDeleted: false,
+        status: status || 'Open Pool',
+    }
 
     if (search) {
         where.OR = [
@@ -22,10 +28,6 @@ export async function GET(req: NextRequest) {
             { company: { contains: search } },
             { email: { contains: search } },
         ]
-    }
-
-    if (status) {
-        where.status = status
     }
 
     const [leads, total] = await Promise.all([

@@ -16,7 +16,6 @@ const TABLES_ORDER = [
     'Task',
     'ActivityLog',
     'Notification',
-    'Attachment',
     'UserGoal',
     'StageHistory',
     'CallAttempt',

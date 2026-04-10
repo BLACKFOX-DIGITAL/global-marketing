@@ -5,7 +5,6 @@ import Link from 'next/link'
 import { } from 'next/navigation'
 import { format, parseISO } from 'date-fns'
 import ActivityTimeline from '@/components/ActivityTimeline'
-import AttachmentList from '@/components/AttachmentList'
 import Editor from '@/components/Editor'
 import { Loader2, Check } from 'lucide-react'
 
@@ -15,18 +14,16 @@ interface Opportunity {
     owner: { name: string; email: string } | null
     lead: { name: string; company: string | null } | null
     activityLogs: Array<{ id: string, action: string, description: string, createdAt: string, user: { name: string } }>
-    attachments: Array<{ id: string, name: string, fileUrl: string, fileSize: number, fileType: string | null, createdAt: string }>
 }
 
 export default function OpportunityDetailPage({ params }: { params: Promise<{ id: string }> }) {
     const { id } = use(params)
     const [opp, setOpp] = useState<Opportunity | null>(null)
     const [loading, setLoading] = useState(true)
-    const [activeTab, setActiveTab] = useState<'timeline' | 'attachments' | 'notes'>('timeline')
-    const [uploading, setUploading] = useState(false)
+    const [activeTab, setActiveTab] = useState<'timeline' | 'notes'>('timeline')
     const [stages, setStages] = useState<{ value: string, color: string | null }[]>([])
     const [stageConfirm, setStageConfirm] = useState<{ newStage: string } | null>(null)
-    const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null)
+    const [stageUpdating, setStageUpdating] = useState(false)
     const [savingNotes, setSavingNotes] = useState<'idle' | 'saving' | 'saved'>('idle')
     const initialNotesRef = useRef<string | null>(null)
 
@@ -101,8 +98,8 @@ export default function OpportunityDetailPage({ params }: { params: Promise<{ id
     }
 
     const executeStageUpdate = async (newStage: string) => {
-        if (!opp) return
-
+        if (!opp || stageUpdating) return
+        setStageUpdating(true)
         setOpp({ ...opp, stage: newStage })
         try {
             await fetch(`/api/opportunities/${id}`, {
@@ -112,30 +109,17 @@ export default function OpportunityDetailPage({ params }: { params: Promise<{ id
             })
             setStageConfirm(null)
 
-            // 🎉 Big celebration for winning a deal!
             if (newStage === 'Closed Won') {
                 const { celebrateBig } = await import('@/lib/confetti')
                 celebrateBig()
             }
 
             fetchOppAndOptions()
-        } catch (e) { console.error(e) }
+        } catch (e) { console.error(e) } finally {
+            setStageUpdating(false)
+        }
     }
 
-    const handleDeleteAttachment = async (attachId: string) => {
-        setDeleteConfirmId(attachId)
-    }
-
-    const executeDeleteAttachment = async (attachId: string) => {
-        await fetch(`/api/attachments?id=${attachId}`, { method: 'DELETE' })
-        setDeleteConfirmId(null)
-        fetchOppAndOptions()
-    }
-
-    // File upload requires a storage backend (e.g. S3/R2). Not yet implemented.
-    const handleUpload = async (_name: string) => {
-        alert('File upload is not yet configured. Please contact your administrator.')
-    }
 
     if (loading) return <div style={{ display: 'flex', justifyContent: 'center', padding: 100 }}><div className="spinner" style={{ width: 32, height: 32 }} /></div>
     if (!opp) return <div style={{ padding: 40 }}><p style={{ color: 'var(--text-muted)' }}>Opportunity not found.</p></div>
@@ -190,12 +174,10 @@ export default function OpportunityDetailPage({ params }: { params: Promise<{ id
                     <div className="card" style={{ padding: 0, minHeight: 400 }}>
                         <div style={{ borderBottom: '1px solid var(--border)', display: 'flex', gap: 32, padding: '0 32px' }}>
                             <button onClick={() => setActiveTab('timeline')} className={`tab ${activeTab === 'timeline' ? 'active' : ''}`} style={{ padding: '16px 0', border: 'none', background: 'none', borderBottom: `2.5px solid ${activeTab === 'timeline' ? 'var(--accent-primary)' : 'transparent'}`, color: activeTab === 'timeline' ? 'var(--text-primary)' : 'var(--text-muted)', fontWeight: 700, fontSize: 14, cursor: 'pointer' }}>Timeline</button>
-                            <button onClick={() => setActiveTab('attachments')} className={`tab ${activeTab === 'attachments' ? 'active' : ''}`} style={{ padding: '16px 0', border: 'none', background: 'none', borderBottom: `2.5px solid ${activeTab === 'attachments' ? 'var(--accent-primary)' : 'transparent'}`, color: activeTab === 'attachments' ? 'var(--text-primary)' : 'var(--text-muted)', fontWeight: 700, fontSize: 14, cursor: 'pointer' }}>Files</button>
                             <button onClick={() => setActiveTab('notes')} className={`tab ${activeTab === 'notes' ? 'active' : ''}`} style={{ padding: '16px 0', border: 'none', background: 'none', borderBottom: `2.5px solid ${activeTab === 'notes' ? 'var(--accent-primary)' : 'transparent'}`, color: activeTab === 'notes' ? 'var(--text-primary)' : 'var(--text-muted)', fontWeight: 700, fontSize: 14, cursor: 'pointer' }}>Notes</button>
                         </div>
                         <div style={{ padding: 24 }}>
                             {activeTab === 'timeline' && <ActivityTimeline activities={opp.activityLogs} />}
-                            {activeTab === 'attachments' && <AttachmentList attachments={opp.attachments} onDelete={handleDeleteAttachment} onUpload={handleUpload} uploading={uploading} />}
                             {activeTab === 'notes' && (
                                 <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
                                     <div style={{ display: 'flex', justifyContent: 'flex-end', height: 16 }}>
@@ -278,30 +260,8 @@ export default function OpportunityDetailPage({ params }: { params: Promise<{ id
                         </div>
                         <div style={{ display: 'flex', gap: 12, justifyContent: 'center' }}>
                             <button className="btn-secondary" onClick={() => setStageConfirm(null)} style={{ flex: 1, padding: '12px 0' }}>Cancel</button>
-                            <button className="btn-primary" onClick={() => executeStageUpdate(stageConfirm.newStage)} style={{ flex: 1, padding: '12px 0', background: stageConfirm.newStage === 'Closed Won' ? '#10b981' : '#ef4444', borderColor: stageConfirm.newStage === 'Closed Won' ? '#10b981' : '#ef4444' }}>
-                                Yes, Mark as {stageConfirm.newStage === 'Closed Won' ? 'Won' : 'Lost'}
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            )}
-
-            {deleteConfirmId && (
-                <div className="modal-overlay" onClick={e => e.target === e.currentTarget && setDeleteConfirmId(null)}>
-                    <div className="modal" style={{ maxWidth: 440, padding: 32 }}>
-                        <div style={{ textAlign: 'center', marginBottom: 24 }}>
-                            <div style={{ width: 64, height: 64, background: 'rgba(239, 68, 68, 0.1)', color: '#ef4444', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px' }}>
-                                <Loader2 size={32} />
-                            </div>
-                            <h3 style={{ fontSize: 22, fontWeight: 700, marginBottom: 8, color: 'var(--text-primary)' }}>Delete Attachment</h3>
-                            <p style={{ color: 'var(--text-secondary)', fontSize: 14, lineHeight: 1.6 }}>
-                                Are you sure you want to permanently delete this file? This action cannot be undone.
-                            </p>
-                        </div>
-                        <div style={{ display: 'flex', gap: 12, justifyContent: 'center' }}>
-                            <button className="btn-secondary" onClick={() => setDeleteConfirmId(null)} style={{ flex: 1, padding: '12px 0' }}>Cancel</button>
-                            <button className="btn-primary" onClick={() => executeDeleteAttachment(deleteConfirmId)} style={{ flex: 1, padding: '12px 0', background: '#ef4444', borderColor: '#ef4444' }}>
-                                Yes, Delete File
+                            <button className="btn-primary" onClick={() => executeStageUpdate(stageConfirm.newStage)} disabled={stageUpdating} style={{ flex: 1, padding: '12px 0', background: stageConfirm.newStage === 'Closed Won' ? '#10b981' : '#ef4444', borderColor: stageConfirm.newStage === 'Closed Won' ? '#10b981' : '#ef4444' }}>
+                                {stageUpdating ? 'Saving...' : `Yes, Mark as ${stageConfirm.newStage === 'Closed Won' ? 'Won' : 'Lost'}`}
                             </button>
                         </div>
                     </div>

@@ -54,7 +54,7 @@ export async function GET(req: NextRequest) {
         }),
         prisma.attendanceRecord.count({ where }),
         prisma.attendanceRecord.aggregate({
-            where: { userId: user.userId, punchIn: { gte: since } },
+            where,
             _sum: { duration: true },
         }),
     ])

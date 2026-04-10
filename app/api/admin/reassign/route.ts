@@ -74,10 +74,16 @@ export async function PUT(req: NextRequest) {
             select: { id: true, name: true, company: true, ownerId: true }
         })
 
-        // Perform the bulk update — also reset lastActivityAt so reps aren't immediately warned
+        // Perform the bulk update — reset both activity timestamps so the new rep
+        // isn't immediately penalized for the previous rep's inactivity
         const updatedLeads = await prisma.lead.updateMany({
             where: { id: { in: leadIds }, isDeleted: false },
-            data: { ownerId: newOwnerId, lastActivityAt: new Date() }
+            data: {
+                ownerId: newOwnerId,
+                previousOwnerId: null,
+                lastActivityAt: new Date(),
+                lastMeaningfulActivityAt: new Date(),
+            }
         })
 
         // Notify the new owner once with a summary
@@ -116,9 +122,9 @@ export async function PUT(req: NextRequest) {
             if (lead.ownerId !== newOwnerId) {
                 await logActivity({
                     userId: newOwnerId,
-                    type: 'SYSTEM',
-                    action: 'SENT_TO_POOL',
-                    description: `Lead manually reassigned by administrator to another rep.`,
+                    type: 'LEAD',
+                    action: 'UPDATED',
+                    description: `Lead manually reassigned by administrator.`,
                     leadId: lead.id
                 })
             }

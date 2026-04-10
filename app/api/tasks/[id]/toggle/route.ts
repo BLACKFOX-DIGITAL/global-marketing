@@ -35,10 +35,15 @@ export async function PATCH(_req: NextRequest, { params }: { params: Promise<{ i
         let gamification = null
         if (updated.completed) {
             gamification = await awardXP(user.userId, 'TASK_COMPLETED', 'TASK_COMPLETED', id)
-            // Bonus XP for on-time completion
+            // Bonus XP for on-time completion — isolated so a failure here doesn't
+            // return a 500 to the client when the task itself was already saved successfully.
             const isOnTime = task.dueDate ? new Date() <= task.dueDate : false
             if (isOnTime) {
-                await awardXP(user.userId, 'TASK_ON_TIME_BONUS', 'TASK_ON_TIME_BONUS', id)
+                try {
+                    await awardXP(user.userId, 'TASK_ON_TIME_BONUS', 'TASK_ON_TIME_BONUS', id)
+                } catch (bonusErr) {
+                    console.error('[Gamification] TASK_ON_TIME_BONUS failed silently:', bonusErr)
+                }
             }
         }
 

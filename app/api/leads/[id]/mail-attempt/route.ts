@@ -37,19 +37,17 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
         const statusOptions = await prisma.systemOption.findMany({ where: { category: 'LEAD_STATUS' } })
 
         const mailStatusOpt = statusOptions.find(o => o.value.toLowerCase().includes('mail') || o.value.toLowerCase().includes('email'))
-        const mailStatus = mailStatusOpt ? mailStatusOpt.value : 'Mail Sent'
-
         const lostStatusOpt = statusOptions.find(o => o.value.toLowerCase() === 'lost' || o.value.toLowerCase().includes('lost'))
-        const lostStatus = lostStatusOpt ? lostStatusOpt.value : 'Lost'
 
         const lead = await prisma.lead.update({
             where: { id },
             data: {
                 mailCount: { increment: 1 },
                 lastMailOutcome: outcome,
-                ...(outcome === 'sent' || outcome === 'follow_up' ? { status: mailStatus } : {}),
-                ...(outcome === 'response_interested' ? { status: mailStatus } : {}),
-                ...(outcome === 'response_not_interested' ? { status: lostStatus } : {}),
+                // Only update status if a matching system option exists; otherwise leave it unchanged
+                ...(outcome === 'sent' || outcome === 'follow_up' ? (mailStatusOpt ? { status: mailStatusOpt.value } : {}) : {}),
+                ...(outcome === 'response_interested' ? (mailStatusOpt ? { status: mailStatusOpt.value } : {}) : {}),
+                ...(outcome === 'response_not_interested' ? (lostStatusOpt ? { status: lostStatusOpt.value } : {}) : {}),
                 lastActivityAt: new Date(),
                 lastMeaningfulActivityAt: new Date(),
             }

@@ -54,7 +54,7 @@ export default function PoolPage() {
 
     async function handleClaim(id: string) {
         setClaiming(id)
-        setClaimError(null)
+        setClaimError(null) // always clear previous error before a new attempt
         const res = await fetch(`/api/leads/${id}/claim`, { method: 'POST' })
 
         if (res.ok) {
@@ -68,7 +68,7 @@ export default function PoolPage() {
         } else {
             const err = await res.json()
             setClaimError(err.error || 'Failed to claim lead')
-            setTimeout(() => setClaimError(null), 3000)
+            // No auto-dismiss — user must close manually so they don't miss the error
         }
         setClaiming(null)
     }
@@ -117,7 +117,7 @@ export default function PoolPage() {
                         className="btn-primary"
                         style={{ padding: '4px 12px', fontSize: 11, display: 'inline-flex', alignItems: 'center', gap: 6, borderRadius: 8 }}
                         onClick={() => handleClaim(lead.id)}
-                        disabled={claiming !== null}
+                        disabled={claiming === lead.id}
                     >
                         {claiming === lead.id ? <div className="spinner" style={{ width: 12, height: 12, borderColor: '#fff', borderTopColor: 'transparent' }} /> : <Hand size={12} />}
                         Claim
@@ -251,6 +251,7 @@ export default function PoolPage() {
                 <div style={{ position: 'fixed', bottom: 32, left: '50%', transform: 'translateX(-50%)', background: 'var(--bg-card)', border: '1px solid #ef4444', padding: '12px 24px', borderRadius: 12, display: 'flex', alignItems: 'center', gap: 12, zIndex: 1000, boxShadow: '0 8px 32px rgba(0,0,0,0.15)' }}>
                     <div style={{ width: 24, height: 24, borderRadius: '50%', background: 'rgba(239,68,68,0.1)', color: '#ef4444', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14, fontWeight: 700 }}>!</div>
                     <span style={{ fontSize: 13, color: 'var(--text-primary)', fontWeight: 500 }}>{claimError}</span>
+                    <button onClick={() => setClaimError(null)} style={{ marginLeft: 4, background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)', fontSize: 16, lineHeight: 1, padding: '0 2px' }}>✕</button>
                 </div>
             )}
         </div>

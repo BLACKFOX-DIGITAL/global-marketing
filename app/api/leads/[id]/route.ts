@@ -15,7 +15,6 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
             owner: { select: { id: true, name: true, email: true } },
             opportunities: { orderBy: { createdAt: 'desc' } },
             contacts: true,
-            attachments: { orderBy: { createdAt: 'desc' } },
             tasks: { include: { owner: { select: { name: true } } }, orderBy: [{ completed: 'asc' }, { dueDate: 'asc' }] },
         },
     })
@@ -54,6 +53,12 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
             return NextResponse.json({ error: 'Website is required' }, { status: 400 })
         }
 
+        const isStatusChange = oldLead.status !== body.status
+        // When admin unassigns a lead (sets ownerId to null / returns to pool),
+        // record previousOwnerId so the fresh-eyes policy works on next claim.
+        const newOwnerId = user.role === 'Administrator' ? (body.ownerId !== undefined ? body.ownerId : user.userId) : user.userId
+        const ownerChangingToPool = user.role === 'Administrator' && newOwnerId === null && oldLead.ownerId !== null
+
         const lead = await prisma.lead.update({
             where: { id },
             data: {
@@ -69,9 +74,12 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
                 socials: body.socials,
                 callOutcome: body.status === 'Called' ? (body.callOutcome || null) : null,
                 notes: body.notes,
-                // Only admins can reassign leads (including returning to pool with null)
-                ownerId: user.role === 'Administrator' ? (body.ownerId !== undefined ? body.ownerId : user.userId) : user.userId,
-                lastActivityAt: new Date()
+                ownerId: newOwnerId,
+                // Preserve fresh-eyes history when admin manually returns a lead to pool
+                ...(ownerChangingToPool ? { previousOwnerId: oldLead.ownerId } : {}),
+                lastActivityAt: new Date(),
+                // A manual status change resets the reclaim clock just like a call/email would
+                ...(isStatusChange ? { lastMeaningfulActivityAt: new Date() } : {}),
             },
             include: { owner: { select: { id: true, name: true, email: true } } },
         })
@@ -141,6 +149,11 @@ export async function DELETE(_req: NextRequest, { params }: { params: Promise<{ 
                 description: `Requested deletion for lead: ${lead.name} (${lead.company || 'N/A'})`,
                 leadId: id
             })
+            // Close all open tasks so they don't remain orphaned after deletion
+            await prisma.task.updateMany({
+                where: { leadId: id, completed: false },
+                data: { completed: true, completedAt: new Date(), status: 'Completed' }
+            })
             // Perform soft delete
             await prisma.lead.update({
                 where: { id },
@@ -152,7 +165,7 @@ export async function DELETE(_req: NextRequest, { params }: { params: Promise<{ 
                 }
             })
         }
-        return NextResponse.json({ message: 'Soft Deleted (Pending Review)' })
+        return NextResponse.json({ message: 'Lead deleted and queued for admin review' })
     } catch {
         return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 })
     }

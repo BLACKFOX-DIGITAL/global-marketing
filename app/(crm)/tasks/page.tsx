@@ -16,7 +16,6 @@ const TASK_TYPES = [
     { value: 'Meeting', icon: '🤝', color: '#f59e0b' },
     { value: 'Follow-up', icon: '🔄', color: '#10b981' },
     { value: 'Send Proposal', icon: '📄', color: '#8b5cf6' },
-    { value: 'System Warning', icon: '⚠️', color: '#f43f5e' },
     { value: 'Other', icon: '📌', color: '#94a3b8' },
 ]
 
@@ -553,7 +552,9 @@ export default function TasksPage() {
                                                         <Calendar size={14} style={{ opacity: 0.6 }} />
                                                         <span style={{ fontVariantNumeric: 'tabular-nums' }}>
                                                             {(() => {
-                                                                if (!mounted) return task.dueDate ? format(parseISO(task.dueDate), 'MMM d') : 'Today'
+                                                                // SSR fallback: use a locale-neutral format to avoid hydration mismatch.
+                                                                // Never default to 'Today' here — task may be due on a different day.
+                                                                if (!mounted) return task.dueDate ? format(parseISO(task.dueDate), 'MMM d') : format(parseISO(task.createdAt), 'MMM d')
                                                                 const d = task.dueDate ? parseISO(task.dueDate) : parseISO(task.createdAt)
                                                                 if (isToday(d)) return (
                                                                     <span style={{ color: 'var(--accent-primary)', fontWeight: 800, display: 'flex', alignItems: 'center', gap: 5 }}>

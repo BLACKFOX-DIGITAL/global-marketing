@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { getCurrentUser, isManager } from '@/lib/auth'
 import { awardXP } from '@/lib/gamification'
+import { logActivity } from '@/lib/activity'
 import type { Prisma } from '@prisma/client'
 
 export async function GET(req: NextRequest) {
@@ -138,6 +139,14 @@ export async function POST(req: NextRequest) {
         await prisma.lead.update({
             where: { id: body.leadId },
             data: { lastActivityAt: new Date() }
+        })
+
+        await logActivity({
+            userId: user.userId,
+            type: 'TASK',
+            action: 'TASK_CREATED',
+            description: `Created task: ${task.title}`,
+            leadId: task.leadId ?? undefined,
         })
 
         const gamificationResult = await awardXP(user.userId, 'TASK_CREATED', 'TASK_CREATED', task.id)

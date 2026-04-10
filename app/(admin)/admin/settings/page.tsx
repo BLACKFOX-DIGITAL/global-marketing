@@ -1,11 +1,10 @@
 'use client'
 import { useState, useEffect } from 'react'
-import { Plus, Edit2, Trash2, Check, X, GripVertical, Settings, Activity, Database, Clock, Waves, Briefcase, Zap, Users, User, Mail, Palmtree, Ban, ShieldAlert } from 'lucide-react'
+import { Plus, Edit2, Trash2, Check, X, GripVertical, Settings, Activity, Database, Clock, Waves, Briefcase, Zap, Users, User, Palmtree, Ban, ShieldAlert } from 'lucide-react'
 import { format, parseISO } from 'date-fns'
 
 interface SystemOption { id: string; category: string; value: string; color: string | null; order: number }
 interface TeamMember { id: string; name: string; email: string; role: string; createdAt: string; baseSalary: number; resendSenderEmail?: string | null; isSuspended: boolean }
-interface EmailTemplate { id: string; name: string; subject: string; body: string; createdAt: string }
 interface Holiday { id: string; name: string; description: string | null; date: string }
 
 const SETTINGS_GROUPS = [
@@ -38,7 +37,6 @@ const SETTINGS_GROUPS = [
         name: 'System',
         categories: [
             { id: 'DATA_MANAGEMENT', label: 'Database & Backup', icon: Database },
-            { id: 'EMAIL_INTEGRATION', label: 'Email Integration', icon: Mail }
         ]
     }
 ]
@@ -49,7 +47,6 @@ export default function AdminSettings() {
     const [options, setOptions] = useState<SystemOption[]>([])
     const [teamMembers, setTeamMembers] = useState<TeamMember[]>([])
     const [holidays, setHolidays] = useState<Holiday[]>([])
-    const [templates, setTemplates] = useState<EmailTemplate[]>([])
     const [activeCategory, setActiveCategory] = useState(CATEGORIES[0].id)
     const [loading, setLoading] = useState(true)
     const [error, setError] = useState<string | null>(null)
@@ -101,10 +98,6 @@ export default function AdminSettings() {
     const [newUserRole, setNewUserRole] = useState('Sales Rep')
     const [newUserSalary, setNewUserSalary] = useState(0)
 
-    const [templateId, setTemplateId] = useState<string | null>(null)
-    const [templateName, setTemplateName] = useState('')
-    const [templateSubject, setTemplateSubject] = useState('')
-    const [templateBody, setTemplateBody] = useState('')
 
     const [holidayName, setHolidayName] = useState('')
     const [holidayDate, setHolidayDate] = useState('')
@@ -177,15 +170,14 @@ export default function AdminSettings() {
     async function fetchData() {
         setLoading(true)
         try {
-            const [optsRes, configRes, usersRes, holidayRes, templatesRes] = await Promise.all([
-                fetch(`/api/admin/settings`), fetch(`/api/admin/config`), fetch(`/api/admin/users`), fetch(`/api/admin/holidays`), fetch(`/api/admin/email-templates`)
+            const [optsRes, configRes, usersRes, holidayRes] = await Promise.all([
+                fetch(`/api/admin/settings`), fetch(`/api/admin/config`), fetch(`/api/admin/users`), fetch(`/api/admin/holidays`)
             ])
             if (optsRes.ok) setOptions((await optsRes.json()).options)
             else if (optsRes.status === 403) setError('Only System Admins can access configuration settings.')
             if (configRes.ok) { const d = await configRes.json(); setConfigs(prev => ({ ...prev, ...d.settings })) }
             if (usersRes.ok) setTeamMembers((await usersRes.json()).users)
             if (holidayRes.ok) setHolidays((await holidayRes.json()).holidays)
-            if (templatesRes.ok) setTemplates((await templatesRes.json()).templates)
         } catch { setError('Failed to fetch data.') } finally { setLoading(false) }
     }
 
@@ -322,26 +314,6 @@ export default function AdminSettings() {
         setProcessing(id); if ((await fetch(`/api/admin/holidays/${id}`, { method: 'DELETE' })).ok) setHolidays(holidays.filter(h => h.id !== id)); setProcessing(null)
     }
 
-    async function handleSaveTemplate(e: React.FormEvent) {
-        e.preventDefault(); setProcessing('template')
-        const res = await fetch(templateId ? `/api/admin/email-templates/${templateId}` : '/api/admin/email-templates', { method: templateId ? 'PUT' : 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name: templateName, subject: templateSubject, body: templateBody }) })
-        if (res.ok) { await fetchData(); setAdding(false); setTemplateId(null); setTemplateName(''); setTemplateSubject(''); setTemplateBody('') }
-        setProcessing(null)
-    }
-
-    async function handleDeleteEmailTemplate(id: string) {
-        setModalConfirm({
-            title: 'Delete Template',
-            message: 'Are you sure you want to delete this email template?',
-            type: 'danger',
-            onConfirm: async () => {
-                setProcessing(id)
-                if ((await fetch(`/api/admin/email-templates/${id}`, { method: 'DELETE' })).ok) setTemplates(templates.filter(t => t.id !== id))
-                setProcessing(null)
-                setModalConfirm(null)
-            }
-        })
-    }
 
     async function handleRestoreDefaults() {
         setModalConfirm({
@@ -453,8 +425,6 @@ export default function AdminSettings() {
                             )}
                             {activeCategory === 'TEAM_MEMBERS' ? (
                                 !adding && <button onClick={() => setAdding(true)} style={{ padding: '6px 14px', borderRadius: 8, fontSize: 11, fontWeight: 900, background: 'var(--accent-primary)', border: 'none', color: '#fff', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6, textTransform: 'uppercase', letterSpacing: '0.5px' }}><Plus size={14} strokeWidth={3} /> New Member</button>
-                            ) : activeCategory === 'EMAIL_INTEGRATION' ? (
-                                !adding && <button onClick={() => { setAdding(true); setTemplateId(null); setTemplateName(''); setTemplateSubject(''); setTemplateBody('') }} style={{ padding: '6px 14px', borderRadius: 8, fontSize: 11, fontWeight: 900, background: 'var(--accent-primary)', border: 'none', color: '#fff', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6, textTransform: 'uppercase', letterSpacing: '0.5px' }}><Plus size={14} strokeWidth={3} /> New Template</button>
                             ) : activeCategory === 'HOLIDAYS' ? (
                                 !adding && <button onClick={() => setAdding(true)} style={{ padding: '6px 14px', borderRadius: 8, fontSize: 11, fontWeight: 900, background: 'var(--accent-primary)', border: 'none', color: '#fff', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6, textTransform: 'uppercase', letterSpacing: '0.5px' }}><Plus size={14} strokeWidth={3} /> Add Holiday</button>
                             ) : activeCategory === 'DATA_MANAGEMENT' ? (
@@ -755,61 +725,6 @@ export default function AdminSettings() {
                                         </div>
                                     </div>
                                 ))}
-                            </div>
-                        ) : activeCategory === 'EMAIL_INTEGRATION' ? (
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
-                                <div style={{ maxWidth: 800 }}>
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 16 }}>
-                                        <div style={{ width: 4, height: 16, background: 'var(--accent-primary)', borderRadius: 2 }} />
-                                        <h4 style={{ fontSize: 13, fontWeight: 800, color: '#f8fafc', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Email Provider Settings</h4>
-                                    </div>
-                                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
-                                        <div>
-                                            <label style={{ display: 'block', fontSize: 9, fontWeight: 900, marginBottom: 6, color: '#475569', textTransform: 'uppercase' }}>API Access Token</label>
-                                            <input type="password" value={configs.RESEND_API_KEY} onChange={e => handleUpdateConfig('RESEND_API_KEY', e.target.value)} style={{ width: '100%', padding: '8px 12px', borderRadius: 8, border: '1px solid var(--border)', background: 'rgba(0,0,0,0.2)', color: '#f8fafc', fontSize: 12, fontWeight: 800, outline: 'none' }} />
-                                        </div>
-                                        <div>
-                                            <label style={{ display: 'block', fontSize: 9, fontWeight: 900, marginBottom: 6, color: '#475569', textTransform: 'uppercase' }}>Webhook Secret</label>
-                                            <input type="password" value={configs.RESEND_WEBHOOK_SECRET} onChange={e => handleUpdateConfig('RESEND_WEBHOOK_SECRET', e.target.value)} style={{ width: '100%', padding: '8px 12px', borderRadius: 8, border: '1px solid var(--border)', background: 'rgba(0,0,0,0.2)', color: '#f8fafc', fontSize: 12, fontWeight: 800, outline: 'none' }} />
-                                        </div>
-                                    </div>
-                                </div>
-                                <div style={{ borderTop: '1px solid var(--border)', paddingTop: 24 }}>
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 16 }}>
-                                        <div style={{ width: 4, height: 16, background: '#10b981', borderRadius: 2 }} />
-                                        <h4 style={{ fontSize: 13, fontWeight: 800, color: '#f8fafc', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Email Templates</h4>
-                                    </div>
-                                    {adding && (
-                                        <form onSubmit={handleSaveTemplate} style={{ border: '1px solid var(--border)', borderRadius: 12, padding: 20, marginBottom: 16, background: 'rgba(255,255,255,0.02)', backdropFilter: 'blur(24px)' }}>
-                                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 12 }}>
-                                                <div><label style={{ display: 'block', fontSize: 9, fontWeight: 900, marginBottom: 6, color: '#475569', textTransform: 'uppercase' }}>Template Name</label><input value={templateName} onChange={e => setTemplateName(e.target.value)} required style={{ width: '100%', padding: '8px 10px', borderRadius: 6, border: '1px solid var(--border)', background: 'rgba(0,0,0,0.2)', color: '#f8fafc', fontSize: 12, fontWeight: 800, outline: 'none' }} /></div>
-                                                <div><label style={{ display: 'block', fontSize: 9, fontWeight: 900, marginBottom: 6, color: '#475569', textTransform: 'uppercase' }}>Email Subject</label><input value={templateSubject} onChange={e => setTemplateSubject(e.target.value)} required style={{ width: '100%', padding: '8px 10px', borderRadius: 6, border: '1px solid var(--border)', background: 'rgba(0,0,0,0.2)', color: '#f8fafc', fontSize: 12, fontWeight: 800, outline: 'none' }} /></div>
-                                            </div>
-                                            <div style={{ marginBottom: 12 }}><label style={{ display: 'block', fontSize: 9, fontWeight: 900, marginBottom: 6, color: '#475569', textTransform: 'uppercase' }}>Email Body (HTML)</label><textarea value={templateBody} onChange={e => setTemplateBody(e.target.value)} required rows={4} style={{ width: '100%', padding: '8px 10px', borderRadius: 6, border: '1px solid var(--border)', background: 'rgba(0,0,0,0.2)', color: '#f8fafc', fontSize: 11, fontWeight: 700, outline: 'none', resize: 'none', lineHeight: 1.5 }} /></div>
-                                            <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end' }}>
-                                                <button type="button" onClick={() => setAdding(false)} style={{ padding: '6px 14px', borderRadius: 6, border: '1px solid var(--border)', background: 'transparent', color: '#64748b', cursor: 'pointer', fontWeight: 900, fontSize: 10, textTransform: 'uppercase' }}>Cancel</button>
-                                                <button type="submit" disabled={processing === 'template'} style={{ padding: '6px 14px', borderRadius: 6, border: 'none', background: '#10b981', color: 'white', cursor: 'pointer', fontWeight: 900, fontSize: 10, textTransform: 'uppercase' }}>Save Template</button>
-                                            </div>
-                                        </form>
-                                    )}
-                                    <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-                                        {templates.length === 0 ? <div style={{ color: '#475569', fontSize: 11, fontWeight: 700, padding: 20, textAlign: 'center' }}>No templates yet</div> : templates.map(t => (
-                                            <div key={t.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 16px', borderRadius: 10, border: '1px solid var(--border)', background: 'rgba(255,255,255,0.01)' }}>
-                                                <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                                                    <div style={{ width: 30, height: 30, borderRadius: 8, background: 'linear-gradient(135deg, #1e293b, #0f172a)', border: '1px solid rgba(255,255,255,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#10b981' }}><Mail size={14} strokeWidth={2.5} /></div>
-                                                    <div>
-                                                        <div style={{ fontWeight: 800, fontSize: 13, color: '#f8fafc' }}>{t.name}</div>
-                                                        <div style={{ fontSize: 10, color: '#64748b', fontWeight: 700 }}>{t.subject}</div>
-                                                    </div>
-                                                </div>
-                                                <div style={{ display: 'flex', gap: 4 }}>
-                                                    <button onClick={() => { setAdding(true); setTemplateId(t.id); setTemplateName(t.name); setTemplateSubject(t.subject); setTemplateBody(t.body) }} style={{ padding: 6, background: 'transparent', border: 'none', color: '#475569', cursor: 'pointer' }}><Edit2 size={13} strokeWidth={2.5} /></button>
-                                                    <button onClick={() => handleDeleteEmailTemplate(t.id)} style={{ padding: 6, background: 'transparent', border: 'none', color: '#f43f5e', cursor: 'pointer' }}><Trash2 size={13} strokeWidth={2.5} /></button>
-                                                </div>
-                                            </div>
-                                        ))}
-                                    </div>
-                                </div>
                             </div>
                         ) : activeCategory === 'HOLIDAYS' ? (
                             <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>

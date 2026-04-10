@@ -96,6 +96,25 @@ export async function PUT(req: NextRequest) {
             data
         })
 
+        // When a user is suspended, return all their active leads to the pool
+        // so they don't become orphaned and unmaintained
+        if (isSuspended === true) {
+            await prisma.lead.updateMany({
+                where: {
+                    ownerId: id,
+                    isDeleted: false,
+                    status: { notIn: ['Lost', 'Won', 'Converted', 'Active Client'] }
+                },
+                data: {
+                    ownerId: null,
+                    previousOwnerId: id,
+                    status: 'Open Pool',
+                    isClaimedFromPool: false,
+                    lastActivityAt: new Date()
+                }
+            })
+        }
+
         const { password: _, ...userWithoutPassword } = updatedUser
         return NextResponse.json(userWithoutPassword)
     } catch (err: unknown) {

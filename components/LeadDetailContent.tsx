@@ -7,11 +7,12 @@ import { format, parseISO } from 'date-fns'
 import EditLeadModal from '@/components/EditLeadModal'
 import ActivityTimeline from '@/components/ActivityTimeline'
 import Editor from '@/components/Editor'
-import EmailModal from '@/components/EmailModal'
+
 import EditTaskModal from '@/components/EditTaskModal'
 
 // Auto-validates email on mount, shows tick/cross
 // Capped at 500 entries to prevent unbounded memory growth on long sessions
+// Network errors are NOT cached so a retry on next visit gives an accurate result
 const EMAIL_CACHE_MAX = 500
 const emailBadgeCache = new Map<string, { state: 'loading' | 'valid' | 'unknown' | 'invalid' }>()
 function setEmailCache(key: string, value: { state: 'loading' | 'valid' | 'unknown' | 'invalid' }) {
@@ -21,7 +22,7 @@ function setEmailCache(key: string, value: { state: 'loading' | 'valid' | 'unkno
     emailBadgeCache.set(key, value)
 }
 function EmailBadge({ email }: { email: string }) {
-    const [state, setState] = useState<'loading' | 'valid' | 'unknown' | 'invalid'>('loading')
+    const [state, setState] = useState<'loading' | 'valid' | 'unknown' | 'invalid' | 'error'>('loading')
     useEffect(() => {
         // Handle multiple emails by taking the first one for the badge status
         const firstEmail = email.split(',')[0] || ''
@@ -50,7 +51,8 @@ function EmailBadge({ email }: { email: string }) {
             setEmailCache(trimmed, { state: s })
             if (mounted) setState(s)
         }).catch(() => {
-            if (mounted) setState('unknown')
+            // Network/timeout error — don't cache so the next visit retries the validation
+            if (mounted) setState('error')
         })
         return () => {
             mounted = false
@@ -64,6 +66,7 @@ function EmailBadge({ email }: { email: string }) {
     if (state === 'valid') return <div title="Email verified" style={{ ...iconStyle, width: 16, height: 16, borderRadius: '50%', background: 'rgba(34,197,94,0.15)', alignItems: 'center', justifyContent: 'center' }}><Check size={10} color="#22c55e" strokeWidth={3} /></div>
     if (state === 'unknown') return <div title="Domain verified" style={{ ...iconStyle, width: 16, height: 16, borderRadius: '50%', background: 'rgba(234,179,8,0.15)', alignItems: 'center', justifyContent: 'center' }}><Check size={10} color="#eab308" strokeWidth={3} /></div>
     if (state === 'invalid') return <div title="Invalid email" style={{ ...iconStyle, width: 16, height: 16, borderRadius: '50%', background: 'rgba(239,68,68,0.15)', alignItems: 'center', justifyContent: 'center' }}><AlertCircle size={10} color="#ef4444" /></div>
+    if (state === 'error') return <div title="Could not verify (network error)" style={{ ...iconStyle, width: 16, height: 16, borderRadius: '50%', background: 'rgba(148,163,184,0.15)', alignItems: 'center', justifyContent: 'center' }}><AlertCircle size={10} color="var(--text-muted)" /></div>
     return null
 }
 
@@ -83,7 +86,6 @@ interface Lead {
     ownerId: string | null; owner: { id: string; name: string; email: string } | null;
     contacts: Array<{ id: string; name: string; email: string | null; phone: string | null; position: string | null; socials: string | null; isPrimary: boolean }>;
     tasks: Array<{ id: string; title: string; taskType: string; priority: string; completed: boolean; dueDate: string | null; owner: { name: string } | null }>;
-    attachments: Array<{ id: string; name: string; fileUrl: string; fileType: string | null; fileSize: number | null; createdAt: string }>;
     mailCount: number; callCount: number; lastCallOutcome: string | null; lastMailOutcome: string | null;
 }
 
@@ -488,8 +490,13 @@ export default function LeadDetailContent({ id, linkPrefix = '' }: { id: string,
     const [savingNotes, setSavingNotes] = useState<'idle' | 'saving' | 'saved'>('idle')
     // Track the last notes value that was saved so we only auto-save on actual changes.
     const savedNotesRef = useRef<string | null | undefined>(undefined)
+    // notesDirtyRef: true when the user has typed notes that haven't been saved yet.
+    // pendingNotesRef: the user's in-progress notes content (separate from server state).
+    // Without these, a server refresh (e.g. after logging a call) would overwrite the
+    // user's typed notes in lead.notes, causing the auto-save to write back stale data.
+    const notesDirtyRef = useRef(false)
+    const pendingNotesRef = useRef<string | null | undefined>(undefined)
     const leadRef = useRef<Lead | null>(null)
-    const [showEmailModal, setShowEmailModal] = useState(false)
 
     const [error, setError] = useState<number | null>(null)
     const [editTaskId, setEditTaskId] = useState<string | null>(null)
@@ -596,7 +603,15 @@ export default function LeadDetailContent({ id, linkPrefix = '' }: { id: string,
             safeFetch('/api/users')
         ])
 
-        if (leadData.id) { setLead(leadData); leadRef.current = leadData }
+        if (leadData.id) {
+            // If the user is actively editing notes, preserve their in-progress content
+            // so a concurrent server refresh doesn't wipe unsaved work.
+            if (notesDirtyRef.current && pendingNotesRef.current !== undefined) {
+                leadData.notes = pendingNotesRef.current
+            }
+            setLead(leadData)
+            leadRef.current = leadData
+        }
         if (statusData.options) setStatuses(statusData.options)
         if (priorityData.options) setPriorities(priorityData.options)
         if (userData && userData.users) setUsers(userData.users)
@@ -640,13 +655,18 @@ export default function LeadDetailContent({ id, linkPrefix = '' }: { id: string,
         }
     }
 
+    const togglingTaskRef = useRef<string | null>(null)
     const handleToggleTask = async (taskId: string) => {
+        if (togglingTaskRef.current === taskId) return
+        togglingTaskRef.current = taskId
         try {
             const res = await fetch(`/api/tasks/${taskId}/toggle`, { method: 'PATCH' })
             if (!res.ok) throw new Error('Failed to toggle task')
             await fetchLeadAndOptions()
         } catch {
             setNotification({ message: 'Failed to update task. Please try again.', type: 'error' })
+        } finally {
+            togglingTaskRef.current = null
         }
     }
 
@@ -703,6 +723,8 @@ export default function LeadDetailContent({ id, linkPrefix = '' }: { id: string,
                 })
                 if (res.ok) {
                     savedNotesRef.current = currentNotes
+                    notesDirtyRef.current = false
+                    pendingNotesRef.current = undefined
                     setSavingNotes('saved')
                     setTimeout(() => setSavingNotes('idle'), 2000)
                 } else {
@@ -805,7 +827,6 @@ export default function LeadDetailContent({ id, linkPrefix = '' }: { id: string,
                                 </div>
                             </div>
                             <div style={{ display: 'flex', gap: 8, flexShrink: 0 }}>
-                                <button onClick={() => setShowEmailModal(true)} className="btn-primary" style={{ height: 32, padding: '0 12px', fontSize: 13 }}><Mail size={14} /> Email</button>
                                 <button onClick={() => setIsEditing(true)} className="btn-secondary" style={{ height: 32, padding: '0 12px', fontSize: 13 }}><Pencil size={14} /></button>
                             </div>
                         </div>
@@ -1067,7 +1088,11 @@ export default function LeadDetailContent({ id, linkPrefix = '' }: { id: string,
                         }}>
                             <Editor 
                                 content={lead.notes || ''} 
-                                onUpdate={(html) => setLead(l => l ? { ...l, notes: html } : null)}
+                                onUpdate={(html) => {
+                                    notesDirtyRef.current = true
+                                    pendingNotesRef.current = html
+                                    setLead(l => l ? { ...l, notes: html } : null)
+                                }}
                             />
                         </div>
                     </div>
@@ -1204,7 +1229,7 @@ export default function LeadDetailContent({ id, linkPrefix = '' }: { id: string,
                         </div>
                         <div style={{ display: 'flex', gap: 12, justifyContent: 'center' }}>
                             <button className="btn-secondary" onClick={() => setShowConvertModal(false)} style={{ flex: 1, padding: '12px 0' }}>Cancel</button>
-                            <button className="btn-primary" onClick={executeConvert} style={{ flex: 1, padding: '12px 0' }}>Yes, Convert Lead</button>
+                            <button className="btn-primary" onClick={executeConvert} disabled={converting} style={{ flex: 1, padding: '12px 0' }}>{converting ? 'Converting...' : 'Yes, Convert Lead'}</button>
                         </div>
                     </div>
                 </div>
@@ -1244,18 +1269,6 @@ export default function LeadDetailContent({ id, linkPrefix = '' }: { id: string,
                 .hover-copy:hover { opacity: 1 !important; }
                 div:hover > .hover-copy { opacity: 0.8; }
             `}</style>
-            {showEmailModal && lead && (
-                <EmailModal
-                    leadId={lead.id}
-                    leadName={lead.name}
-                    leadEmail={lead.email || ''}
-                    onClose={() => setShowEmailModal(false)}
-                    onSuccess={() => {
-                        setNotification({ message: 'Email sent successfully', type: 'success' })
-                        fetchLeadAndOptions()
-                    }}
-                />
-            )}
             </div>
         </div >
     )

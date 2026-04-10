@@ -7,7 +7,7 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
     const user = await getCurrentUser()
     if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     const { id } = await params
-    const task = await prisma.task.findUnique({ where: { id }, include: { owner: { select: { id: true, name: true, email: true } } } })
+    const task = await prisma.task.findUnique({ where: { id }, include: { owner: { select: { id: true, name: true, email: true } }, lead: { select: { id: true, name: true, company: true } } } })
     if (!task) return NextResponse.json({ error: 'Not found' }, { status: 404 })
 
     if (user.role !== 'Administrator' && task.ownerId !== user.userId) {

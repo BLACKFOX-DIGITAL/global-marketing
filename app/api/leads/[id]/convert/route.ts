@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { getCurrentUser } from '@/lib/auth'
 import { awardXP } from '@/lib/gamification'
+import { logActivity } from '@/lib/activity'
 
 export async function POST(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
     const user = await getCurrentUser()
@@ -27,7 +28,15 @@ export async function POST(_req: NextRequest, { params }: { params: Promise<{ id
             orderBy: { order: 'asc' },
             take: 1
         })
-        const initialStage = stageSettings.length > 0 ? stageSettings[0].value : 'Test Job Received'
+
+        if (stageSettings.length === 0) {
+            return NextResponse.json(
+                { error: 'No opportunity stages are configured. Ask an administrator to add at least one stage in Settings.' },
+                { status: 400 }
+            )
+        }
+
+        const initialStage = stageSettings[0].value
 
         // Wrap creation in a transaction to prevent duplicate conversions under concurrent requests
         const opportunity = await prisma.$transaction(async (tx) => {
@@ -60,6 +69,15 @@ export async function POST(_req: NextRequest, { params }: { params: Promise<{ id
             })
 
             return opp
+        })
+
+        await logActivity({
+            userId: user.userId,
+            type: 'LEAD',
+            action: 'CONVERTED',
+            description: `Converted lead to opportunity: ${opportunity.title}`,
+            leadId: id,
+            opportunityId: opportunity.id
         })
 
         const gamification = await awardXP(user.userId, 'LEAD_CONVERTED', 'LEAD_CONVERTED', id)

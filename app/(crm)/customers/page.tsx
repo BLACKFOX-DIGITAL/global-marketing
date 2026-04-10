@@ -189,7 +189,7 @@ export default function CustomersPage() {
                             </div>
                             <h3 style={{ fontSize: 22, fontWeight: 700, marginBottom: 8, color: 'var(--text-primary)' }}>Delete Customer</h3>
                             <p style={{ color: 'var(--text-secondary)', fontSize: 14, lineHeight: 1.6 }}>
-                                Are you sure you want to delete this customer? This action cannot be undone and will permanently remove all associated tasks, timelines, and files.
+                                Are you sure you want to delete this customer? This will remove them from your list and send them to admin review.
                             </p>
                         </div>
                         <div style={{ display: 'flex', gap: 12, justifyContent: 'center' }}>

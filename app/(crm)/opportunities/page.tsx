@@ -105,6 +105,7 @@ export default function OpportunitiesPage() {
     const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null)
     const [taskModalOpp, setTaskModalOpp] = useState<{ oppId: string, leadId: string | null } | null>(null)
     const [stageConfirm, setStageConfirm] = useState<{ id: string, newStage: string, oppTitle: string } | null>(null)
+    const [stageUpdating, setStageUpdating] = useState(false)
     const [searchQuery, setSearchQuery] = useState('')
 
     const filteredOpportunities = opportunities.filter(o =>
@@ -139,6 +140,9 @@ export default function OpportunitiesPage() {
     }
 
     const executeStageUpdate = async (id: string, newStage: string) => {
+        if (stageUpdating) return
+        setStageUpdating(true)
+
         if (newStage === 'Closed Won') {
             import('canvas-confetti').then((confetti) => {
                 confetti.default({ particleCount: 150, spread: 80, origin: { y: 0.6 } })
@@ -150,6 +154,7 @@ export default function OpportunitiesPage() {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ stage: newStage })
         })
+        setStageUpdating(false)
         setStageConfirm(null)
         mutateOpps()
     }
@@ -293,8 +298,8 @@ export default function OpportunitiesPage() {
                             </div>
                             <div style={{ display: 'flex', gap: 12, justifyContent: 'center' }}>
                                 <button className="btn-secondary" onClick={() => setStageConfirm(null)} style={{ flex: 1, padding: '12px 0' }}>Cancel</button>
-                                <button className="btn-primary" onClick={() => executeStageUpdate(stageConfirm.id, stageConfirm.newStage)} style={{ flex: 1, padding: '12px 0', background: stageConfirm.newStage === 'Closed Won' ? '#10b981' : '#ef4444', borderColor: stageConfirm.newStage === 'Closed Won' ? '#10b981' : '#ef4444' }}>
-                                    Yes, Mark as {stageConfirm.newStage === 'Closed Won' ? 'Won' : 'Lost'}
+                                <button className="btn-primary" onClick={() => executeStageUpdate(stageConfirm.id, stageConfirm.newStage)} disabled={stageUpdating} style={{ flex: 1, padding: '12px 0', background: stageConfirm.newStage === 'Closed Won' ? '#10b981' : '#ef4444', borderColor: stageConfirm.newStage === 'Closed Won' ? '#10b981' : '#ef4444' }}>
+                                    {stageUpdating ? 'Saving...' : `Yes, Mark as ${stageConfirm.newStage === 'Closed Won' ? 'Won' : 'Lost'}`}
                                 </button>
                             </div>
                         </div>

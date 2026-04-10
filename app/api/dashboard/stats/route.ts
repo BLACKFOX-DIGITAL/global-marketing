@@ -50,8 +50,8 @@ export async function GET() {
             }
         }),
         prisma.task.findMany({
-            where: { ...filter, dueDate: { gte: startOfDay, lt: endOfDay } },
-            orderBy: [{ completed: 'asc' }, { priority: 'desc' }],
+            where: { ...filter, dueDate: { gte: startOfDay, lt: endOfDay }, completed: false },
+            orderBy: [{ priority: 'desc' }],
             take: 5,
         }),
         prisma.opportunity.groupBy({ by: ['stage'], where: filter, _count: true }),

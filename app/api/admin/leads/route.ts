@@ -53,7 +53,7 @@ export async function POST(req: NextRequest) {
                         notes: lead.notes ? sanitize(lead.notes.trim()) : null,
                         industry: lead.industry ? sanitize(lead.industry.trim()) : null,
                         ownerId: assignTo || null,
-                        isClaimedFromPool: assignTo ? false : true,
+                        isClaimedFromPool: false,
                     }
                 })
                 results.success++

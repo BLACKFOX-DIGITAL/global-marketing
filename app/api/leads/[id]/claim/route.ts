@@ -48,6 +48,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
                     status: 'New',
                     isClaimedFromPool: true,
                     lastActivityAt: new Date(),
+                    lastMeaningfulActivityAt: new Date(),
                 }
             })
         })

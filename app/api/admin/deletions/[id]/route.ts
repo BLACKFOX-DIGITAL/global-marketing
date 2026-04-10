@@ -48,10 +48,6 @@ export async function DELETE(req: NextRequest, { params }: { params: Promise<{ i
             if (!lead.isDeleted) {
                 return NextResponse.json({ error: 'Lead is not in the deletion queue' }, { status: 400 })
             }
-            // TODO: Delete associated files from storage provider before purging the DB record.
-            // The app stores fileUrl strings in Attachment records — once integrated with a
-            // storage provider (e.g. S3, Supabase Storage), fetch all attachments here and
-            // call the provider's delete API before prisma.lead.delete().
             await prisma.lead.delete({ where: { id } })
             return NextResponse.json({ message: 'Lead purged permanently' })
         }
@@ -61,7 +57,6 @@ export async function DELETE(req: NextRequest, { params }: { params: Promise<{ i
             if (!opp.isDeleted) {
                 return NextResponse.json({ error: 'Opportunity is not in the deletion queue' }, { status: 400 })
             }
-            // TODO: Delete associated files from storage provider before purging the DB record.
             await prisma.opportunity.delete({ where: { id } })
             return NextResponse.json({ message: 'Opportunity purged permanently' })
         }

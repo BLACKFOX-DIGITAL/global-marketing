@@ -1,12 +1,11 @@
 'use client'
 import React, { useState, useEffect, use, useCallback, useRef } from 'react'
-import { Pencil, Mail, Phone, MapPin, Globe, Rocket, CheckSquare, Check, Calendar, User, Plus, History, Paperclip, MessageSquare, CheckCircle, AlertCircle, Loader2 } from 'lucide-react'
+import { Pencil, Mail, Phone, MapPin, Globe, Rocket, CheckSquare, Check, Calendar, User, Plus, History, MessageSquare, CheckCircle, AlertCircle, Loader2 } from 'lucide-react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { format, parseISO, formatDistanceToNow } from 'date-fns'
 import EditLeadModal from '@/components/EditLeadModal'
 import ActivityTimeline from '@/components/ActivityTimeline'
-import AttachmentList from '@/components/AttachmentList'
 
 // Auto-validates email on mount, shows tick/cross
 const emailBadgeCache = new Map<string, { state: 'loading' | 'valid' | 'unknown' | 'invalid' }>()
@@ -67,7 +66,6 @@ interface Lead {
     owner: { id: string; name: string; email: string } | null
     contacts: Array<{ id: string; name: string; email: string | null; phone: string | null; socials: string | null; position: string | null; isPrimary: boolean }>
     activityLogs: { id: string, type: string, action: string, description: string, createdAt: string, user: { name: string } }[]
-    attachments: { id: string, name: string, fileUrl: string, fileSize: number, fileType: string | null, createdAt: string }[]
     tasks: { id: string, title: string, taskType: string, completed: boolean, priority: string, dueDate: string | null, owner: { name: string } | null }[]
     callAttempts: { id: string, outcome: string, note?: string, createdAt: string }[]
     mailAttempts: { id: string, outcome: string, note?: string, createdAt: string }[]
@@ -412,8 +410,7 @@ export default function LeadDetailPage({ params }: { params: Promise<{ id: strin
     const [isEditing, setIsEditing] = useState(false)
     const [converting, setConverting] = useState(false)
     const [showConvertModal, setShowConvertModal] = useState(false)
-    const [activeTab, setActiveTab] = useState<'tasks' | 'attachments'>('tasks')
-    const [uploading, setUploading] = useState(false)
+    const [activeTab, setActiveTab] = useState<'tasks'>('tasks')
     const [newTask, setNewTask] = useState({ title: '', taskType: 'Follow-up', dueDate: '', priority: 'Medium' })
     const [creatingTask, setCreatingTask] = useState(false)
     const [priorities, setPriorities] = useState<{ value: string; color: string | null }[]>([])
@@ -563,27 +560,6 @@ export default function LeadDetailPage({ params }: { params: Promise<{ id: strin
          
     }, [currentNotes, id])
 
-    const handleDeleteAttachment = async (attachId: string) => {
-        await fetch(`/api/attachments?id=${attachId}`, { method: 'DELETE' })
-        await fetchLeadAndOptions()
-    }
-
-    const handleUpload = async (name: string) => {
-        setUploading(true)
-        await fetch('/api/attachments', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                name,
-                fileUrl: '#',
-                fileType: name.endsWith('.pdf') ? 'application/pdf' : 'image/png',
-                fileSize: 1024 * 450,
-                leadId: id
-            })
-        })
-        await fetchLeadAndOptions()
-        setUploading(false)
-    }
 
     useEffect(() => {
         fetchLeadAndOptions()
@@ -731,7 +707,6 @@ export default function LeadDetailPage({ params }: { params: Promise<{ id: strin
                         <div style={{ borderBottom: '1px solid var(--border)', display: 'flex', gap: 0, padding: '0 24px' }}>
                             {[
                                 { key: 'tasks' as const, icon: <CheckSquare size={15} />, label: 'Tasks', count: lead.tasks?.filter(t => !t.completed).length },
-                                { key: 'attachments' as const, icon: <Paperclip size={15} />, label: 'Files', count: lead.attachments?.length },
                             ].map(t => (
                                 <button key={t.key}
                                     onClick={() => setActiveTab(t.key)}
@@ -847,15 +822,6 @@ export default function LeadDetailPage({ params }: { params: Promise<{ id: strin
                                         </div>
                                     )}
                                 </div>
-                            )}
-
-                            {activeTab === 'attachments' && (
-                                <AttachmentList
-                                    attachments={lead.attachments}
-                                    onDelete={handleDeleteAttachment}
-                                    onUpload={handleUpload}
-                                    uploading={uploading}
-                                />
                             )}
                         </div>
                     </div>
