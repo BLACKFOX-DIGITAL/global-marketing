@@ -44,7 +44,7 @@ export async function createNotification({
     userId: string
     title: string
     message: string
-    type?: 'INFO' | 'SUCCESS' | 'WARNING' | 'URGENT'
+    type?: 'INFO' | 'SUCCESS' | 'WARNING' | 'URGENT' | 'SYSTEM_WARNING'
     link?: string
 }) {
     try {

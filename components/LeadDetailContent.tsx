@@ -1174,6 +1174,13 @@ export default function LeadDetailContent({ id, linkPrefix = '' }: { id: string,
 
                     {/* Overview */}
                     <div className="card" style={{ padding: 16 }}>
+                        <div style={{ fontSize: 11, color: 'var(--text-muted)', marginBottom: 12, display: 'flex', alignItems: 'center', gap: 6 }}>
+                            <Calendar size={12} color="var(--accent-primary)" />
+                            <span style={{ fontWeight: 700 }}>Created</span>
+                            <span style={{ marginLeft: 'auto', color: 'var(--text-secondary)', fontWeight: 500 }}>
+                                {format(parseISO(lead.createdAt), 'MMM d, yyyy')}
+                            </span>
+                        </div>
                         <div style={{ fontSize: 11, color: 'var(--text-muted)', marginBottom: 10, display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontWeight: 700 }}>
                             <span>Owner</span>
                             <select
