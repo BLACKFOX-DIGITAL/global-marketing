@@ -25,12 +25,12 @@ export async function POST(req: NextRequest) {
         // 1. Streak Risk Alerts
         const reps = await prisma.user.findMany({
             where: { role: 'Sales Rep', isSuspended: false },
-            select: { id: true, name: true, lastActiveDay: true, currentStreak: true, isUsingStreakFreeze: true }
+            select: { id: true, name: true, lastActiveDay: true, currentStreak: true, streakFreezeAvailable: true }
         })
 
         for (const rep of reps) {
-            // If they have a streak > 1, aren't using a freeze, and haven't logged activity today
-            if (rep.currentStreak > 1 && !rep.isUsingStreakFreeze) {
+            // If they have a streak > 1 and haven't logged activity today
+            if (rep.currentStreak > 1) {
                 const lastActiveStr = rep.lastActiveDay ? new Date(rep.lastActiveDay).toISOString().split('T')[0] : null
                 if (lastActiveStr !== todayStr) {
                     notifications.push({

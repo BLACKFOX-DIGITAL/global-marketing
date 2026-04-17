@@ -169,7 +169,7 @@ export default function LeadOperationsHub() {
         })
         if (res.ok) { 
             const data = await res.json()
-            alert(\`Import successful: Processed \${data.totalProcessed} leads. Skipped \${data.duplicatesSkipped} duplicates.\`)
+            alert(`Import successful: Processed ${data.totalProcessed} leads. Skipped ${data.duplicatesSkipped} duplicates.`)
             setCsvData([]); setShowImport(false); fetchData() 
         } else {
             alert('Failed to import leads.')
