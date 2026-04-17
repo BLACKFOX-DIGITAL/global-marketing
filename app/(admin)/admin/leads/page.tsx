@@ -163,11 +163,17 @@ export default function LeadOperationsHub() {
 
     const handleImport = async () => {
         setImporting(true)
-        const res = await fetch('/api/admin/leads', {
+        const res = await fetch('/api/admin/leads/import', {
             method: 'POST', headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ leads: csvData, assignTo: importAssignTo || null })
         })
-        if (res.ok) { setCsvData([]); setShowImport(false); fetchData() }
+        if (res.ok) { 
+            const data = await res.json()
+            alert(\`Import successful: Processed \${data.totalProcessed} leads. Skipped \${data.duplicatesSkipped} duplicates.\`)
+            setCsvData([]); setShowImport(false); fetchData() 
+        } else {
+            alert('Failed to import leads.')
+        }
         setImporting(false)
     }
 

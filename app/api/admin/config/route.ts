@@ -3,7 +3,6 @@ import { prisma } from '@/lib/prisma'
 import { getCurrentUser } from '@/lib/auth'
 
 const ALLOWED_CONFIG_KEYS = new Set([
-    'RESEND_API_KEY',
     'RECYCLE_DAYS',
     'CLAIM_LIMIT',
     'RECLAIM_HIGH', 'WARN_HIGH',

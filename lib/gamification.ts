@@ -185,6 +185,30 @@ export async function awardXP(userId: string, xpActionKey: keyof Awaited<ReturnT
     // --- Check Achievements ---
     const newAchievements = await checkAndUnlockAchievements(userId)
 
+    // --- Send Gamification Notifications ---
+    const notifications = []
+    if (leveledUp) {
+        notifications.push({
+            userId: userId,
+            type: 'SUCCESS',
+            title: 'Level Up! 🌟',
+            message: `Congratulations! You just reached Level ${newLevel}! Keep up the great work.`,
+            link: '/leaderboard'
+        })
+    }
+    for (const achievement of newAchievements) {
+        notifications.push({
+            userId: userId,
+            type: 'SUCCESS',
+            title: 'Achievement Unlocked! 🏆',
+            message: `You unlocked the "${achievement}" achievement!`,
+            link: '/leaderboard'
+        })
+    }
+    if (notifications.length > 0) {
+        await prisma.notification.createMany({ data: notifications })
+    }
+
     return {
         xpAwarded: xpAmount,
         xpBeforeMultiplier: baseXpAmount,

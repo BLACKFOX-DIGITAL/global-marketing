@@ -93,6 +93,16 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
             }
 
             if (body.stage === 'Closed Won') {
+                const allUsers = await prisma.user.findMany({ select: { id: true } })
+                const alerts = allUsers.map(u => ({
+                    userId: u.id,
+                    type: 'SUCCESS',
+                    title: '🚨 Deal Closed!',
+                    message: `💰 ${opp.owner?.name || user.name} just closed the ${opp.company || opp.title} deal!`,
+                    link: `/opportunities`
+                }))
+                await prisma.notification.createMany({ data: alerts })
+
                 const gamificationResult = await awardXP(user.userId, 'OPPORTUNITY_WON', 'OPPORTUNITY_WON', id)
                 return NextResponse.json({ ...opp, gamificationResult })
             }

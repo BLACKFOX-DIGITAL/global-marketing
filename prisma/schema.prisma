@@ -19,6 +19,8 @@ model User {
   longestStreak     Int                @default(0)
   lastActiveDay     DateTime?
   baseSalary        Float              @default(0)
+  streakFreezeAvailable Boolean        @default(true)
+  streakFreezeUsedAt    DateTime?
   createdAt         DateTime           @default(now())
   updatedAt         DateTime           @updatedAt
   activityLogs      ActivityLog[]
@@ -32,7 +34,9 @@ model User {
   goals             UserGoal[]
   achievements      UserAchievement[]
   xpHistory         XPHistory[]
-  resendSenderEmail String?
+  leadNotes         LeadNote[]
+  reminders         Reminder[]
+  monthlyAwards     MonthlyAward[]
   isSuspended       Boolean            @default(false)
   createdHolidays   Holiday[]          @relation("HolidayCreator")
 }
@@ -78,6 +82,8 @@ model Lead {
   tasks         Task[]
   callAttempts  CallAttempt[]
   mailAttempts  MailAttempt[]
+  leadNotes     LeadNote[]
+  reminders     Reminder[]
 
   @@index([ownerId, isDeleted])
   @@index([status, isDeleted])
@@ -103,18 +109,15 @@ model CallAttempt {
 }
 
 model MailAttempt {
-  id             String   @id @default(cuid())
-  leadId         String
-  outcome        String // sent, follow_up, response_interested, response_not_interested
-  note           String?
-  createdAt      DateTime @default(now())
-  createdBy      String?
-  resendId       String?  @unique
-  deliveryStatus String? // Delivered, Opened, Clicked, Bounced, etc.
-  lead           Lead     @relation(fields: [leadId], references: [id], onDelete: Cascade)
+  id        String   @id @default(cuid())
+  leadId    String
+  outcome   String // sent, follow_up, response_interested, response_not_interested
+  note      String?
+  createdAt DateTime @default(now())
+  createdBy String?
+  lead      Lead     @relation(fields: [leadId], references: [id], onDelete: Cascade)
 
   @@index([leadId, createdAt])
-  @@index([resendId])
 }
 
 model Contact {
@@ -346,11 +349,44 @@ model Holiday {
   @@index([date])
 }
 
-model EmailTemplate {
+model LeadNote {
   id        String   @id @default(cuid())
-  name      String   @unique
-  subject   String
-  body      String
+  leadId    String
+  userId    String
+  content   String
   createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  lead      Lead     @relation(fields: [leadId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([leadId, createdAt])
 }
+
+model Reminder {
+  id          String   @id @default(cuid())
+  leadId      String
+  userId      String
+  message     String?
+  remindAt    DateTime
+  isTriggered Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  lead        Lead     @relation(fields: [leadId], references: [id], onDelete: Cascade)
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, isTriggered])
+  @@index([remindAt, isTriggered])
+}
+
+model MonthlyAward {
+  id        String   @id @default(cuid())
+  userId    String
+  month     Int
+  year      Int
+  category  String   // top_closer, longest_streak, call_king, rising_star
+  value     Int      @default(0)
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, month, year, category])
+  @@index([month, year])
+}
+

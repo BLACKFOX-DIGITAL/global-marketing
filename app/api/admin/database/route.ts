@@ -9,7 +9,6 @@ const TABLES_ORDER = [
     'SystemOption',
     'SystemSetting',
     'Holiday',
-    'EmailTemplate',
     'Lead',
     'Contact',
     'Opportunity',
@@ -20,10 +19,13 @@ const TABLES_ORDER = [
     'StageHistory',
     'CallAttempt',
     'MailAttempt',
+    'LeadNote',
+    'Reminder',
     'AttendanceRecord',
     'LeaveRequest',
     'UserAchievement',
-    'XPHistory'
+    'XPHistory',
+    'MonthlyAward'
 ]
 
 export async function GET() {

@@ -2,6 +2,7 @@ import { getCurrentUser } from '@/lib/auth'
 import { redirect } from 'next/navigation'
 import Sidebar from '@/components/Sidebar'
 import CommandPalette from '@/components/CommandPalette'
+import KeyboardShortcutsProvider from '@/components/KeyboardShortcutsProvider'
 
 export const dynamic = 'force-dynamic'
 
@@ -21,12 +22,14 @@ export default async function CRMLayout({ children }: { children: React.ReactNod
 
 
     return (
-        <div className="crm-layout">
-            <Sidebar user={user} />
-            <main className="crm-main">
-                {children}
-            </main>
-            <CommandPalette />
-        </div>
+        <KeyboardShortcutsProvider>
+            <div className="crm-layout">
+                <Sidebar user={user} />
+                <main className="crm-main">
+                    {children}
+                </main>
+                <CommandPalette />
+            </div>
+        </KeyboardShortcutsProvider>
     )
 }

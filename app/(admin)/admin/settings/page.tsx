@@ -4,7 +4,7 @@ import { Plus, Edit2, Trash2, Check, X, GripVertical, Settings, Activity, Databa
 import { format, parseISO } from 'date-fns'
 
 interface SystemOption { id: string; category: string; value: string; color: string | null; order: number }
-interface TeamMember { id: string; name: string; email: string; role: string; createdAt: string; baseSalary: number; resendSenderEmail?: string | null; isSuspended: boolean }
+interface TeamMember { id: string; name: string; email: string; role: string; createdAt: string; baseSalary: number; isSuspended: boolean }
 interface Holiday { id: string; name: string; description: string | null; date: string }
 
 const SETTINGS_GROUPS = [
@@ -54,7 +54,7 @@ export default function AdminSettings() {
     const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null)
     const [modalConfirm, setModalConfirm] = useState<{ title: string, message: string, onConfirm: () => void, type: 'danger' | 'info' } | null>(null)
     const [configs, setConfigs] = useState<Record<string, string>>({
-        RECYCLE_DAYS: '60', CLAIM_LIMIT: '10', RESEND_API_KEY: '', RESEND_WEBHOOK_SECRET: '',
+        RECYCLE_DAYS: '60', CLAIM_LIMIT: '10',
         RECLAIM_HIGH: '7', WARN_HIGH: '5',
         RECLAIM_MEDIUM: '14', WARN_MEDIUM: '12',
         RECLAIM_LOW: '21', WARN_LOW: '19',
@@ -89,7 +89,6 @@ export default function AdminSettings() {
     const [editUserEmail, setEditUserEmail] = useState('')
     const [editUserRole, setEditUserRole] = useState('')
     const [editUserSalary, setEditUserSalary] = useState(0)
-    const [editUserSenderEmail, setEditUserSenderEmail] = useState('')
     const [editUserPassword, setEditUserPassword] = useState('')
 
     const [newUserName, setNewUserName] = useState('')
@@ -231,7 +230,6 @@ export default function AdminSettings() {
                 email: editUserEmail, 
                 role: editUserRole, 
                 baseSalary: editUserSalary, 
-                resendSenderEmail: editUserSenderEmail,
                 password: editUserPassword || undefined
             }) 
         })
@@ -681,7 +679,7 @@ export default function AdminSettings() {
                                             </div>
                                         </div>
                                         <div style={{ display: 'flex', gap: 6 }}>
-                                            <button onClick={() => { setEditingUser(member); setEditUserName(member.name); setEditUserEmail(member.email); setEditUserRole(member.role); setEditUserSalary(member.baseSalary || 0); setEditUserSenderEmail(member.resendSenderEmail || ''); setEditUserPassword('') }} style={{ padding: '5px 10px', border: '1px solid var(--border)', borderRadius: 6, background: 'transparent', color: '#94a3b8', fontSize: 10, fontWeight: 900, cursor: 'pointer', textTransform: 'uppercase' }}>Edit</button>
+                                            <button onClick={() => { setEditingUser(member); setEditUserName(member.name); setEditUserEmail(member.email); setEditUserRole(member.role); setEditUserSalary(member.baseSalary || 0); setEditUserPassword('') }} style={{ padding: '5px 10px', border: '1px solid var(--border)', borderRadius: 6, background: 'transparent', color: '#94a3b8', fontSize: 10, fontWeight: 900, cursor: 'pointer', textTransform: 'uppercase' }}>Edit</button>
                                             <button 
                                                 onClick={() => handleUserSuspend(member.id, member.isSuspended)} 
                                                 disabled={processing === member.id}

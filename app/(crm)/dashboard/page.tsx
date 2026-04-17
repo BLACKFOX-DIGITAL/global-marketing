@@ -10,6 +10,8 @@ import EditTaskModal from '@/components/EditTaskModal'
 
 // Lazy-load heavy Recharts bundle — doesn't block initial render
 import { AnalyticsDashboard } from '@/components/AnalyticsCharts'
+import StreakFreeze from '@/components/StreakFreeze'
+import NotificationCenter from '@/components/NotificationCenter'
 
 
 interface DashboardData {
@@ -299,6 +301,7 @@ export default function DashboardPage() {
                             Retry
                         </button>
                     )}
+                    <NotificationCenter />
                     <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>{format(new Date(), 'EEEE, MMMM d yyyy')}</div>
                 </div>
             </div>
@@ -365,6 +368,10 @@ export default function DashboardPage() {
                             </div>
                         )}
                     </div>
+                </div>
+
+                <div style={{ marginBottom: 20 }}>
+                    <StreakFreeze />
                 </div>
 
                 {/* ── Bento Grid ── */}

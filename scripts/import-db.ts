@@ -12,7 +12,6 @@ const TABLES_ORDER = [
     'SystemOption',
     'SystemSetting',
     'Holiday',
-    'EmailTemplate',
     'Lead',
     'Contact',
     'Opportunity',

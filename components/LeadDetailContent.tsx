@@ -7,6 +7,8 @@ import { format, parseISO } from 'date-fns'
 import EditLeadModal from '@/components/EditLeadModal'
 import ActivityTimeline from '@/components/ActivityTimeline'
 import Editor from '@/components/Editor'
+import LeadNotes from '@/components/LeadNotes'
+import LeadReminders from '@/components/LeadReminders'
 
 import EditTaskModal from '@/components/EditTaskModal'
 
@@ -473,7 +475,7 @@ function Stepper({ lead, onRefresh, onConvert, onNotify, availableStatuses }: { 
 }
 
 
-export default function LeadDetailContent({ id, linkPrefix = '' }: { id: string, linkPrefix?: string }) {
+export default function LeadDetailContent({ id, linkPrefix = '', currentUserId = '', isAdmin = false }: { id: string, linkPrefix?: string, currentUserId?: string, isAdmin?: boolean }) {
     const router = useRouter()
     const [lead, setLead] = useState<Lead | null>(null)
     const [loading, setLoading] = useState(true)
@@ -1062,39 +1064,9 @@ export default function LeadDetailContent({ id, linkPrefix = '' }: { id: string,
                         </div>
                     </div>
 
-                    {/* Private Notes Section */}
-                    <div className="card" style={{ padding: 24 }}>
-                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 }}>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                                <div style={{ width: 32, height: 32, borderRadius: 8, background: 'rgba(139,92,246,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                                    <MessageSquare size={16} color="#8b5cf6" />
-                                </div>
-                                <div>
-                                    <span style={{ display: 'block', fontSize: 14, fontWeight: 700, color: 'var(--text-primary)' }}>Private Notes</span>
-                                    <span style={{ display: 'block', fontSize: 11, color: 'var(--text-muted)' }}>Only visible to you</span>
-                                </div>
-                            </div>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, fontWeight: 500 }}>
-                                {savingNotes === 'saving' && <span style={{ color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: 6 }}><Loader2 size={14} className="animate-spin" /> Auto-saving...</span>}
-                                {savingNotes === 'saved' && <span style={{ color: '#22c55e', display: 'flex', alignItems: 'center', gap: 6 }}><Check size={14} strokeWidth={3} /> Saved to cloud</span>}
-                            </div>
-                        </div>
-                        
-                        <div style={{ 
-                            background: 'var(--bg-input)', 
-                            borderRadius: 12, 
-                            border: '1px solid var(--border)',
-                            overflow: 'hidden'
-                        }}>
-                            <Editor 
-                                content={lead.notes || ''} 
-                                onUpdate={(html) => {
-                                    notesDirtyRef.current = true
-                                    pendingNotesRef.current = html
-                                    setLead(l => l ? { ...l, notes: html } : null)
-                                }}
-                            />
-                        </div>
+                    {/* Threaded Notes Section */}
+                    <div className="card" style={{ padding: '20px 24px' }}>
+                        <LeadNotes leadId={id} currentUserId={currentUserId} isAdmin={isAdmin} />
                     </div>
                 </div>
 
@@ -1116,6 +1088,11 @@ export default function LeadDetailContent({ id, linkPrefix = '' }: { id: string,
                             <Rocket size={16} className={converting ? 'animate-pulse' : ''} /> {converting ? 'Converting...' : 'Convert to Opportunity'}
                         </button>
                     )}
+
+                    {/* Reminders */}
+                    <div className="card" style={{ padding: '16px' }}>
+                        <LeadReminders leadId={id} />
+                    </div>
 
                     {/* Contacts */}
                     <div className="card" style={{ padding: 16 }}>

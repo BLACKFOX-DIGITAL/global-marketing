@@ -3,6 +3,7 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import useSWR from 'swr'
 import NotificationCenter from '@/components/NotificationCenter'
+import MonthlyAwards from '@/components/MonthlyAwards'
 import { Trophy, Award, Star, TrendingUp, Target, CheckCircle, Clock, Zap, ChevronDown, ChevronUp } from 'lucide-react'
 
 interface LeaderboardEntry {
@@ -90,6 +91,7 @@ export default function LeaderboardPage() {
                         </div>
                     ) : (
                         <>
+                            <MonthlyAwards />
                             {/* Podium */}
                             {top3.length > 0 && (
                                 <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'center', gap: 16, marginBottom: 32 }}>

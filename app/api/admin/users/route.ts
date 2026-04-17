@@ -16,7 +16,6 @@ export async function GET() {
                 role: true,
                 createdAt: true,
                 baseSalary: true,
-                resendSenderEmail: true,
                 isSuspended: true
             },
             orderBy: { name: 'asc' }
@@ -72,7 +71,7 @@ export async function PUT(req: NextRequest) {
     if (!isAdmin(currentUser)) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
 
     try {
-        const { id, name, email, role, baseSalary, resendSenderEmail, password, isSuspended } = await req.json()
+        const { id, name, email, role, baseSalary, password, isSuspended } = await req.json()
 
         if (!id) {
             return NextResponse.json({ error: 'Missing user ID' }, { status: 400 })
@@ -87,7 +86,6 @@ export async function PUT(req: NextRequest) {
         if (email !== undefined) data.email = email
         if (role !== undefined) data.role = role
         if (baseSalary !== undefined) { const s = parseFloat(baseSalary); data.baseSalary = isNaN(s) ? 0 : s }
-        if (resendSenderEmail !== undefined) data.resendSenderEmail = resendSenderEmail
         if (isSuspended !== undefined) data.isSuspended = isSuspended
         if (password) data.password = await hashPassword(password)
 

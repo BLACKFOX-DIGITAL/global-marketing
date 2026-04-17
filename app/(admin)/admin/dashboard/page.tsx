@@ -7,6 +7,8 @@ import {
     Target, Users, Zap, BarChart3, Search, AlertTriangle
 } from 'lucide-react'
 import Link from 'next/link'
+import NotificationCenter from '@/components/NotificationCenter'
+import ActivityHeatmap from '@/components/ActivityHeatmap'
 
 // Dynamically import Recharts to prevent hydration/lazy element issues in React 19/Next 15+
 const ResponsiveContainer = dynamic(() => import('recharts').then(m => m.ResponsiveContainer), { ssr: false })
@@ -147,11 +149,14 @@ export default function ExecutiveDashboard() {
                             </div>
                         </div>
                     </div>
-                    {totalAlerts > 0 && (
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 8, background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.2)', borderRadius: 10, padding: '6px 14px', fontSize: 12, fontWeight: 700, color: '#f43f5e' }}>
-                            <ShieldAlert size={14} /> {totalAlerts} item{totalAlerts !== 1 ? 's' : ''} need attention
-                        </div>
-                    )}
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                        {totalAlerts > 0 && (
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 8, background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.2)', borderRadius: 10, padding: '6px 14px', fontSize: 12, fontWeight: 700, color: '#f43f5e' }}>
+                                <ShieldAlert size={14} /> {totalAlerts} item{totalAlerts !== 1 ? 's' : ''} need attention
+                            </div>
+                        )}
+                        <NotificationCenter />
+                    </div>
                 </div>
 
                 {loading ? (
@@ -424,6 +429,12 @@ export default function ExecutiveDashboard() {
                     </div>
                 )}
             </div>
+
+                    {/* Activity Heatmap */}
+                    <div style={{ padding: '0 24px 24px' }}>
+                        <ActivityHeatmap />
+                    </div>
+
         </ErrorBoundary>
     )
 }
