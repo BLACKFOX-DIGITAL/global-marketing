@@ -9,7 +9,6 @@ import { AttendanceWidget } from '@/components/AttendanceWidget'
 import EditTaskModal from '@/components/EditTaskModal'
 
 // Lazy-load heavy Recharts bundle — doesn't block initial render
-import { AnalyticsDashboard } from '@/components/AnalyticsCharts'
 import StreakFreeze from '@/components/StreakFreeze'
 import NotificationCenter from '@/components/NotificationCenter'
 
@@ -769,11 +768,6 @@ export default function DashboardPage() {
                                 ))
                             )}
                         </div>
-                    </div>
-
-                    {/* Analytics Charts — AT THE BOTTOM */}
-                    <div style={{ gridColumn: 'span 12', animation: 'fadeSlideUp 0.4s ease both 0.5s' }}>
-                        <AnalyticsDashboard />
                     </div>
 
                 </div>
