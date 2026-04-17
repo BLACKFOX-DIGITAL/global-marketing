@@ -136,7 +136,7 @@ export default function ExecutiveDashboard() {
             <div style={{ padding: '20px 30px', maxWidth: 1400, margin: '0 auto', width: '100%', minHeight: '100vh' }}>
 
                 {/* Header */}
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20, position: 'relative', zIndex: 50 }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
                         <div style={{ background: 'linear-gradient(135deg, #10b981, #059669)', padding: 7, borderRadius: 10, color: '#fff', boxShadow: '0 0 20px rgba(16,185,129,0.3)' }}>
                             <Zap size={20} strokeWidth={2.5} fill="currentColor" />

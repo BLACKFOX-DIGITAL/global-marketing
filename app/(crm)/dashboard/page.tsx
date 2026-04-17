@@ -283,7 +283,7 @@ export default function DashboardPage() {
                 height: 56, background: 'var(--bg-secondary)', borderBottom: '1px solid var(--border)',
                 display: 'flex', alignItems: 'center', justifyContent: 'space-between',
                 padding: '0 32px', flexShrink: 0,
-                backdropFilter: 'blur(12px)'
+                backdropFilter: 'blur(12px)', position: 'relative', zIndex: 50
             }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
                     <div style={{ width: 8, height: 8, borderRadius: '50%', background: statsError ? '#ef4444' : '#10b981', boxShadow: `0 0 8px ${statsError ? '#ef4444' : '#10b981'}` }} />
