@@ -241,51 +241,15 @@ export default function DashboardPage() {
 
     return (
         <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
-            <style>{`
-                @keyframes fadeSlideUp {
-                    from { opacity: 0; transform: translateY(16px); }
-                    to { opacity: 1; transform: translateY(0); }
-                }
-                @keyframes fadeSlideDown {
-                    from { opacity: 0; transform: translateY(-16px); }
-                    to { opacity: 1; transform: translateY(0); }
-                }
-                .section-label {
-                    font-size: 9px;
-                    font-weight: 700;
-                    letter-spacing: 0.8px;
-                    text-transform: uppercase;
-                    color: var(--text-muted);
-                }
-                .dash-card {
-                    background: var(--bg-card);
-                    border: 1px solid var(--border);
-                    border-radius: 12px;
-                    transition: border-color 0.2s, transform 0.2s, box-shadow 0.2s;
-                }
-                .dash-card:hover {
-                    border-color: rgba(99,102,241,0.3);
-                    transform: translateY(-1px);
-                    box-shadow: 0 4px 20px rgba(0,0,0,0.2);
-                }
-                .metric-value {
-                    font-size: 24px;
-                    font-weight: 900;
-                    letter-spacing: -0.5px;
-                    line-height: 1;
-                }
-                .lead-row:hover { background: rgba(255,255,255,0.02); }
-                .task-item:hover { background: rgba(255,255,255,0.02); }
-            `}</style>
             {/* Top Bar */}
             <div style={{
-                height: 56, background: 'var(--bg-secondary)', borderBottom: '1px solid var(--border)',
+                height: 60, background: 'var(--bg-secondary)', borderBottom: '1px solid var(--border)',
                 display: 'flex', alignItems: 'center', justifyContent: 'space-between',
                 padding: '0 32px', flexShrink: 0,
-                backdropFilter: 'blur(12px)', position: 'relative', zIndex: 50
+                backdropFilter: 'blur(20px)', WebkitBackdropFilter: 'blur(20px)', position: 'relative', zIndex: 50
             }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                    <div style={{ width: 8, height: 8, borderRadius: '50%', background: statsError ? '#ef4444' : '#10b981', boxShadow: `0 0 8px ${statsError ? '#ef4444' : '#10b981'}` }} />
+                    <div style={{ width: 8, height: 8, borderRadius: '50%', background: statsError ? '#ef4444' : '#10b981', boxShadow: `0 0 10px ${statsError ? '#ef4444' : 'rgba(16, 185, 129, 0.6)'}`, animation: !statsError ? 'pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite' : 'none' }} />
                     <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-secondary)' }}>Live Dashboard</span>
                     {statsError && !statsData && (
                         <span style={{ fontSize: 11, color: '#ef4444', fontWeight: 600 }}>— data unavailable</span>
@@ -309,18 +273,24 @@ export default function DashboardPage() {
 
                 {/* ── Hero Header ── */}
                 <div style={{
-                    marginBottom: 20, padding: '16px 24px',
-                    background: 'linear-gradient(135deg, rgba(99,102,241,0.08) 0%, rgba(139,92,246,0.04) 50%, rgba(6,182,212,0.03) 100%)',
-                    border: '1px solid rgba(99,102,241,0.15)',
-                    borderRadius: 16, position: 'relative', overflow: 'hidden'
+                    marginBottom: 24, padding: '24px 32px',
+                    background: 'linear-gradient(135deg, rgba(99,102,241,0.12) 0%, rgba(139,92,246,0.06) 50%, rgba(6,182,212,0.03) 100%)',
+                    border: '1px solid rgba(99,102,241,0.2)',
+                    borderRadius: 24, position: 'relative', overflow: 'hidden',
+                    boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.05), 0 10px 40px -10px rgba(99,102,241,0.1)'
                 }}>
-
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', position: 'relative' }}>
+                    <div style={{
+                        position: 'absolute', top: '-50%', left: '-10%', width: '50%', height: '200%',
+                        background: 'radial-gradient(circle, rgba(99, 102, 241, 0.15) 0%, transparent 60%)',
+                        transform: 'rotate(25deg)', pointerEvents: 'none'
+                    }} />
+                    
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', position: 'relative', zIndex: 1 }}>
                         <div>
-                            <div style={{ fontSize: 12, color: 'var(--accent-primary)', fontWeight: 700, marginBottom: 4, letterSpacing: '0.5px' }}>
-                                {greeting}, {userName} 👋
+                            <div style={{ fontSize: 13, color: 'var(--accent-primary)', fontWeight: 800, marginBottom: 8, letterSpacing: '0.5px', textTransform: 'uppercase' }}>
+                                {greeting}, {userName} ✨
                             </div>
-                            <h1 style={{ fontSize: 24, fontWeight: 900, margin: 0, lineHeight: 1.2, letterSpacing: '-0.3px' }}>
+                            <h1 style={{ fontSize: 28, fontWeight: 900, margin: 0, lineHeight: 1.2, letterSpacing: '-0.5px' }}>
                                 My Dashboard
                             </h1>
                         </div>
@@ -369,12 +339,12 @@ export default function DashboardPage() {
                     </div>
                 </div>
 
-                <div style={{ marginBottom: 20 }}>
+                <div style={{ marginBottom: 24 }}>
                     <StreakFreeze />
                 </div>
 
                 {/* ── Bento Grid ── */}
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(12, 1fr)', gridAutoRows: 'auto', gap: 12 }}>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(12, 1fr)', gridAutoRows: 'auto', gap: 16 }}>
 
                     {/* KPI Cards — span 3 each */}
                     {[

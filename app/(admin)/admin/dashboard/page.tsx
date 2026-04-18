@@ -41,13 +41,14 @@ function StatCard({ label, value, trend, icon: Icon, color, isPrimary = false, s
 
     const inner = (
         <div style={{
-            padding: '12px 16px', borderRadius: 16,
-            background: 'rgba(30, 41, 59, 0.4)', backdropFilter: 'blur(20px)',
-            border: isPrimary ? `1px solid ${color}40` : '1px solid rgba(255,255,255,0.05)',
+            padding: '16px 20px', borderRadius: 24,
+            background: 'rgba(30, 41, 59, 0.45)', backdropFilter: 'blur(30px)',
+            border: isPrimary ? `1px solid ${color}40` : '1px solid rgba(255,255,255,0.06)',
+            boxShadow: isPrimary ? `inset 0 1px 0 rgba(255,255,255,0.1), 0 12px 32px ${color}15` : 'inset 0 1px 0 rgba(255,255,255,0.05), 0 8px 30px rgba(0,0,0,0.15)',
             display: 'flex', flexDirection: 'column', gap: 4,
             position: 'relative', overflow: 'hidden',
             cursor: href ? 'pointer' : 'default',
-            transition: 'border-color 0.2s',
+            transition: 'all 0.2s',
         }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <div style={{ fontSize: 10, color: 'var(--text-muted)', fontWeight: 800, letterSpacing: '0.6px', textTransform: 'uppercase' }}>{label}</div>
@@ -88,12 +89,13 @@ function AlertBadge({ label, value, color, href }: { label: string, value: numbe
         <Link href={href} style={{ textDecoration: 'none' }}>
             <div style={{
                 display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                background: `${color}08`, border: `1px solid ${color}20`,
-                borderRadius: 12, padding: '10px 14px', cursor: 'pointer',
-                transition: 'background 0.2s',
+                background: 'rgba(30,41,59,0.4)', border: `1px solid ${color}30`,
+                borderRadius: 14, padding: '12px 16px', cursor: 'pointer',
+                transition: 'all 0.2s', backdropFilter: 'blur(10px)',
+                boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.02)'
             }}>
-                <span style={{ fontSize: 12, fontWeight: 700, color: '#f1f5f9' }}>{label}</span>
-                <span style={{ fontSize: 12, fontWeight: 900, color, background: `${color}15`, padding: '2px 10px', borderRadius: 8 }}>{value}</span>
+                <span style={{ fontSize: 13, fontWeight: 700, color: '#f1f5f9' }}>{label}</span>
+                <span style={{ fontSize: 13, fontWeight: 900, color, background: `${color}15`, padding: '2px 12px', borderRadius: 10 }}>{value}</span>
             </div>
         </Link>
     )
@@ -162,7 +164,6 @@ export default function ExecutiveDashboard() {
                 {loading ? (
                     <div style={{ display: 'flex', justifyContent: 'center', padding: 140 }}>
                         <div style={{ width: 30, height: 30, border: '3px solid rgba(255,255,255,0.05)', borderRadius: '50%', borderTopColor: '#10b981', animation: 'spin 1s linear infinite' }} />
-                        <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
                     </div>
                 ) : data && (
                     <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
@@ -210,7 +211,7 @@ export default function ExecutiveDashboard() {
                         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
 
                             {/* Actionable Alerts */}
-                            <div style={{ background: 'rgba(15,23,42,0.5)', backdropFilter: 'blur(40px)', border: '1px solid rgba(255,255,255,0.05)', borderRadius: 20, padding: '18px 20px' }}>
+                            <div style={{ background: 'rgba(15,23,42,0.5)', backdropFilter: 'blur(40px)', border: '1px solid rgba(255,255,255,0.05)', borderRadius: 20, padding: '24px 24px', boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.05), 0 8px 30px rgba(0,0,0,0.1)' }}>
                                 <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 14 }}>
                                     <AlertTriangle size={14} color="#f59e0b" />
                                     <h3 style={{ fontSize: 12, fontWeight: 900, margin: 0, textTransform: 'uppercase', letterSpacing: '1px', color: '#64748b' }}>Items Needing Action</h3>
@@ -229,7 +230,7 @@ export default function ExecutiveDashboard() {
                             </div>
 
                             {/* Monthly Goal Progress */}
-                            <div style={{ background: 'rgba(15,23,42,0.5)', backdropFilter: 'blur(40px)', border: '1px solid rgba(255,255,255,0.05)', borderRadius: 20, padding: '18px 20px' }}>
+                            <div style={{ background: 'rgba(15,23,42,0.5)', backdropFilter: 'blur(40px)', border: '1px solid rgba(255,255,255,0.05)', borderRadius: 20, padding: '24px 24px', boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.05), 0 8px 30px rgba(0,0,0,0.1)' }}>
                                 <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 14 }}>
                                     <BarChart3 size={14} color="#3b82f6" />
                                     <h3 style={{ fontSize: 12, fontWeight: 900, margin: 0, textTransform: 'uppercase', letterSpacing: '1px', color: '#64748b' }}>Monthly Team Goals</h3>
@@ -262,7 +263,7 @@ export default function ExecutiveDashboard() {
                         </div>
 
                         {/* 14-Day Trend Chart */}
-                        <div style={{ background: 'rgba(15,23,42,0.4)', backdropFilter: 'blur(40px)', border: '1px solid rgba(255,255,255,0.05)', borderRadius: 24, padding: '20px 24px' }}>
+                        <div style={{ background: 'rgba(15,23,42,0.4)', backdropFilter: 'blur(40px)', border: '1px solid rgba(255,255,255,0.05)', borderRadius: 24, padding: '24px 24px', boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.05), 0 8px 30px rgba(0,0,0,0.1)' }}>
                             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
                                 <div>
                                     <h3 style={{ fontSize: 14, fontWeight: 900, margin: 0, color: '#f8fafc', display: 'flex', alignItems: 'center', gap: 8 }}>
@@ -306,8 +307,8 @@ export default function ExecutiveDashboard() {
                         <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: 16 }}>
 
                             {/* Leaderboard */}
-                            <div style={{ background: 'rgba(15,23,42,0.6)', backdropFilter: 'blur(40px)', border: '1px solid rgba(255,255,255,0.05)', borderRadius: 24, overflow: 'hidden' }}>
-                                <div style={{ padding: '16px 20px', borderBottom: '1px solid rgba(255,255,255,0.05)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                            <div style={{ background: 'rgba(15,23,42,0.6)', backdropFilter: 'blur(40px)', border: '1px solid rgba(255,255,255,0.05)', borderRadius: 24, overflow: 'hidden', boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.05), 0 8px 30px rgba(0,0,0,0.1)' }}>
+                                <div style={{ padding: '20px 24px', borderBottom: '1px solid rgba(255,255,255,0.05)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                                     <h3 style={{ fontSize: 12, fontWeight: 900, margin: 0, textTransform: 'uppercase', letterSpacing: '1px', color: '#64748b' }}>
                                         Team Performance · This Month
                                     </h3>
@@ -376,7 +377,7 @@ export default function ExecutiveDashboard() {
                             <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
 
                                 {/* Pipeline by Stage */}
-                                <div style={{ background: 'rgba(30,41,59,0.4)', backdropFilter: 'blur(40px)', border: '1px solid rgba(255,255,255,0.05)', borderRadius: 20, padding: 20 }}>
+                                <div style={{ background: 'rgba(30,41,59,0.4)', backdropFilter: 'blur(40px)', border: '1px solid rgba(255,255,255,0.05)', borderRadius: 20, padding: 24, boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.05), 0 8px 30px rgba(0,0,0,0.1)' }}>
                                     <h3 style={{ fontSize: 12, fontWeight: 900, margin: '0 0 14px 0', textTransform: 'uppercase', letterSpacing: '1px', color: '#64748b' }}>Pipeline by Stage</h3>
                                     <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
                                         {Object.entries(data.stageBreakdown || {})
@@ -403,7 +404,7 @@ export default function ExecutiveDashboard() {
                                 </div>
 
                                 {/* Recent Leads */}
-                                <div style={{ background: 'rgba(30,41,59,0.4)', backdropFilter: 'blur(40px)', border: '1px solid rgba(255,255,255,0.05)', borderRadius: 20, padding: 20, flex: 1 }}>
+                                <div style={{ background: 'rgba(30,41,59,0.4)', backdropFilter: 'blur(40px)', border: '1px solid rgba(255,255,255,0.05)', borderRadius: 20, padding: 24, flex: 1, boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.05), 0 8px 30px rgba(0,0,0,0.1)' }}>
                                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
                                         <h3 style={{ fontSize: 12, fontWeight: 900, margin: 0, textTransform: 'uppercase', letterSpacing: '1px', color: '#64748b' }}>Recent Leads</h3>
                                         <Link href="/admin/leads" style={{ fontSize: 10, color: '#3b82f6', fontWeight: 700, textDecoration: 'none' }}>View all →</Link>

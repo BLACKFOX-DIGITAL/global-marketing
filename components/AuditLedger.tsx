@@ -34,13 +34,15 @@ function KpiCard({ label, value, sub, icon: Icon, color, highlight = false }: {
 }) {
     return (
         <div style={{
-            padding: '14px 16px', borderRadius: 14,
+            padding: '20px 24px', borderRadius: 20,
             background: highlight ? `${color}12` : 'rgba(30,41,59,0.45)',
-            border: `1px solid ${highlight ? color + '30' : 'rgba(255,255,255,0.06)'}`,
+            border: `1px solid ${highlight ? color + '40' : 'rgba(255,255,255,0.06)'}`,
             backdropFilter: 'blur(20px)', display: 'flex', flexDirection: 'column', gap: 6,
-            boxShadow: highlight ? `0 0 20px ${color}18` : 'none'
+            boxShadow: highlight ? `inset 0 1px 0 rgba(255,255,255,0.1), 0 8px 30px ${color}15` : 'inset 0 1px 0 rgba(255,255,255,0.05), 0 4px 20px rgba(0,0,0,0.1)',
+            position: 'relative', overflow: 'hidden'
         }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <div style={{ position: 'absolute', top: 0, right: 0, width: 80, height: 80, background: `radial-gradient(circle at 100% 0%, ${color}10, transparent)`, pointerEvents: 'none' }} />
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', zIndex: 1 }}>
                 <div style={{ fontSize: 9, color: '#64748b', fontWeight: 800, letterSpacing: '0.8px', textTransform: 'uppercase' }}>{label}</div>
                 <div style={{ width: 24, height: 24, borderRadius: 7, background: `${color}18`, color, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                     <Icon size={13} strokeWidth={2.5} />
@@ -160,9 +162,9 @@ export default function AuditLedger() {
 
             {/* Trend Chart */}
             {trendData.length > 0 && (
-                <div style={{ background: 'rgba(15,23,42,0.45)', backdropFilter: 'blur(40px)', border: '1px solid rgba(255,255,255,0.06)', borderRadius: 18, padding: '16px 20px' }}>
-                    <h3 style={{ fontSize: 12, fontWeight: 900, margin: '0 0 16px 0', color: '#64748b', textTransform: 'uppercase', letterSpacing: '1px', display: 'flex', alignItems: 'center', gap: 6 }}>
-                        <BarChart3 size={13} /> Activity — Last 7 Days
+                <div style={{ background: 'rgba(15,23,42,0.45)', backdropFilter: 'blur(40px)', border: '1px solid rgba(255,255,255,0.06)', borderRadius: 24, padding: '24px 28px', boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.05), 0 8px 30px rgba(0,0,0,0.1)' }}>
+                    <h3 style={{ fontSize: 13, fontWeight: 900, margin: '0 0 20px 0', color: '#f8fafc', textTransform: 'uppercase', letterSpacing: '1px', display: 'flex', alignItems: 'center', gap: 6 }}>
+                        <BarChart3 size={14} color="#6366f1" /> Activity — Last 7 Days
                     </h3>
                     <div style={{ height: 140 }}>
                         <ResponsiveContainer width="100%" height="100%">
@@ -189,33 +191,33 @@ export default function AuditLedger() {
             )}
 
             {/* Filters Bar */}
-            <div style={{ background: 'rgba(15,23,42,0.45)', backdropFilter: 'blur(20px)', border: '1px solid rgba(255,255,255,0.06)', borderRadius: 14, padding: '10px 16px', display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap' }}>
+            <div style={{ background: 'rgba(30,41,59,0.4)', backdropFilter: 'blur(30px)', border: '1px solid rgba(255,255,255,0.06)', borderRadius: 24, padding: '16px 20px', display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap', boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.05), 0 4px 20px rgba(0,0,0,0.05)' }}>
                 {/* Search */}
-                <div style={{ display: 'flex', alignItems: 'center', background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 8, padding: '5px 10px', gap: 6, flex: 1, minWidth: 200 }}>
-                    <Search size={12} color="#475569" />
+                <div style={{ display: 'flex', alignItems: 'center', background: 'rgba(0,0,0,0.2)', border: '1px solid rgba(255,255,255,0.06)', borderRadius: 10, padding: '6px 12px', gap: 8, flex: 1, minWidth: 200, boxShadow: 'inset 0 2px 4px rgba(0,0,0,0.1)' }}>
+                    <Search size={14} color="#64748b" />
                     <input
                         placeholder="Search events, users, leads..."
                         value={search}
                         onChange={e => { setSearch(e.target.value); setAuditPage(1) }}
-                        style={{ background: 'transparent', border: 'none', color: '#f1f5f9', fontSize: 11, outline: 'none', width: '100%' }}
+                        style={{ background: 'transparent', border: 'none', color: '#f1f5f9', fontSize: 13, outline: 'none', width: '100%' }}
                     />
                 </div>
 
-                {/* Period */}
-                <div style={{ display: 'flex', background: 'rgba(0,0,0,0.3)', borderRadius: 8, padding: 2, border: '1px solid rgba(255,255,255,0.06)', gap: 1 }}>
+                {/* Period selector */}
+                <div style={{ display: 'flex', background: 'rgba(0,0,0,0.2)', borderRadius: 10, padding: 3, border: '1px solid rgba(255,255,255,0.06)', gap: 2, boxShadow: 'inset 0 2px 4px rgba(0,0,0,0.1)' }}>
                     {PERIODS.map(p => (
                         <button key={p.key} onClick={() => { setPeriod(p.key); setAuditPage(1) }}
-                            style={{ padding: '4px 10px', borderRadius: 6, border: 'none', fontSize: 9, fontWeight: 900, background: period === p.key ? '#6366f1' : 'transparent', color: period === p.key ? '#fff' : '#475569', cursor: 'pointer', transition: 'all 0.2s', textTransform: 'uppercase', letterSpacing: '0.4px', whiteSpace: 'nowrap' }}>
+                            style={{ padding: '6px 12px', borderRadius: 8, border: 'none', fontSize: 10, fontWeight: 900, background: period === p.key ? '#6366f1' : 'transparent', color: period === p.key ? '#fff' : '#64748b', cursor: 'pointer', transition: 'all 0.2s', textTransform: 'uppercase', letterSpacing: '0.4px', whiteSpace: 'nowrap' }}>
                             {p.label}
                         </button>
                     ))}
                 </div>
 
                 {/* Action filter */}
-                <div style={{ display: 'flex', alignItems: 'center', background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 8, padding: '5px 10px', gap: 6 }}>
-                    <Filter size={11} color="#475569" />
+                <div style={{ display: 'flex', alignItems: 'center', background: 'rgba(0,0,0,0.2)', border: '1px solid rgba(255,255,255,0.06)', borderRadius: 10, padding: '6px 12px', gap: 8, boxShadow: 'inset 0 2px 4px rgba(0,0,0,0.1)' }}>
+                    <Filter size={14} color="#64748b" />
                     <select value={actionFilter} onChange={e => { setActionFilter(e.target.value); setAuditPage(1) }}
-                        style={{ background: 'transparent', border: 'none', color: '#f1f5f9', fontSize: 11, fontWeight: 700, outline: 'none', cursor: 'pointer', minWidth: 130 }}>
+                        style={{ background: 'transparent', border: 'none', color: '#f1f5f9', fontSize: 13, fontWeight: 700, outline: 'none', cursor: 'pointer', minWidth: 140 }}>
                         <option value="" style={{ background: '#0f172a' }}>All Actions</option>
                         {actionTypes.map(at => (
                             <option key={at.action} value={at.action} style={{ background: '#0f172a' }}>{formatActionLabel(at.action)} ({at._count})</option>
@@ -224,10 +226,10 @@ export default function AuditLedger() {
                 </div>
 
                 {/* User filter */}
-                <div style={{ display: 'flex', alignItems: 'center', background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 8, padding: '5px 10px', gap: 6 }}>
-                    <Users size={11} color="#475569" />
+                <div style={{ display: 'flex', alignItems: 'center', background: 'rgba(0,0,0,0.2)', border: '1px solid rgba(255,255,255,0.06)', borderRadius: 10, padding: '6px 12px', gap: 8, boxShadow: 'inset 0 2px 4px rgba(0,0,0,0.1)' }}>
+                    <Users size={14} color="#64748b" />
                     <select value={userFilter} onChange={e => { setUserFilter(e.target.value); setAuditPage(1) }}
-                        style={{ background: 'transparent', border: 'none', color: '#f1f5f9', fontSize: 11, fontWeight: 700, outline: 'none', cursor: 'pointer', minWidth: 130 }}>
+                        style={{ background: 'transparent', border: 'none', color: '#f1f5f9', fontSize: 13, fontWeight: 700, outline: 'none', cursor: 'pointer', minWidth: 140 }}>
                         <option value="" style={{ background: '#0f172a' }}>All Users</option>
                         {allUsers.map(u => (
                             <option key={u.id} value={u.id} style={{ background: '#0f172a' }}>{u.name}</option>
@@ -238,7 +240,7 @@ export default function AuditLedger() {
                 {activeFilterCount > 0 && (
                     <button
                         onClick={() => { setSearch(''); setActionFilter(''); setUserFilter(''); setPeriod(''); setAuditPage(1) }}
-                        style={{ padding: '5px 10px', background: 'rgba(244,63,94,0.08)', border: '1px solid rgba(244,63,94,0.2)', color: '#f43f5e', borderRadius: 8, fontSize: 10, fontWeight: 800, cursor: 'pointer', whiteSpace: 'nowrap' }}
+                        style={{ padding: '6px 12px', background: 'rgba(244,63,94,0.1)', border: '1px solid rgba(244,63,94,0.3)', color: '#f43f5e', borderRadius: 10, fontSize: 11, fontWeight: 800, cursor: 'pointer', whiteSpace: 'nowrap' }}
                     >
                         Clear ({activeFilterCount})
                     </button>
@@ -246,14 +248,14 @@ export default function AuditLedger() {
 
                 <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 8 }}>
                     <div style={{ width: 6, height: 6, borderRadius: '50%', background: '#10b981', boxShadow: '0 0 8px #10b98160' }} />
-                    <span style={{ fontSize: 10, color: '#64748b', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.5px', whiteSpace: 'nowrap' }}>
+                    <span style={{ fontSize: 11, color: '#64748b', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.8px', whiteSpace: 'nowrap' }}>
                         {auditTotal.toLocaleString()} events
                     </span>
                 </div>
             </div>
 
             {/* Table */}
-            <div style={{ background: 'rgba(15,23,42,0.6)', backdropFilter: 'blur(40px)', border: '1px solid rgba(255,255,255,0.06)', borderRadius: 18, overflow: 'hidden' }}>
+            <div style={{ background: 'rgba(15,23,42,0.6)', backdropFilter: 'blur(40px)', border: '1px solid rgba(255,255,255,0.06)', borderRadius: 24, overflow: 'hidden', boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.05), 0 8px 30px rgba(0,0,0,0.1)' }}>
                 <div style={{ overflowX: 'auto' }}>
                     <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', minWidth: 900 }}>
                         <thead style={{ background: 'rgba(255,255,255,0.02)', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>

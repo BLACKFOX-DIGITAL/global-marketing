@@ -26,12 +26,12 @@ function MetricCard({ label, value, subValue, icon: Icon, color, isAlert = false
 }) {
     return (
         <div style={{
-            padding: '12px 14px', borderRadius: 14, background: 'rgba(255,255,255,0.02)',
+            padding: '20px 24px', borderRadius: 20, background: 'rgba(255,255,255,0.02)',
             border: isAlert ? `1px solid ${color}40` : '1px solid var(--border)',
             display: 'flex', flexDirection: 'column', gap: 6, backdropFilter: 'blur(24px)',
-            boxShadow: isAlert ? `0 0 15px ${color}10` : 'none', position: 'relative', overflow: 'hidden'
+            boxShadow: isAlert ? `inset 0 1px 0 rgba(255,255,255,0.05), 0 0 15px ${color}10` : 'inset 0 1px 0 rgba(255,255,255,0.05), 0 4px 20px rgba(0,0,0,0.05)', position: 'relative', overflow: 'hidden'
         }}>
-            <div style={{ position: 'absolute', top: 0, right: 0, width: 40, height: 40, background: `radial-gradient(circle at 100% 0%, ${color}12, transparent)`, pointerEvents: 'none' }} />
+            <div style={{ position: 'absolute', top: 0, right: 0, width: 60, height: 60, background: `radial-gradient(circle at 100% 0%, ${color}15, transparent)`, pointerEvents: 'none' }} />
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <div style={{ fontSize: 9, color: '#475569', fontWeight: 900, letterSpacing: '0.8px', textTransform: 'uppercase' }}>{label}</div>
                 <div style={{ width: 24, height: 24, borderRadius: 8, background: `${color}12`, color, display: 'flex', alignItems: 'center', justifyContent: 'center', border: `1px solid ${color}15` }}>
@@ -194,10 +194,10 @@ export default function WorkforceDashboard() {
                 </div>
             )}
 
-            <div style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 16, overflow: 'hidden', backdropFilter: 'blur(20px)' }}>
+            <div style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 24, overflow: 'hidden', backdropFilter: 'blur(20px)', boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.02), 0 8px 30px rgba(0,0,0,0.1)' }}>
                 {/* Toolbar */}
-                <div style={{ padding: '8px 20px', borderBottom: '1px solid var(--border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'rgba(255,255,255,0.02)' }}>
-                    <h3 style={{ fontSize: 9.5, fontWeight: 900, margin: 0, textTransform: 'uppercase', letterSpacing: '1.2px', color: '#64748b' }}>
+                <div style={{ padding: '16px 20px', borderBottom: '1px solid var(--border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'rgba(255,255,255,0.02)' }}>
+                    <h3 style={{ fontSize: 11, fontWeight: 900, margin: 0, textTransform: 'uppercase', letterSpacing: '1.2px', color: '#64748b' }}>
                         {activeTab === 'attendance' ? 'Attendance Records' : 'Leave Requests'}
                     </h3>
                     {activeTab === 'attendance' ? (
@@ -325,8 +325,8 @@ export default function WorkforceDashboard() {
 
             {/* Absentee Section — employees with no record for the selected date */}
             {activeTab === 'attendance' && !loading && absentees.length > 0 && (
-                <div style={{ marginTop: 16, background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 16, overflow: 'hidden', backdropFilter: 'blur(20px)' }}>
-                    <div style={{ padding: '8px 20px', borderBottom: '1px solid var(--border)', display: 'flex', alignItems: 'center', gap: 8, background: 'rgba(244,63,94,0.03)' }}>
+                <div style={{ marginTop: 24, background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 20, overflow: 'hidden', backdropFilter: 'blur(20px)', boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.02), 0 8px 30px rgba(244,63,94,0.05)' }}>
+                    <div style={{ padding: '12px 20px', borderBottom: '1px solid var(--border)', display: 'flex', alignItems: 'center', gap: 8, background: 'rgba(244,63,94,0.03)' }}>
                         <UserX size={13} color="#f43f5e" strokeWidth={2.5} />
                         <h3 style={{ fontSize: 9.5, fontWeight: 900, margin: 0, textTransform: 'uppercase', letterSpacing: '1.2px', color: '#f43f5e' }}>
                             Not Clocked In Today — {absentees.length} employee{absentees.length !== 1 ? 's' : ''}
@@ -349,8 +349,8 @@ export default function WorkforceDashboard() {
             {/* Edit Attendance Modal */}
             {editingAttendance && (
                 <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(10px)', zIndex: 100, display: 'flex', alignItems: 'center', justifyContent: 'center' }} onClick={e => e.target === e.currentTarget && setEditingAttendance(null)}>
-                    <div style={{ width: 380, background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 20, padding: 24, boxShadow: '0 30px 60px rgba(0,0,0,0.5)', position: 'relative' }}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
+                    <div style={{ width: 400, background: 'var(--bg-card)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 24, padding: 32, boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.1), 0 30px 60px rgba(0,0,0,0.5)', position: 'relative' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
                             <div>
                                 <h3 style={{ fontSize: 13, fontWeight: 900, margin: 0, color: '#f8fafc' }}>Edit Attendance</h3>
                                 <div style={{ fontSize: 10, color: '#64748b', marginTop: 2, fontWeight: 600 }}>{editingAttendance.user.name}</div>

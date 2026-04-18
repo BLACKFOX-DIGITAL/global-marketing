@@ -53,7 +53,7 @@ export function AnalyticsDashboard() {
       <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) minmax(0, 1fr)', gap: 24 }}>
 
         {/* Performance Area Chart */}
-        <div className="card" style={{ padding: 24 }}>
+        <div className="card" style={{ padding: 24, borderRadius: 24, boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.05), 0 8px 30px rgba(0,0,0,0.1)' }}>
           <h3 style={{ fontSize: 16, fontWeight: 700, marginBottom: 20 }}>Deals Won (Last 30 Days)</h3>
           <div style={{ height: 260 }}>
             {!data?.performance?.length ? (
@@ -83,7 +83,7 @@ export function AnalyticsDashboard() {
         </div>
 
         {/* Sales Funnel Bar Chart (Vertical) */}
-        <div className="card" style={{ padding: 24 }}>
+        <div className="card" style={{ padding: 24, borderRadius: 24, boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.05), 0 8px 30px rgba(0,0,0,0.1)' }}>
           <h3 style={{ fontSize: 16, fontWeight: 700, marginBottom: 20 }}>Conversion Funnel</h3>
           <div style={{ height: 260 }}>
             {!data?.funnel?.length ? (

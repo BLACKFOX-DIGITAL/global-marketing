@@ -89,14 +89,14 @@ export default function NotificationCenter() {
             </button>
 
             {open && (
-                <div className="card" style={{
-                    position: 'absolute', top: '100%', right: 0, width: 320, zIndex: 100,
-                    marginTop: 10, padding: 0, boxShadow: '0 10px 30px rgba(0,0,0,0.5)',
-                    maxHeight: 480, overflow: 'hidden', display: 'flex', flexDirection: 'column',
-                    background: 'var(--bg-card)', border: '1px solid var(--border)'
+                <div style={{
+                    position: 'absolute', top: '100%', right: 0, width: 340, zIndex: 100,
+                    marginTop: 16, padding: 0, boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.08), 0 20px 40px rgba(0,0,0,0.4)',
+                    maxHeight: 480, overflow: 'hidden', display: 'flex', flexDirection: 'column', borderRadius: 20,
+                    background: 'rgba(15,23,42,0.65)', backdropFilter: 'blur(30px)', border: '1px solid rgba(255,255,255,0.08)'
                 }}>
-                    <div style={{ padding: '12px 16px', borderBottom: '1px solid var(--border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'var(--bg-card)' }}>
-                        <h3 style={{ fontSize: 13, fontWeight: 700, margin: 0 }}>Notifications</h3>
+                    <div style={{ padding: '16px 20px', borderBottom: '1px solid rgba(255,255,255,0.05)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'rgba(0,0,0,0.2)' }}>
+                        <h3 style={{ fontSize: 13, fontWeight: 900, margin: 0, color: '#f8fafc', textTransform: 'uppercase', letterSpacing: '0.8px' }}>Alerts</h3>
                         <button onClick={() => markRead()} style={{ background: 'none', border: 'none', color: 'var(--accent-primary)', fontSize: 11, cursor: 'pointer', fontWeight: 600 }}>Mark all as read</button>
                     </div>
 

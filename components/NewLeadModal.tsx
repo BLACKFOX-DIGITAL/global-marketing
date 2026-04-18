@@ -222,32 +222,30 @@ export default function NewLeadModal({ onSuccess, onClose }: { onSuccess: () => 
     return (
         <div style={{
             position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
-            background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(8px)',
+            background: 'rgba(15,23,42,0.6)', backdropFilter: 'blur(30px)',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
             zIndex: 1000, padding: 20,
             animation: 'fadeIn 0.2s ease-out'
         }}>
             <div className="card" style={{
                 width: '100%', maxWidth: 920, maxHeight: '90vh', overflowY: 'auto',
-                padding: 0, position: 'relative',
-                boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(255,255,255,0.05)',
+                padding: 0, position: 'relative', borderRadius: 24,
+                boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.05), 0 25px 50px -12px rgba(0,0,0,0.5)',
                 animation: 'slideUp 0.25s ease-out'
             }}>
                 {/* Header */}
                 <div style={{
-                    padding: '14px 24px', borderBottom: '1px solid var(--border)',
+                    padding: '20px 24px', borderBottom: '1px solid rgba(255,255,255,0.08)',
                     display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-                    position: 'sticky', top: 0, background: 'var(--bg-card)', zIndex: 10
+                    position: 'sticky', top: 0, background: 'rgba(30,41,59,0.8)', backdropFilter: 'blur(20px)', zIndex: 10
                 }}>
                     <h2 style={{ fontSize: 17, fontWeight: 700, margin: 0 }}>Create New Lead</h2>
-                    <button onClick={onClose} style={{
-                        background: 'rgba(255,255,255,0.05)', border: '1px solid var(--border)',
-                        color: 'var(--text-muted)', cursor: 'pointer', borderRadius: 8,
-                        width: 30, height: 30, display: 'flex', alignItems: 'center', justifyContent: 'center',
-                        transition: 'all 0.15s'
-                    }}
-                        onMouseOver={e => { e.currentTarget.style.background = 'rgba(239,68,68,0.1)'; e.currentTarget.style.color = '#ef4444' }}
-                        onMouseOut={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.05)'; e.currentTarget.style.color = 'var(--text-muted)' }}
+                    <button onClick={onClose}
+                        className="btn-icon-delete"
+                        style={{
+                            border: '1px solid var(--border)', cursor: 'pointer', borderRadius: 8,
+                            width: 30, height: 30, display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        }}
                     >
                         <X size={15} />
                     </button>
@@ -316,12 +314,8 @@ export default function NewLeadModal({ onSuccess, onClose }: { onSuccess: () => 
                                                             set('country', c)
                                                             setShowCountryDropdown(false)
                                                         }}
-                                                        style={{
-                                                            padding: '8px 12px', fontSize: 12, cursor: 'pointer',
-                                                            transition: 'background 0.15s', borderBottom: '1px solid rgba(255,255,255,0.03)'
-                                                        }}
-                                                        onMouseOver={e => e.currentTarget.style.background = 'rgba(99,102,241,0.1)'}
-                                                        onMouseOut={e => e.currentTarget.style.background = 'transparent'}
+                                                        className="dropdown-option"
+                                                        style={{ padding: '8px 12px', fontSize: 12, borderBottom: '1px solid rgba(255,255,255,0.03)' }}
                                                     >
                                                         {c}
                                                     </div>
@@ -431,12 +425,8 @@ export default function NewLeadModal({ onSuccess, onClose }: { onSuccess: () => 
                                                             set('industry', i)
                                                             setShowIndustryDropdown(false)
                                                         }}
-                                                        style={{
-                                                            padding: '8px 12px', fontSize: 12, cursor: 'pointer',
-                                                            transition: 'background 0.15s', borderBottom: '1px solid rgba(255,255,255,0.03)'
-                                                        }}
-                                                        onMouseOver={e => e.currentTarget.style.background = 'rgba(99,102,241,0.1)'}
-                                                        onMouseOut={e => e.currentTarget.style.background = 'transparent'}
+                                                        className="dropdown-option"
+                                                        style={{ padding: '8px 12px', fontSize: 12, borderBottom: '1px solid rgba(255,255,255,0.03)' }}
                                                     >
                                                         {i}
                                                     </div>
@@ -548,14 +538,12 @@ export default function NewLeadModal({ onSuccess, onClose }: { onSuccess: () => 
                                                                     handleAddPosition(contact.position, i)
                                                                     setActivePositionIdx(null)
                                                                 }}
+                                                                className="dropdown-option-accent"
                                                                 style={{
-                                                                    padding: '10px 12px', fontSize: 12, cursor: 'pointer',
+                                                                    padding: '10px 12px', fontSize: 12,
                                                                     color: 'var(--accent-primary)', fontWeight: 700,
-                                                                    background: 'rgba(99,102,241,0.05)',
                                                                     borderBottom: recentPositions.length > 0 ? '1px solid var(--border)' : 'none'
                                                                 }}
-                                                                onMouseOver={e => e.currentTarget.style.background = 'rgba(99,102,241,0.1)'}
-                                                                onMouseOut={e => e.currentTarget.style.background = 'rgba(99,102,241,0.05)'}
                                                             >
                                                                 + Add "{contact.position}" as new official position
                                                             </div>
@@ -569,12 +557,8 @@ export default function NewLeadModal({ onSuccess, onClose }: { onSuccess: () => 
                                                                         onClick={() => {
                                                                             const n = [...contacts]; n[i].position = p; setContacts(n); setActivePositionIdx(null)
                                                                         }}
-                                                                        style={{
-                                                                            padding: '8px 12px', fontSize: 12, cursor: 'pointer',
-                                                                            transition: 'background 0.15s', borderBottom: '1px solid rgba(255,255,255,0.03)'
-                                                                        }}
-                                                                        onMouseOver={e => e.currentTarget.style.background = 'rgba(99,102,241,0.1)'}
-                                                                        onMouseOut={e => e.currentTarget.style.background = 'transparent'}
+                                                                        className="dropdown-option"
+                                                                        style={{ padding: '8px 12px', fontSize: 12, borderBottom: '1px solid rgba(255,255,255,0.03)' }}
                                                                     >
                                                                         {p}
                                                                     </div>
@@ -714,10 +698,6 @@ export default function NewLeadModal({ onSuccess, onClose }: { onSuccess: () => 
                 </form>
             </div>
 
-            <style>{`
-                @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-                @keyframes slideUp { from { transform: translateY(10px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
-            `}</style>
         </div>
     )
 }

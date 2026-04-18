@@ -23,11 +23,11 @@ function KpiCard({ label, value, sub, icon: Icon, color, highlight = false }: {
 }) {
     return (
         <div style={{
-            padding: '14px 16px', borderRadius: 14,
+            padding: '20px 24px', borderRadius: 20,
             background: highlight ? `${color}12` : 'rgba(30,41,59,0.45)',
             border: `1px solid ${highlight ? color + '30' : 'rgba(255,255,255,0.06)'}`,
             backdropFilter: 'blur(20px)', display: 'flex', flexDirection: 'column', gap: 6,
-            boxShadow: highlight ? `0 0 20px ${color}18` : 'none'
+            boxShadow: highlight ? `inset 0 1px 0 rgba(255,255,255,0.1), 0 8px 30px ${color}18` : 'inset 0 1px 0 rgba(255,255,255,0.05), 0 4px 20px rgba(0,0,0,0.1)'
         }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <div style={{ fontSize: 9, color: '#64748b', fontWeight: 800, letterSpacing: '0.8px', textTransform: 'uppercase' }}>{label}</div>
@@ -295,8 +295,8 @@ export default function LeadOperationsHub() {
 
             {/* Status Breakdown Chart */}
             {chartData.length > 0 && (
-                <div style={{ background: 'rgba(15,23,42,0.45)', backdropFilter: 'blur(40px)', border: '1px solid rgba(255,255,255,0.06)', borderRadius: 18, padding: '16px 20px', marginBottom: 18 }}>
-                    <h3 style={{ fontSize: 12, fontWeight: 900, margin: '0 0 16px 0', color: '#64748b', textTransform: 'uppercase', letterSpacing: '1px', display: 'flex', alignItems: 'center', gap: 6 }}>
+                <div style={{ background: 'rgba(15,23,42,0.45)', backdropFilter: 'blur(40px)', border: '1px solid rgba(255,255,255,0.06)', borderRadius: 24, padding: '24px 28px', marginBottom: 20, boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.05), 0 8px 30px rgba(0,0,0,0.1)' }}>
+                    <h3 style={{ fontSize: 13, fontWeight: 900, margin: '0 0 16px 0', color: '#64748b', textTransform: 'uppercase', letterSpacing: '1px', display: 'flex', alignItems: 'center', gap: 6 }}>
                         <BarChart3 size={13} /> Lead Status Breakdown
                     </h3>
                     <div style={{ height: 160 }}>
@@ -396,7 +396,7 @@ export default function LeadOperationsHub() {
             )}
 
             {activeTab === 'leads' ? (
-                <div style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 16, overflow: 'hidden' }}>
+                <div style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 20, overflow: 'hidden', boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.02), 0 4px 20px rgba(0,0,0,0.05)' }}>
                     <div style={{ overflowX: 'auto' }}>
                         <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', minWidth: 800 }}>
                             <thead style={{ background: 'rgba(255,255,255,0.02)', borderBottom: '1px solid var(--border)', position: 'sticky', top: 0, zIndex: 10 }}>
@@ -514,8 +514,8 @@ export default function LeadOperationsHub() {
 
             {/* Import Modal */}
             {showImport && (
-                <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(4px)', zIndex: 200, display: 'flex', alignItems: 'center', justifyContent: 'center' }} onClick={e => e.target === e.currentTarget && setShowImport(false)}>
-                    <div style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 20, padding: 32, width: 500, boxShadow: '0 20px 40px rgba(0,0,0,0.4)' }}>
+                <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(8px)', zIndex: 200, display: 'flex', alignItems: 'center', justifyContent: 'center' }} onClick={e => e.target === e.currentTarget && setShowImport(false)}>
+                    <div style={{ background: 'var(--bg-card)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 24, padding: 32, width: 500, boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.1), 0 20px 40px rgba(0,0,0,0.4)' }}>
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
                             <h3 style={{ fontSize: 18, fontWeight: 700, margin: 0 }}>Import Leads</h3>
                             <button onClick={() => setShowImport(false)} style={{ background: 'transparent', border: 'none', color: 'var(--text-muted)', cursor: 'pointer' }}><X size={20} /></button>
@@ -545,8 +545,8 @@ export default function LeadOperationsHub() {
 
             {/* New Lead Modal */}
             {showNewLead && (
-                <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(4px)', zIndex: 200, display: 'flex', alignItems: 'center', justifyContent: 'center' }} onClick={e => e.target === e.currentTarget && setShowNewLead(false)}>
-                    <div style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 20, padding: 32, width: 520, boxShadow: '0 20px 40px rgba(0,0,0,0.4)' }}>
+                <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(8px)', zIndex: 200, display: 'flex', alignItems: 'center', justifyContent: 'center' }} onClick={e => e.target === e.currentTarget && setShowNewLead(false)}>
+                    <div style={{ background: 'var(--bg-card)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 24, padding: 32, width: 520, boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.1), 0 20px 40px rgba(0,0,0,0.4)' }}>
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
                             <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                                 <div style={{ background: 'linear-gradient(135deg, #10b981, #059669)', padding: 7, borderRadius: 9, color: '#fff' }}><UserPlus size={16} /></div>

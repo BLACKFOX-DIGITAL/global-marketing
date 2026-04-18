@@ -135,16 +135,16 @@ export default function OpportunityDetailPage({ params }: { params: Promise<{ id
             </div>
 
             <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) 340px', gap: 20 }}>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-                    <div className="card" style={{ padding: 24 }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
+                    <div className="card" style={{ padding: 28, borderRadius: 24, boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.05), 0 8px 30px rgba(0,0,0,0.1)' }}>
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                            <div style={{ display: 'flex', gap: 16 }}>
-                                <div style={{ width: 56, height: 56, borderRadius: 12, background: 'var(--accent-glow)', color: 'var(--accent-secondary)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 22, fontWeight: 700 }}>
-                                    <Briefcase size={28} />
+                            <div style={{ display: 'flex', gap: 20 }}>
+                                <div style={{ width: 64, height: 64, borderRadius: 16, background: 'linear-gradient(135deg, #10b981, #059669)', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 28, fontWeight: 700, boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.3), 0 8px 16px -4px rgba(16, 185, 129, 0.4)' }}>
+                                    <Briefcase size={32} />
                                 </div>
-                                <div>
-                                    <h1 style={{ fontSize: 22, fontWeight: 700, margin: '0 0 4px 0' }}>{displayTitle}</h1>
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, color: 'var(--text-secondary)', fontSize: 13 }}>
+                                <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+                                    <h1 style={{ fontSize: 24, fontWeight: 900, margin: '0 0 6px 0', letterSpacing: '-0.5px' }}>{displayTitle}</h1>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, color: 'var(--text-secondary)', fontSize: 13, fontWeight: 500 }}>
                                         <Building size={14} /> {opp.company || 'No company'}
                                     </div>
                                 </div>
@@ -159,24 +159,24 @@ export default function OpportunityDetailPage({ params }: { params: Promise<{ id
                             </div>
                         </div>
 
-                        <div style={{ marginTop: 24, padding: '16px 20px', background: 'var(--bg-input)', borderRadius: 12, display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 20 }}>
+                        <div style={{ marginTop: 28, padding: '20px 24px', background: 'var(--bg-secondary)', borderRadius: 16, display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 24, border: '1px solid rgba(255,255,255,0.03)', boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.02)' }}>
                             <div>
-                                <div style={{ fontSize: 11, color: 'var(--text-muted)', fontWeight: 700, textTransform: 'uppercase', marginBottom: 4 }}>Probability</div>
-                                <div style={{ fontSize: 18, fontWeight: 800, color: 'var(--text-primary)' }}>{opp.probability || 0}%</div>
+                                <div style={{ fontSize: 11, color: 'var(--text-muted)', fontWeight: 800, textTransform: 'uppercase', marginBottom: 6, letterSpacing: '0.8px' }}>Probability</div>
+                                <div style={{ fontSize: 24, fontWeight: 900, color: 'var(--text-primary)', letterSpacing: '-0.5px' }}>{opp.probability || 0}%</div>
                             </div>
                             <div>
-                                <div style={{ fontSize: 11, color: 'var(--text-muted)', fontWeight: 700, textTransform: 'uppercase', marginBottom: 4 }}>Exp. Close</div>
-                                <div style={{ fontSize: 18, fontWeight: 800, color: 'var(--text-primary)' }}>{opp.closeDate ? format(parseISO(opp.closeDate), 'MMM d, yyyy') : 'TBD'}</div>
+                                <div style={{ fontSize: 11, color: 'var(--text-muted)', fontWeight: 800, textTransform: 'uppercase', marginBottom: 6, letterSpacing: '0.8px' }}>Exp. Close</div>
+                                <div style={{ fontSize: 24, fontWeight: 900, color: 'var(--text-primary)', letterSpacing: '-0.5px' }}>{opp.closeDate ? format(parseISO(opp.closeDate), 'MMM d, yyyy') : 'TBD'}</div>
                             </div>
                         </div>
                     </div>
 
-                    <div className="card" style={{ padding: 0, minHeight: 400 }}>
+                    <div className="card" style={{ padding: 0, minHeight: 400, borderRadius: 24, boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.02), 0 4px 20px rgba(0,0,0,0.05)' }}>
                         <div style={{ borderBottom: '1px solid var(--border)', display: 'flex', gap: 32, padding: '0 32px' }}>
-                            <button onClick={() => setActiveTab('timeline')} className={`tab ${activeTab === 'timeline' ? 'active' : ''}`} style={{ padding: '16px 0', border: 'none', background: 'none', borderBottom: `2.5px solid ${activeTab === 'timeline' ? 'var(--accent-primary)' : 'transparent'}`, color: activeTab === 'timeline' ? 'var(--text-primary)' : 'var(--text-muted)', fontWeight: 700, fontSize: 14, cursor: 'pointer' }}>Timeline</button>
-                            <button onClick={() => setActiveTab('notes')} className={`tab ${activeTab === 'notes' ? 'active' : ''}`} style={{ padding: '16px 0', border: 'none', background: 'none', borderBottom: `2.5px solid ${activeTab === 'notes' ? 'var(--accent-primary)' : 'transparent'}`, color: activeTab === 'notes' ? 'var(--text-primary)' : 'var(--text-muted)', fontWeight: 700, fontSize: 14, cursor: 'pointer' }}>Notes</button>
+                            <button onClick={() => setActiveTab('timeline')} className={`tab ${activeTab === 'timeline' ? 'active' : ''}`} style={{ padding: '18px 0', border: 'none', background: 'none', borderBottom: `2.5px solid ${activeTab === 'timeline' ? 'var(--accent-primary)' : 'transparent'}`, color: activeTab === 'timeline' ? 'var(--text-primary)' : 'var(--text-muted)', fontWeight: 700, fontSize: 14, cursor: 'pointer' }}>Timeline</button>
+                            <button onClick={() => setActiveTab('notes')} className={`tab ${activeTab === 'notes' ? 'active' : ''}`} style={{ padding: '18px 0', border: 'none', background: 'none', borderBottom: `2.5px solid ${activeTab === 'notes' ? 'var(--accent-primary)' : 'transparent'}`, color: activeTab === 'notes' ? 'var(--text-primary)' : 'var(--text-muted)', fontWeight: 700, fontSize: 14, cursor: 'pointer' }}>Notes</button>
                         </div>
-                        <div style={{ padding: 24 }}>
+                        <div style={{ padding: 32 }}>
                             {activeTab === 'timeline' && <ActivityTimeline activities={opp.activityLogs} />}
                             {activeTab === 'notes' && (
                                 <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
@@ -194,9 +194,9 @@ export default function OpportunityDetailPage({ params }: { params: Promise<{ id
                     </div>
                 </div>
 
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-                    <div className="card" style={{ padding: 20 }}>
-                        <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--text-muted)', letterSpacing: '0.5px', marginBottom: 16 }}>CURRENT STAGE</div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
+                    <div className="card" style={{ padding: 24, borderRadius: 20, boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.02), 0 4px 20px rgba(0,0,0,0.05)' }}>
+                        <div style={{ fontSize: 11, fontWeight: 800, color: 'var(--text-muted)', letterSpacing: '0.8px', marginBottom: 16 }}>CURRENT STAGE</div>
                         <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                             {stages.map(s => {
                                 const isClosed = opp.stage === 'Closed Won' || opp.stage === 'Closed Lost'
@@ -207,7 +207,7 @@ export default function OpportunityDetailPage({ params }: { params: Promise<{ id
                                         onClick={() => updateStage(s.value)}
                                         disabled={isClosed && !isCurrent}
                                         style={{
-                                            padding: '10px 14px', borderRadius: 8, border: '1px solid', textAlign: 'left', fontSize: 13, fontWeight: 600,
+                                            padding: '12px 16px', borderRadius: 10, border: '1px solid', textAlign: 'left', fontSize: 13, fontWeight: 600,
                                             borderColor: isCurrent ? (s.color || 'var(--accent-primary)') : 'var(--border)',
                                             background: isCurrent ? `${s.color || 'var(--accent-primary)'}15` : 'transparent',
                                             color: isCurrent ? (s.color || 'var(--accent-primary)') : 'var(--text-secondary)',
@@ -222,10 +222,10 @@ export default function OpportunityDetailPage({ params }: { params: Promise<{ id
                         </div>
                     </div>
 
-                    <div className="card" style={{ padding: 20 }}>
-                        <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--text-muted)', letterSpacing: '0.5px', marginBottom: 20 }}>OPPORTUNITY OVERVIEW</div>
+                    <div className="card" style={{ padding: 24, borderRadius: 20, boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.02), 0 4px 20px rgba(0,0,0,0.05)' }}>
+                        <div style={{ fontSize: 11, fontWeight: 800, color: 'var(--text-muted)', letterSpacing: '0.8px', marginBottom: 20 }}>OPPORTUNITY OVERVIEW</div>
                         <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: 13 }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: 14 }}>
                                 <span style={{ color: 'var(--text-secondary)' }}>Owner</span>
                                 <span style={{ color: 'var(--text-primary)', fontWeight: 600 }}>{opp.owner?.name}</span>
                             </div>

@@ -64,7 +64,7 @@ export default function ThemeSwitcher({ variant = 'header', collapsed = false }:
 
             {isOpen && (
                 <div 
-                    className="card" 
+                    className="card glass" 
                     style={{ 
                         position: 'absolute', 
                         bottom: variant === 'sidebar' ? '100%' : 'auto',
@@ -76,9 +76,11 @@ export default function ThemeSwitcher({ variant = 'header', collapsed = false }:
                         marginTop: variant === 'sidebar' ? 0 : '8px', 
                         zIndex: 1000, 
                         padding: '8px',
-                        boxShadow: '0 10px 30px rgba(0,0,0,0.4)',
-                        border: '1px solid var(--border)',
-                        background: 'var(--bg-card)'
+                        boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.05), 0 16px 32px rgba(0,0,0,0.4)',
+                        border: '1px solid rgba(255,255,255,0.06)',
+                        background: 'rgba(30,41,59,0.8)',
+                        backdropFilter: 'blur(30px)',
+                        borderRadius: 16
                     }}
                 >
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>

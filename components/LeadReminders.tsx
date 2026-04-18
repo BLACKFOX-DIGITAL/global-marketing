@@ -83,7 +83,7 @@ export default function LeadReminders({ leadId }: { leadId: string }) {
 
             {/* Create form */}
             {showForm && (
-                <div style={{ padding: 12, background: 'rgba(0,0,0,0.1)', borderRadius: 10, border: '1px solid var(--border)', marginBottom: 12, animation: 'slideDown 0.15s ease' }}>
+                <div style={{ padding: 16, background: 'rgba(15,23,42,0.6)', borderRadius: 12, border: '1px solid rgba(255,255,255,0.06)', boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.03), 0 4px 12px rgba(0,0,0,0.1)', marginBottom: 12, animation: 'slideDown 0.15s ease' }}>
                     <input
                         type="datetime-local"
                         value={remindAt}
@@ -119,8 +119,9 @@ export default function LeadReminders({ leadId }: { leadId: string }) {
                     {activeReminders.map(r => (
                         <div key={r.id} style={{
                             display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-                            padding: '8px 10px', background: 'rgba(245,158,11,0.06)',
-                            border: '1px solid rgba(245,158,11,0.15)', borderRadius: 8
+                            padding: '12px 14px', background: 'rgba(245,158,11,0.08)',
+                            border: '1px solid rgba(245,158,11,0.2)', borderRadius: 12,
+                            boxShadow: 'inset 0 1px 0 rgba(245,158,11,0.05)'
                         }}>
                             <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                                 <Clock size={12} color="#f59e0b" />

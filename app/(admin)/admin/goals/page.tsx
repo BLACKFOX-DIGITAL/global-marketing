@@ -24,11 +24,11 @@ function KpiCard({ label, value, sub, icon: Icon, color, highlight = false }: {
 }) {
     return (
         <div style={{
-            padding: '14px 16px', borderRadius: 14,
+            padding: '20px 24px', borderRadius: 20,
             background: highlight ? `${color}12` : 'rgba(30,41,59,0.45)',
             border: `1px solid ${highlight ? color + '30' : 'rgba(255,255,255,0.06)'}`,
-            backdropFilter: 'blur(20px)', display: 'flex', flexDirection: 'column', gap: 6,
-            boxShadow: highlight ? `0 0 20px ${color}18` : 'none'
+            backdropFilter: 'blur(20px)', display: 'flex', flexDirection: 'column', gap: 8,
+            boxShadow: highlight ? `inset 0 1px 0 rgba(255,255,255,0.05), 0 8px 30px ${color}18` : 'inset 0 1px 0 rgba(255,255,255,0.05), 0 4px 20px rgba(0,0,0,0.1)'
         }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <div style={{ fontSize: 9, color: '#64748b', fontWeight: 800, letterSpacing: '0.8px', textTransform: 'uppercase' }}>{label}</div>
@@ -268,8 +268,8 @@ export default function GoalsPage() {
                     </div>
 
                     {/* Chart */}
-                    <div style={{ background: 'rgba(15,23,42,0.45)', backdropFilter: 'blur(40px)', border: '1px solid rgba(255,255,255,0.06)', borderRadius: 18, padding: '16px 20px' }}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+                    <div style={{ background: 'rgba(15,23,42,0.45)', backdropFilter: 'blur(40px)', border: '1px solid rgba(255,255,255,0.06)', borderRadius: 24, padding: '24px 28px', boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.05), 0 8px 30px rgba(0,0,0,0.1)' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
                             <h3 style={{ fontSize: 13, fontWeight: 900, margin: 0, color: '#f8fafc', display: 'flex', alignItems: 'center', gap: 6 }}>
                                 <BarChart3 size={14} color="#3b82f6" /> 6-Month Actuals vs Targets
                             </h3>
@@ -306,8 +306,8 @@ export default function GoalsPage() {
                     </div>
 
                     {/* Table */}
-                    <div style={{ background: 'rgba(15,23,42,0.6)', backdropFilter: 'blur(40px)', border: '1px solid rgba(255,255,255,0.06)', borderRadius: 18, overflow: 'hidden' }}>
-                        <div style={{ padding: '12px 20px', borderBottom: '1px solid rgba(255,255,255,0.05)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <div style={{ background: 'rgba(15,23,42,0.6)', backdropFilter: 'blur(40px)', border: '1px solid rgba(255,255,255,0.06)', borderRadius: 24, overflow: 'hidden', boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.05), 0 8px 30px rgba(0,0,0,0.1)' }}>
+                        <div style={{ padding: '16px 20px', borderBottom: '1px solid rgba(255,255,255,0.05)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                             <h3 style={{ fontSize: 11, fontWeight: 900, margin: 0, textTransform: 'uppercase', letterSpacing: '1px', color: '#64748b', display: 'flex', alignItems: 'center', gap: 6 }}>
                                 <Users size={13} /> Rep Targets
                             </h3>

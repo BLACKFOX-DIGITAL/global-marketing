@@ -136,15 +136,15 @@ export default function KeyboardShortcutsHelp({ isOpen, onClose }: { isOpen: boo
         <div 
             style={{ 
                 position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
-                background: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(8px)',
+                background: 'rgba(15,23,42,0.6)', backdropFilter: 'blur(30px)',
                 zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center',
                 animation: 'fadeIn 0.15s ease'
             }}
             onClick={e => e.target === e.currentTarget && onClose()}
         >
             <div style={{
-                width: 440, background: 'var(--bg-card)', border: '1px solid var(--border)',
-                borderRadius: 16, padding: 24, boxShadow: '0 0 60px rgba(0,0,0,0.5)',
+                width: 440, background: 'rgba(30,41,59,0.8)', border: '1px solid rgba(255,255,255,0.06)',
+                borderRadius: 24, padding: 24, boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.05), 0 25px 50px -12px rgba(0,0,0,0.5)',
                 animation: 'slideDown 0.2s ease'
             }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>

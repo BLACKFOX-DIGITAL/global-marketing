@@ -21,9 +21,8 @@ interface Lead {
 
 function Avatar({ name }: { name: string }) {
     const initials = name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)
-    const colors = ['#6366f1', '#8b5cf6', '#06b6d4', '#10b981', '#f59e0b']
-    const bg = colors[name.charCodeAt(0) % colors.length]
-    return <div className="avatar" style={{ background: bg, color: 'white', fontSize: 11, width: 30, height: 30 }}>{initials}</div>
+    const bg = 'linear-gradient(135deg, #6366f1, #8b5cf6)'
+    return <div className="avatar" style={{ background: bg, color: 'white', fontSize: 13, fontWeight: 700, width: 34, height: 34, display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: 10, boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.3)' }}>{initials}</div>
 }
 
 const fetcher = (url: string) => fetch(url).then(res => res.json())
@@ -143,20 +142,20 @@ export default function PoolPage() {
                     </div>
                 </div>
 
-                <div style={{ display: 'flex', gap: 8, marginBottom: 12, alignItems: 'center' }}>
-                    <div className="search-bar" style={{ flex: 1, maxWidth: 400, height: 32 }}>
-                        <Search size={14} color="var(--text-muted)" />
+                <div style={{ display: 'flex', gap: 12, marginBottom: 20, alignItems: 'center' }}>
+                    <div className="search-bar" style={{ flex: 1, maxWidth: 440, height: 44, borderRadius: 12, background: 'rgba(0,0,0,0.25)', boxShadow: 'inset 0 2px 4px rgba(0,0,0,0.2)' }}>
+                        <Search size={16} color="var(--text-muted)" />
                         <input
-                            placeholder="Search pool..."
+                            placeholder="Search pool for companies or names..."
                             value={searchInput}
                             onChange={e => { setSearchInput(e.target.value); setPage(1) }}
-                            style={{ fontSize: 13 }}
+                            style={{ fontSize: 13, fontWeight: 500 }}
                         />
                     </div>
                     <select
                         value={statusFilter}
                         onChange={e => { setStatusFilter(e.target.value); setPage(1) }}
-                        style={{ width: 140, height: 32, fontSize: 12, padding: '0 8px' }}
+                        style={{ width: 160, height: 44, fontSize: 13, fontWeight: 700, padding: '0 12px', borderRadius: 12, border: '1px solid rgba(255,255,255,0.06)', background: 'rgba(0,0,0,0.25)', color: 'var(--text-primary)', boxShadow: 'inset 0 2px 4px rgba(0,0,0,0.2)', cursor: 'pointer' }}
                     >
                         <option value="">All Statuses</option>
                         {statusOptions.map(s => (
@@ -164,21 +163,23 @@ export default function PoolPage() {
                         ))}
                     </select>
 
-                    <NotificationCenter />
-
-                    {isScrolled && (
-                        <div style={{ fontSize: 11, fontWeight: 700, background: 'rgba(56, 189, 248, 0.1)', color: '#38bdf8', padding: '4px 10px', borderRadius: 6, display: 'flex', alignItems: 'center', gap: 6 }}>
-                            {total} Left
-                        </div>
-                    )}
+                    <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 12 }}>
+                        <NotificationCenter />
+                        {isScrolled && (
+                            <div style={{ fontSize: 11, fontWeight: 800, background: 'rgba(56, 189, 248, 0.1)', color: '#38bdf8', padding: '6px 12px', borderRadius: 8, display: 'flex', alignItems: 'center', gap: 6, border: '1px solid rgba(56, 189, 248, 0.2)', backdropFilter: 'blur(10px)' }}>
+                                {total} Available
+                            </div>
+                        )}
+                    </div>
                 </div>
 
-                <div className="card" style={{ padding: 0, display: 'flex', flexDirection: 'column', flex: 1, overflow: 'hidden' }}>
+                <div className="card" style={{ padding: 0, display: 'flex', flexDirection: 'column', flex: 1, overflow: 'hidden', borderRadius: 24, background: 'rgba(30,41,59,0.4)', backdropFilter: 'blur(30px)', border: '1px solid rgba(255,255,255,0.06)', boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.05), 0 30px 60px rgba(0,0,0,0.2)' }}>
                     <div style={{
-                        display: 'flex', background: 'var(--bg-card)',
-                        borderBottom: '1px solid var(--border)',
-                        padding: '10px 18px', fontWeight: 600, fontSize: 12, color: 'var(--text-muted)',
-                        textTransform: 'uppercase', letterSpacing: '0.05em', height: 40, alignItems: 'center'
+                        display: 'flex', background: 'rgba(255,255,255,0.03)',
+                        borderBottom: '1px solid rgba(255,255,255,0.04)',
+                        padding: '14px 24px', fontWeight: 800, fontSize: 11, color: 'var(--text-muted)',
+                        textTransform: 'uppercase', letterSpacing: '1px', height: 52, alignItems: 'center',
+                        position: 'relative', zIndex: 10
                     }}>
                         <div style={{ width: '25%' }}>Name & Company</div>
                         <div style={{ width: '25%' }}>Website & Email</div>
@@ -188,41 +189,44 @@ export default function PoolPage() {
                         <div style={{ width: '10%', textAlign: 'right' }}>Actions</div>
                     </div>
 
-                    <div style={{ flex: 1, position: 'relative', minHeight: 0 }}>
+                    <div style={{ flex: 1, display: 'flex', flexDirection: 'column', position: 'relative', minHeight: 0 }}>
                         {loading ? (
-                            <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                                <div className="spinner" />
+                            <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                <div className="spinner" style={{ width: 32, height: 32, borderTopColor: 'var(--accent-primary)' }} />
                             </div>
                         ) : leads.length === 0 ? (
-                            <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 12, color: 'var(--text-muted)' }}>
-                                <Inbox size={36} strokeWidth={1.5} />
-                                <div style={{ fontSize: 14, fontWeight: 600, color: 'var(--text-secondary)' }}>
-                                    {search || statusFilter ? 'No leads match your filters' : 'No leads available'}
+                            <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 20, color: 'var(--text-muted)', padding: '40px 0' }}>
+                                <div style={{ width: 80, height: 80, borderRadius: '50%', background: 'rgba(255,255,255,0.03)', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: 'inset 0 2px 10px rgba(0,0,0,0.2)' }}>
+                                    <Inbox size={40} strokeWidth={1} style={{ opacity: 0.5 }} />
                                 </div>
-                                {(search || statusFilter) && (
-                                    <div style={{ fontSize: 12 }}>Try adjusting your search or status filter</div>
-                                )}
+                                <div style={{ textAlign: 'center' }}>
+                                    <div style={{ fontSize: 16, fontWeight: 700, color: 'var(--text-primary)', marginBottom: 4 }}>
+                                        {search || statusFilter ? 'No matching leads' : 'Pool is currently empty'}
+                                    </div>
+                                    <div style={{ fontSize: 13, color: 'var(--text-muted)' }}>
+                                        {search || statusFilter ? 'Try adjusting your search or filters' : 'New leads will appear here automatically'}
+                                    </div>
+                                </div>
                             </div>
                         ) : (
-                            <AutoSizer renderProp={({ height, width }) => (
-                                <List
-                                    rowComponent={Row}
-                                    rowProps={{}}
-                                    rowCount={leads.length}
-                                    rowHeight={56}
-                                    style={{ height: height ?? 0, width: width ?? 0 }}
-                                    onScroll={(e: React.UIEvent<HTMLDivElement>) => setIsScrolled(e.currentTarget.scrollTop > 50)}
-                                />
-                            )} />
+                            <div style={{ position: 'absolute', inset: 0 }}>
+                                <AutoSizer renderProp={({ height, width }) => (
+                                    <List
+                                        rowComponent={Row}
+                                        rowProps={{}}
+                                        rowCount={leads.length}
+                                        rowHeight={60}
+                                        style={{ height: height ?? 0, width: width ?? 0 }}
+                                        onScroll={(e: React.UIEvent<HTMLDivElement>) => setIsScrolled(e.currentTarget.scrollTop > 50)}
+                                    />
+                                )} />
+                            </div>
                         )}
                     </div>
 
-                    <div style={{ padding: '12px 16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: '1px solid var(--border)', background: 'var(--bg-card)' }}>
-                        <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>
-                            {total === 0
-                                ? 'No leads available'
-                                : <>Showing {((page - 1) * 50) + 1}–{Math.min(page * 50, total)} of <strong style={{ color: 'var(--text-primary)' }}>{total}</strong> open leads</>
-                            }
+                    <div style={{ padding: '16px 24px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: '1px solid rgba(255,255,255,0.04)', background: 'rgba(0,0,0,0.1)' }}>
+                        <span style={{ fontSize: 12, color: 'var(--text-muted)', fontWeight: 500 }}>
+                            {total > 0 && <>Showing {((page - 1) * 50) + 1}–{Math.min(page * 50, total)} of <strong style={{ color: 'var(--text-primary)' }}>{total}</strong> open leads</>}
                         </span>
                         <div className="pagination">
                             <button className="page-btn" onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page === 1}>

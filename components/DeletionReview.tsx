@@ -54,7 +54,7 @@ export default function DeletionReview() {
     }
 
     return (
-        <div style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 16, overflow: 'hidden', backdropFilter: 'blur(20px)' }}>
+        <div style={{ background: 'rgba(30,41,59,0.4)', boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.05), 0 8px 30px rgba(0,0,0,0.1)', border: '1px solid rgba(255,255,255,0.06)', borderRadius: 24, overflow: 'hidden', backdropFilter: 'blur(20px)' }}>
             <div style={{ padding: '12px 20px', borderBottom: '1px solid rgba(244, 63, 94, 0.2)', display: 'flex', alignItems: 'center', gap: 12, background: 'linear-gradient(90deg, rgba(244, 63, 94, 0.1), transparent)' }}>
                 <div style={{ width: 32, height: 32, borderRadius: 10, background: 'rgba(244, 63, 94, 0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#f43f5e', border: '1px solid rgba(244, 63, 94, 0.2)' }}>
                     <AlertTriangle size={18} strokeWidth={2.5} />
@@ -146,8 +146,8 @@ export default function DeletionReview() {
             </div>
 
             {purgeConfirmId && (
-                <div className="modal-overlay" onClick={e => e.target === e.currentTarget && setPurgeConfirmId(null)}>
-                    <div className="modal" style={{ maxWidth: 440, padding: 32 }}>
+                <div className="modal-overlay" onClick={e => e.target === e.currentTarget && setPurgeConfirmId(null)} style={{ background: 'rgba(15,23,42,0.6)', backdropFilter: 'blur(30px)' }}>
+                    <div className="modal" style={{ maxWidth: 440, padding: 32, borderRadius: 24, boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.05), 0 25px 50px -12px rgba(0,0,0,0.5)' }}>
                         <div style={{ textAlign: 'center', marginBottom: 24 }}>
                             <div style={{ width: 64, height: 64, background: 'rgba(239, 68, 68, 0.1)', color: '#ef4444', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px' }}>
                                 <Trash2 size={32} />

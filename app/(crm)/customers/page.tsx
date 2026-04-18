@@ -20,9 +20,8 @@ function StatusBadge({ status }: { status: string }) {
 
 function Avatar({ name }: { name: string }) {
     const initials = name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)
-    const colors = ['#6366f1', '#8b5cf6', '#06b6d4', '#10b981', '#f59e0b']
-    const bg = colors[name.charCodeAt(0) % colors.length]
-    return <div className="avatar" style={{ background: bg, color: 'white', fontSize: 11, width: 30, height: 30 }}>{initials}</div>
+    const bg = 'linear-gradient(135deg, #6366f1, #8b5cf6)'
+    return <div className="avatar" style={{ background: bg, color: 'white', fontSize: 13, fontWeight: 700, width: 34, height: 34, display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: 10, boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.3)' }}>{initials}</div>
 }
 
 const fetcher = (url: string) => fetch(url).then(r => r.json())
@@ -61,37 +60,39 @@ export default function CustomersPage() {
     return (
         <>
             <div className="crm-content" style={{ paddingTop: 16 }}>
-                <div className="page-header" style={{ marginBottom: 12 }}>
+                <div className="page-header" style={{ marginBottom: 24 }}>
                     <div style={{ display: 'flex', alignItems: 'baseline', gap: 12 }}>
-                        <h2 style={{ marginBottom: 0 }}>Customer Portfolio</h2>
+                        <h2 style={{ fontSize: 26, fontWeight: 800, marginBottom: 0, letterSpacing: '-0.5px' }}>Customer Portfolio</h2>
                         <span style={{ fontSize: 13, color: 'var(--text-muted)' }}>{total} clients</span>
                     </div>
                 </div>
 
-                <div style={{ display: 'flex', gap: 8, marginBottom: 12, alignItems: 'center' }}>
-                    <div className="search-bar" style={{ flex: 1, maxWidth: 400, height: 32 }}>
-                        <Search size={14} color="var(--text-muted)" />
+                <div style={{ display: 'flex', gap: 12, marginBottom: 20, alignItems: 'center' }}>
+                    <div className="search-bar" style={{ flex: 1, maxWidth: 400, height: 42, borderRadius: 12, background: 'rgba(0,0,0,0.2)', border: '1px solid var(--border)', boxShadow: 'inset 0 2px 4px rgba(0,0,0,0.1)' }}>
+                        <Search size={16} color="var(--text-muted)" />
                         <input
-                            placeholder="Find customers..."
+                            placeholder="Find customers by name or company..."
                             value={search}
                             onChange={e => { setSearch(e.target.value); setPage(1) }}
-                            style={{ fontSize: 13 }}
+                            style={{ fontSize: 13, fontWeight: 500 }}
                         />
                     </div>
-                    <NotificationCenter />
+                    <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                        <NotificationCenter />
+                    </div>
                 </div>
 
-                <div className="card" style={{ padding: 0 }}>
+                <div className="card" style={{ padding: 0, borderRadius: 24, background: 'rgba(30,41,59,0.4)', backdropFilter: 'blur(30px)', border: '1px solid rgba(255,255,255,0.06)', boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.05), 0 8px 32px rgba(0,0,0,0.1)', overflow: 'hidden' }}>
                     <table className="data-table">
                         <thead>
-                            <tr style={{ height: 38 }}>
-                                <th style={{ padding: '0 16px' }}>Company / Contact</th>
-                                <th style={{ padding: '0 16px' }}>Website / Email</th>
-                                <th style={{ padding: '0 16px' }}>Phone</th>
-                                <th style={{ padding: '0 16px' }}>Industry</th>
-                                <th style={{ padding: '0 16px' }}>Priority</th>
-                                <th style={{ padding: '0 16px' }}>Status</th>
-                                <th style={{ padding: '0 16px', textAlign: 'right' }}>Actions</th>
+                            <tr style={{ height: 44, background: 'var(--bg-secondary)', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+                                <th style={{ padding: '0 20px', fontSize: 11, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.8px', color: 'var(--text-muted)' }}>Company / Contact</th>
+                                <th style={{ padding: '0 20px', fontSize: 11, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.8px', color: 'var(--text-muted)' }}>Website / Email</th>
+                                <th style={{ padding: '0 20px', fontSize: 11, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.8px', color: 'var(--text-muted)' }}>Phone</th>
+                                <th style={{ padding: '0 20px', fontSize: 11, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.8px', color: 'var(--text-muted)' }}>Industry</th>
+                                <th style={{ padding: '0 20px', fontSize: 11, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.8px', color: 'var(--text-muted)' }}>Priority</th>
+                                <th style={{ padding: '0 20px', fontSize: 11, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.8px', color: 'var(--text-muted)' }}>Status</th>
+                                <th style={{ padding: '0 20px', fontSize: 11, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.8px', color: 'var(--text-muted)', textAlign: 'right' }}>Actions</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -100,23 +101,23 @@ export default function CustomersPage() {
                             ) : leads.length === 0 ? (
                                 <tr><td colSpan={7} style={{ textAlign: 'center', padding: 40, color: 'var(--text-muted)' }}>No customers found</td></tr>
                             ) : leads.map(lead => (
-                                <tr key={lead.id} style={{ height: 48 }}>
-                                    <td>
-                                        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                                <tr key={lead.id} style={{ height: 60, borderBottom: '1px solid var(--border)', transition: 'background 0.2s', background: 'transparent' }} onMouseEnter={e => e.currentTarget.style.background = 'var(--bg-card-hover)'} onMouseLeave={e => e.currentTarget.style.background = 'transparent'}>
+                                    <td style={{ padding: '0 20px' }}>
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
                                             <Avatar name={lead.company || lead.name} />
                                             <div>
-                                                <Link href={`/leads/${lead.id}`} style={{ fontWeight: 600, color: 'var(--text-primary)', textDecoration: 'none', fontSize: 13 }}>{lead.company || lead.name}</Link>
-                                                {lead.name && lead.name !== lead.company && <div style={{ fontSize: 11, color: 'var(--text-muted)' }}>{lead.name}</div>}
+                                                <Link href={`/leads/${lead.id}`} style={{ fontWeight: 700, color: 'var(--text-primary)', textDecoration: 'none', fontSize: 14 }}>{lead.company || lead.name}</Link>
+                                                {lead.name && lead.name !== lead.company && <div style={{ fontSize: 12, color: 'var(--text-secondary)', marginTop: 2 }}>{lead.name}</div>}
                                             </div>
                                         </div>
                                     </td>
-                                    <td>
-                                        <div style={{ color: 'var(--text-secondary)', fontSize: 12 }}>{lead.website || '—'}</div>
-                                        {lead.email && <div style={{ fontSize: 11, color: 'var(--text-muted)' }}>{lead.email}</div>}
+                                    <td style={{ padding: '0 20px' }}>
+                                        <div style={{ color: 'var(--text-secondary)', fontSize: 13 }}>{lead.website || '—'}</div>
+                                        {lead.email && <div style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 2 }}>{lead.email}</div>}
                                     </td>
-                                    <td style={{ padding: '8px 16px', color: 'var(--text-secondary)', fontSize: 12 }}>{lead.phone || '—'}</td>
-                                    <td style={{ padding: '8px 16px', color: 'var(--text-secondary)', fontSize: 12, fontWeight: 500 }}>{lead.industry || '—'}</td>
-                                    <td style={{ color: 'var(--text-secondary)', fontSize: 12 }}>
+                                    <td style={{ padding: '0 20px', color: 'var(--text-secondary)', fontSize: 13 }}>{lead.phone || '—'}</td>
+                                    <td style={{ padding: '0 20px', color: 'var(--text-secondary)', fontSize: 13, fontWeight: 500 }}>{lead.industry || '—'}</td>
+                                    <td style={{ padding: '0 20px', color: 'var(--text-secondary)', fontSize: 13 }}>
                                         {lead.priority ? (
                                             <span style={{
                                                 fontSize: 10, padding: '3px 8px', borderRadius: 4, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.5px',

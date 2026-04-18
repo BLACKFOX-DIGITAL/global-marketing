@@ -144,7 +144,7 @@ export default function AttendancePage() {
                 <div className="page-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                     <div>
                         <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 8 }}>
-                            <h2>Attendance</h2>
+                            <h2 style={{ fontSize: 26, fontWeight: 800, marginBottom: 0, letterSpacing: '-0.5px' }}>Attendance</h2>
                             <StatusBadge active={punchedIn} />
                         </div>
                         <p>Track your daily work hours by clocking in and out.</p>
@@ -154,9 +154,9 @@ export default function AttendancePage() {
 
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 340px', gap: 20 }}>
                     {/* Main punch area */}
-                    <div className="card" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '48px 32px', position: 'relative', overflow: 'hidden' }}>
+                    <div className="card" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '48px 32px', position: 'relative', overflow: 'hidden', borderRadius: 24, background: 'rgba(30,41,59,0.4)', backdropFilter: 'blur(20px)', border: '1px solid rgba(255,255,255,0.06)', boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.05), 0 8px 30px rgba(0,0,0,0.1)' }}>
                         {punchedIn && (
-                            <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 4, background: 'linear-gradient(90deg, transparent, #10b981, transparent)', opacity: 0.3 }} />
+                            <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 6, background: 'linear-gradient(90deg, transparent, #10b981, transparent)', opacity: 0.8 }} />
                         )}
                         {/* Current time */}
                         <div style={{ fontSize: 13, color: 'var(--text-muted)', marginBottom: 6 }}>
@@ -226,34 +226,34 @@ export default function AttendancePage() {
                     {/* Sidebar summary */}
                     <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
                         {/* Today's summary */}
-                        <div className="card">
-                            <div style={{ fontWeight: 600, marginBottom: 14, fontSize: 14, display: 'flex', alignItems: 'center', gap: 8 }}>
+                        <div className="card" style={{ borderRadius: 24, background: 'rgba(30,41,59,0.4)', backdropFilter: 'blur(20px)', border: '1px solid rgba(255,255,255,0.06)', boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.05), 0 6px 20px rgba(0,0,0,0.1)' }}>
+                            <div style={{ fontWeight: 800, marginBottom: 14, fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.8px', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: 8 }}>
                                 <Timer size={14} color="var(--accent-primary)" />
-                                Today&apos;s Summary
+                                Today's Summary
                             </div>
                             <div style={{ display: 'flex', gap: 12 }}>
                                 <div style={{
-                                    flex: 1.5, background: 'rgba(99,102,241,0.06)', borderRadius: 10, padding: '14px 12px', textAlign: 'center',
+                                    flex: 1.5, background: 'rgba(99,102,241,0.08)', borderRadius: 14, padding: '14px 12px', textAlign: 'center',
                                     border: '1px solid rgba(99,102,241,0.1)'
                                 }}>
-                                    <div style={{ fontSize: 20, fontWeight: 700, color: 'var(--accent-secondary)' }}>
+                                    <div style={{ fontSize: 20, fontWeight: 800, color: 'var(--accent-secondary)' }}>
                                         {formatSessionTime(todayMinutes * 60 + (punchedIn ? elapsed : 0))}
                                     </div>
-                                    <div style={{ fontSize: 10, color: 'var(--text-muted)', marginTop: 2, fontWeight: 600, textTransform: 'uppercase' }}>Total Hours</div>
+                                    <div style={{ fontSize: 10, color: 'var(--text-muted)', marginTop: 2, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.5px' }}>Total Hours</div>
                                 </div>
                                 <div style={{
-                                    flex: 1, background: 'rgba(16,185,129,0.06)', borderRadius: 10, padding: '14px 12px', textAlign: 'center',
+                                    flex: 1, background: 'rgba(16,185,129,0.08)', borderRadius: 14, padding: '14px 12px', textAlign: 'center',
                                     border: '1px solid rgba(16,185,129,0.1)'
                                 }}>
-                                    <div style={{ fontSize: 20, fontWeight: 700, color: '#10b981' }}>{todaySessionCount}</div>
-                                    <div style={{ fontSize: 10, color: 'var(--text-muted)', marginTop: 2, fontWeight: 600, textTransform: 'uppercase' }}>Sessions</div>
+                                    <div style={{ fontSize: 20, fontWeight: 800, color: '#10b981' }}>{todaySessionCount}</div>
+                                    <div style={{ fontSize: 10, color: 'var(--text-muted)', marginTop: 2, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.5px' }}>Sessions</div>
                                 </div>
                             </div>
                         </div>
 
                         {/* Recent punches */}
-                        <div className="card" style={{ padding: 0 }}>
-                            <div style={{ padding: '14px 18px', borderBottom: '1px solid var(--border)', fontWeight: 600, fontSize: 14 }}>Recent Activity</div>
+                        <div className="card" style={{ padding: 0, borderRadius: 24, background: 'rgba(30,41,59,0.4)', backdropFilter: 'blur(20px)', border: '1px solid rgba(255,255,255,0.06)', boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.05), 0 8px 30px rgba(0,0,0,0.1)', overflow: 'hidden' }}>
+                            <div style={{ padding: '20px 24px', borderBottom: '1px solid rgba(255,255,255,0.05)', fontWeight: 800, fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.8px', color: 'var(--text-muted)', background: 'rgba(255,255,255,0.02)' }}>Recent Activity</div>
                             {recentRecords.length === 0 && (
                                 <div style={{ padding: 20, color: 'var(--text-muted)', textAlign: 'center', fontSize: 13 }}>No sessions recorded today</div>
                             )}

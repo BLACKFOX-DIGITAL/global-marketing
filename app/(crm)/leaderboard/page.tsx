@@ -61,21 +61,22 @@ export default function LeaderboardPage() {
                         <div style={{ display: 'flex', alignItems: 'center', gap: 15 }}>
                             <NotificationCenter />
                             <div>
-                                <h2 style={{ fontSize: 22, fontWeight: 700, marginBottom: 4, display: 'flex', alignItems: 'center', gap: 10 }}>
-                                    <Trophy size={22} color="#f59e0b" /> Sales Leaderboard
+                                <h2 style={{ fontSize: 26, fontWeight: 800, marginBottom: 4, display: 'flex', alignItems: 'center', gap: 10, letterSpacing: '-0.5px' }}>
+                                    <Trophy size={26} color="#f59e0b" /> Sales Leaderboard
                                 </h2>
                                 <p style={{ color: 'var(--text-muted)', fontSize: 13, margin: 0 }}>Earn XP through calls, emails, tasks, conversions and closed deals.</p>
                             </div>
                         </div>
-                        <div style={{ display: 'flex', background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 10, overflow: 'hidden' }}>
+                        <div style={{ display: 'flex', background: 'rgba(0,0,0,0.2)', border: '1px solid rgba(255,255,255,0.06)', borderRadius: 12, overflow: 'hidden', height: 36, padding: 2 }}>
                             {PERIODS.map(p => (
                                 <button
                                     key={p.key}
                                     onClick={() => setPeriod(p.key)}
                                     style={{
-                                        padding: '8px 16px', border: 'none', fontSize: 12, fontWeight: 600, cursor: 'pointer',
+                                        padding: '0 16px', border: 'none', fontSize: 11, fontWeight: 700, cursor: 'pointer',
                                         background: period === p.key ? 'var(--accent-primary)' : 'transparent',
-                                        color: period === p.key ? 'white' : 'var(--text-secondary)',
+                                        color: period === p.key ? 'white' : 'var(--text-muted)',
+                                        borderRadius: 8,
                                         transition: 'all 0.2s',
                                     }}
                                 >
@@ -142,10 +143,12 @@ export default function LeaderboardPage() {
                                                 <div style={{
                                                     width: '100%', height: podiumHeightMap[podiumRank] || 100,
                                                     background: `linear-gradient(180deg, ${rankColor}20 0%, ${rankColor}08 100%)`,
+                                                    backdropFilter: 'blur(10px)',
                                                     border: `1px solid ${rankColor}30`,
-                                                    borderRadius: '12px 12px 0 0',
+                                                    borderRadius: '24px 24px 0 0',
                                                     display: 'flex', flexDirection: 'column', alignItems: 'center',
                                                     justifyContent: 'center', gap: 6,
+                                                    boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.1)'
                                                 }}>
                                                     <div style={{ fontSize: 16, fontWeight: 800, color: rankColor }}>Lv.{entry.level}</div>
                                                     <div style={{ fontSize: 11, color: 'var(--text-muted)' }}>{entry.closedWon} won</div>
@@ -160,18 +163,18 @@ export default function LeaderboardPage() {
 
                             {/* Full Rankings Table */}
                             {(data?.leaderboard?.length || 0) > 0 && (
-                                <div className="card" style={{ padding: 0 }}>
+                                <div className="card" style={{ padding: 0, borderRadius: 24, background: 'rgba(30,41,59,0.4)', backdropFilter: 'blur(20px)', border: '1px solid rgba(255,255,255,0.06)', boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.05), 0 8px 30px rgba(0,0,0,0.1)', overflow: 'hidden' }}>
                                     <table className="data-table">
                                         <thead>
-                                            <tr>
-                                                <th style={{ width: 60 }}>Rank</th>
-                                                <th>Name</th>
-                                                <th>Level</th>
-                                                <th>XP This Period</th>
-                                                <th>Streak</th>
-                                                <th>Tasks</th>
-                                                <th>Leads</th>
-                                                <th>Win Rate</th>
+                                            <tr style={{ background: 'var(--bg-secondary)', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+                                                <th style={{ width: 60, fontSize: 11, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.8px', color: 'var(--text-muted)' }}>Rank</th>
+                                                <th style={{ fontSize: 11, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.8px', color: 'var(--text-muted)' }}>Name</th>
+                                                <th style={{ fontSize: 11, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.8px', color: 'var(--text-muted)' }}>Level</th>
+                                                <th style={{ fontSize: 11, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.8px', color: 'var(--text-muted)' }}>XP This Period</th>
+                                                <th style={{ fontSize: 11, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.8px', color: 'var(--text-muted)' }}>Streak</th>
+                                                <th style={{ fontSize: 11, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.8px', color: 'var(--text-muted)' }}>Tasks</th>
+                                                <th style={{ fontSize: 11, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.8px', color: 'var(--text-muted)' }}>Leads</th>
+                                                <th style={{ fontSize: 11, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.8px', color: 'var(--text-muted)' }}>Win Rate</th>
                                             </tr>
                                         </thead>
                                         <tbody>
@@ -241,8 +244,10 @@ export default function LeaderboardPage() {
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
                     {cu && (
                         <div style={{
-                            background: 'linear-gradient(135deg, #4f46e5, #6366f1)',
-                            borderRadius: 14, padding: '24px 20px', color: 'white',
+                            background: 'linear-gradient(135deg, #6366f1, #4f46e5)',
+                            borderRadius: 24, padding: '24px 20px', color: 'white',
+                            boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.3), 0 12px 40px rgba(99, 102, 241, 0.2)',
+                            position: 'relative', overflow: 'hidden'
                         }}>
                             <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: '1px', textTransform: 'uppercase', opacity: 0.8, marginBottom: 8 }}>Your Current Status</div>
                             <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, marginBottom: 4 }}>
@@ -280,37 +285,37 @@ export default function LeaderboardPage() {
                     )}
 
                     {cu && (
-                        <div className="card">
+                        <div className="card" style={{ borderRadius: 24, background: 'rgba(30,41,59,0.4)', backdropFilter: 'blur(20px)', border: '1px solid rgba(255,255,255,0.06)', boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.05), 0 6px 20px rgba(0,0,0,0.1)' }}>
                             <div style={{ fontWeight: 600, marginBottom: 14, display: 'flex', alignItems: 'center', gap: 8 }}>
                                 <TrendingUp size={15} color="#6366f1" /> This Period
                             </div>
                             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
-                                <div style={{ background: 'rgba(99,102,241,0.08)', borderRadius: 10, padding: '14px 12px', textAlign: 'center' }}>
+                                <div style={{ background: 'rgba(99,102,241,0.08)', borderRadius: 14, padding: '14px 12px', textAlign: 'center', border: '1px solid rgba(99,102,241,0.1)' }}>
                                     <Target size={16} color="#6366f1" style={{ marginBottom: 6 }} />
                                     <div style={{ fontSize: 9, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: 2 }}>Leads</div>
-                                    <div style={{ fontSize: 20, fontWeight: 700 }}>{cu.leads}</div>
+                                    <div style={{ fontSize: 20, fontWeight: 800 }}>{cu.leads}</div>
                                 </div>
-                                <div style={{ background: 'rgba(16,185,129,0.08)', borderRadius: 10, padding: '14px 12px', textAlign: 'center' }}>
+                                <div style={{ background: 'rgba(16,185,129,0.08)', borderRadius: 14, padding: '14px 12px', textAlign: 'center', border: '1px solid rgba(16,185,129,0.1)' }}>
                                     <Award size={16} color="#10b981" style={{ marginBottom: 6 }} />
                                     <div style={{ fontSize: 9, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: 2 }}>Deals Won</div>
-                                    <div style={{ fontSize: 20, fontWeight: 700 }}>{cu.closedWon}</div>
+                                    <div style={{ fontSize: 20, fontWeight: 800 }}>{cu.closedWon}</div>
                                 </div>
-                                <div style={{ background: 'rgba(245,158,11,0.08)', borderRadius: 10, padding: '14px 12px', textAlign: 'center' }}>
+                                <div style={{ background: 'rgba(245,158,11,0.08)', borderRadius: 14, padding: '14px 12px', textAlign: 'center', border: '1px solid rgba(245,158,11,0.1)' }}>
                                     <CheckCircle size={16} color="#f59e0b" style={{ marginBottom: 6 }} />
                                     <div style={{ fontSize: 9, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: 2 }}>Tasks</div>
-                                    <div style={{ fontSize: 20, fontWeight: 700 }}>{cu.tasksCompleted}</div>
+                                    <div style={{ fontSize: 20, fontWeight: 800 }}>{cu.tasksCompleted}</div>
                                 </div>
-                                <div style={{ background: 'rgba(6,182,212,0.08)', borderRadius: 10, padding: '14px 12px', textAlign: 'center' }}>
+                                <div style={{ background: 'rgba(6,182,212,0.08)', borderRadius: 14, padding: '14px 12px', textAlign: 'center', border: '1px solid rgba(6,182,212,0.1)' }}>
                                     <Clock size={16} color="#06b6d4" style={{ marginBottom: 6 }} />
                                     <div style={{ fontSize: 9, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: 2 }}>Hours</div>
-                                    <div style={{ fontSize: 20, fontWeight: 700 }}>{cu.hoursWorked}h</div>
+                                    <div style={{ fontSize: 20, fontWeight: 800 }}>{cu.hoursWorked}h</div>
                                 </div>
                             </div>
                         </div>
                     )}
 
                     {/* XP Scoring Guide */}
-                    <div className="card">
+                    <div className="card" style={{ borderRadius: 24, background: 'rgba(30,41,59,0.4)', backdropFilter: 'blur(20px)', border: '1px solid rgba(255,255,255,0.06)', boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.05), 0 6px 20px rgba(0,0,0,0.1)' }}>
                         <div
                             style={{ fontWeight: 600, marginBottom: xpGuideOpen ? 14 : 0, display: 'flex', alignItems: 'center', justifyContent: 'space-between', cursor: 'pointer', padding: '4px 0' }}
                             onClick={() => setXpGuideOpen(!xpGuideOpen)}

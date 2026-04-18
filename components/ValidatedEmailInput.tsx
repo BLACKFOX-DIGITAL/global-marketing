@@ -171,7 +171,6 @@ export default function ValidatedEmailInput({ value, onChange, placeholder = 'em
 
             {/* Invalid reason tooltip */}
 
-            <style>{`@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }`}</style>
         </div>
     )
 }

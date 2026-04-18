@@ -89,12 +89,16 @@ export default function LeadNotes({ leadId, currentUserId, isAdmin }: { leadId: 
                     placeholder="Add a note..."
                     onKeyDown={e => { if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) handleSubmit() }}
                     style={{
-                        flex: 1, padding: '10px 12px', borderRadius: 10,
-                        border: '1px solid var(--border)', background: 'rgba(0,0,0,0.15)',
-                        color: 'var(--text-primary)', fontSize: 12, fontWeight: 500,
+                        flex: 1, padding: '12px 16px', borderRadius: 12,
+                        border: '1px solid rgba(255,255,255,0.05)', background: 'rgba(0,0,0,0.2)',
+                        boxShadow: 'inset 0 2px 4px rgba(0,0,0,0.1)',
+                        color: 'var(--text-primary)', fontSize: 13, fontWeight: 500,
                         resize: 'vertical', minHeight: 60, maxHeight: 200,
                         outline: 'none', fontFamily: 'inherit', lineHeight: 1.5,
+                        transition: 'border-color 0.2s, box-shadow 0.2s'
                     }}
+                    onFocus={e => { e.currentTarget.style.borderColor = 'var(--accent-primary)'; e.currentTarget.style.boxShadow = '0 0 0 3px var(--accent-glow), inset 0 2px 4px rgba(0,0,0,0.1)'; }}
+                    onBlur={e => { e.currentTarget.style.borderColor = 'rgba(255,255,255,0.05)'; e.currentTarget.style.boxShadow = 'inset 0 2px 4px rgba(0,0,0,0.1)'; }}
                 />
                 <button
                     onClick={handleSubmit}
@@ -124,10 +128,11 @@ export default function LeadNotes({ leadId, currentUserId, isAdmin }: { leadId: 
                         const color = getColor(note.user.name)
                         return (
                             <div key={note.id} style={{
-                                display: 'flex', gap: 10, padding: '10px 12px',
-                                background: 'rgba(0,0,0,0.1)', borderRadius: 10,
+                                display: 'flex', gap: 12, padding: '14px 16px',
+                                background: 'rgba(15,23,42,0.4)', borderRadius: 12,
                                 border: '1px solid rgba(255,255,255,0.03)',
-                                transition: 'border-color 0.2s'
+                                boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.02), 0 2px 8px rgba(0,0,0,0.1)',
+                                transition: 'all 0.2s'
                             }}>
                                 <div style={{
                                     width: 28, height: 28, borderRadius: '50%',

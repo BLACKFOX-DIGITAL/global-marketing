@@ -52,14 +52,22 @@ export default function CommandPalette() {
   return (
     <Command.Dialog open={open} onOpenChange={setOpen} label="Global Command Menu" className="command-palette-dialog">
       <div className="command-palette-overlay" onClick={() => setOpen(false)} />
-      <div className="command-palette-content">
-        <div className="command-palette-input-wrapper">
-          <Search size={18} className="command-palette-search-icon" />
+      <div className="command-palette" style={{
+        background: 'rgba(15,23,42,0.6)', backdropFilter: 'blur(40px)', 
+        border: '1px solid rgba(255,255,255,0.06)', borderRadius: 24,
+        boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.05), 0 20px 40px rgba(0,0,0,0.5)'
+      }}>
+        <div className="command-palette-input-wrapper" style={{ display: 'flex', alignItems: 'center', padding: '0 24px', borderBottom: '1px solid rgba(255,255,255,0.05)', background: 'rgba(0,0,0,0.2)' }}>
+          <Search size={18} color="#64748b" />
           <Command.Input 
             value={query} 
             onValueChange={setQuery} 
             placeholder="Search leads, opportunities, tasks... (Cmd+K)" 
             className="command-palette-input cmdk-input-reset" 
+            style={{ 
+              border: 'none', background: 'transparent', color: '#f8fafc', 
+              fontSize: 16, padding: '20px 16px', outline: 'none', width: '100%' 
+            }}
           />
         </div>
         

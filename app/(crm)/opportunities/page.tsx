@@ -3,7 +3,7 @@ import { useState, useEffect } from 'react'
 import Header from '@/components/Header'
 import Link from 'next/link'
 
-import { Calendar, CheckCircle2, ListTodo, Search } from 'lucide-react'
+import { Calendar, CheckCircle2, ListTodo, Search, Trash2, X } from 'lucide-react'
 import NotificationCenter from '@/components/NotificationCenter'
 import { format, parseISO, differenceInDays } from 'date-fns'
 
@@ -51,36 +51,44 @@ function QuickTaskModal({ oppId, leadId, onClose, onCreated }: { oppId: string, 
     }
 
     return (
-        <div className="modal-overlay" onClick={e => e.target === e.currentTarget && onClose()}>
-            <div className="modal" style={{ maxWidth: 400 }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
-                    <h3 style={{ fontSize: 17, fontWeight: 700 }}>Add Task</h3>
-                    <button className="btn-ghost" onClick={onClose} style={{ padding: '4px 8px' }}>✕</button>
+        <div className="modal-overlay" onClick={e => e.target === e.currentTarget && onClose()} style={{ backdropFilter: 'blur(8px)' }}>
+            <div className="modal" style={{ maxWidth: 400, borderRadius: 24, padding: 32, background: 'rgba(30,41,59,0.5)', backdropFilter: 'blur(30px)', border: '1px solid rgba(255,255,255,0.06)', boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.05), 0 30px 60px rgba(0,0,0,0.5)' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
+                    <h3 style={{ fontSize: 18, fontWeight: 800, margin: 0, letterSpacing: '-0.3px' }}>Assign Quick Task</h3>
+                    <button className="btn-ghost" onClick={onClose} style={{ padding: 6 }}><X size={18} /></button>
                 </div>
-                <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-                    {error && <div style={{ color: '#ef4444', fontSize: 13, background: 'rgba(239,68,68,0.08)', padding: '8px 12px', borderRadius: 6 }}>{error}</div>}
-                    <div className="form-group"><label className="form-label">Task Title</label><input placeholder="e.g. Schedule demo" value={task.title} onChange={e => setTask(f => ({ ...f, title: e.target.value }))} required /></div>
-                    <div className="grid-2">
-                        <div className="form-group"><label className="form-label">Type</label>
-                            <select value={task.taskType} onChange={e => setTask(f => ({ ...f, taskType: e.target.value }))}>
+                <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+                    {error && <div style={{ color: '#ef4444', fontSize: 12, fontWeight: 700, background: 'rgba(239,68,68,0.08)', padding: '10px 14px', borderRadius: 8, border: '1px solid rgba(239,68,68,0.1)' }}>{error}</div>}
+                    <div className="form-group">
+                        <label className="form-label" style={{ fontSize: 10, fontWeight: 900, textTransform: 'uppercase', letterSpacing: '0.8px', color: 'var(--text-muted)' }}>Task Title</label>
+                        <input placeholder="e.g. Follow up on proposal" value={task.title} onChange={e => setTask(f => ({ ...f, title: e.target.value }))} required style={{ borderRadius: 10, background: 'rgba(0,0,0,0.2)', border: '1px solid var(--border)', padding: '10px 14px', fontSize: 13 }} />
+                    </div>
+                    <div className="grid-2" style={{ gap: 12 }}>
+                        <div className="form-group">
+                            <label className="form-label" style={{ fontSize: 10, fontWeight: 900, textTransform: 'uppercase', letterSpacing: '0.8px', color: 'var(--text-muted)' }}>Type</label>
+                            <select value={task.taskType} onChange={e => setTask(f => ({ ...f, taskType: e.target.value }))} style={{ borderRadius: 10, background: 'rgba(0,0,0,0.2)', border: '1px solid var(--border)', padding: '10px 14px', fontSize: 13 }}>
                                 <option>Follow-up</option>
                                 <option>Call</option>
                                 <option>Email</option>
                                 <option>Meeting</option>
                             </select>
                         </div>
-                        <div className="form-group"><label className="form-label">Priority</label>
-                            <select value={task.priority} onChange={e => setTask(f => ({ ...f, priority: e.target.value }))}>
+                        <div className="form-group">
+                            <label className="form-label" style={{ fontSize: 10, fontWeight: 900, textTransform: 'uppercase', letterSpacing: '0.8px', color: 'var(--text-muted)' }}>Priority</label>
+                            <select value={task.priority} onChange={e => setTask(f => ({ ...f, priority: e.target.value }))} style={{ borderRadius: 10, background: 'rgba(0,0,0,0.2)', border: '1px solid var(--border)', padding: '10px 14px', fontSize: 13 }}>
                                 <option>Low</option>
                                 <option>Medium</option>
                                 <option>High</option>
                             </select>
                         </div>
                     </div>
-                    <div className="form-group"><label className="form-label">Due Date</label><input type="datetime-local" value={task.dueDate} onChange={e => setTask(f => ({ ...f, dueDate: e.target.value }))} /></div>
-                    <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end', marginTop: 4 }}>
-                        <button type="button" className="btn-secondary" onClick={onClose}>Cancel</button>
-                        <button type="submit" className="btn-primary" disabled={loading}>{loading ? 'Saving...' : 'Add Task'}</button>
+                    <div className="form-group">
+                        <label className="form-label" style={{ fontSize: 10, fontWeight: 900, textTransform: 'uppercase', letterSpacing: '0.8px', color: 'var(--text-muted)' }}>Due Date</label>
+                        <input type="datetime-local" value={task.dueDate} onChange={e => setTask(f => ({ ...f, dueDate: e.target.value }))} style={{ borderRadius: 10, background: 'rgba(0,0,0,0.2)', border: '1px solid var(--border)', padding: '10px 14px', fontSize: 13 }} />
+                    </div>
+                    <div style={{ display: 'flex', gap: 12, justifyContent: 'flex-end', marginTop: 10 }}>
+                        <button type="button" className="btn-secondary" onClick={onClose} style={{ flex: 1, padding: '12px', borderRadius: 10, fontWeight: 800, fontSize: 11, textTransform: 'uppercase' }}>Cancel</button>
+                        <button type="submit" className="btn-primary" disabled={loading} style={{ flex: 1.5, padding: '12px', borderRadius: 10, fontWeight: 800, fontSize: 11, textTransform: 'uppercase' }}>{loading ? 'Processing...' : 'Assign Task'}</button>
                     </div>
                 </form>
             </div>
@@ -166,9 +174,9 @@ export default function OpportunitiesPage() {
                         <h2 style={{ marginBottom: 0 }}>Opportunities Board</h2>
                         <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginTop: 4 }}>
                             <span style={{ fontSize: 13, color: 'var(--text-muted)' }}>Showing {filteredOpportunities.length} deals</span>
-                            <div className="search-bar" style={{ width: 220, height: 30 }}>
-                                <Search size={13} color="var(--text-muted)" />
-                                <input placeholder="Search deals..." value={searchQuery} onChange={e => setSearchQuery(e.target.value)} style={{ fontSize: 12 }} />
+                        <div className="search-bar" style={{ width: 260, height: 38, borderRadius: 10, background: 'rgba(0,0,0,0.2)', border: '1px solid var(--border)', boxShadow: 'inset 0 2px 4px rgba(0,0,0,0.1)' }}>
+                                <Search size={14} color="var(--text-muted)" />
+                                <input placeholder="Search deals..." value={searchQuery} onChange={e => setSearchQuery(e.target.value)} style={{ fontSize: 13, fontWeight: 500 }} />
                             </div>
                         </div>
                     </div>
@@ -207,7 +215,7 @@ export default function OpportunitiesPage() {
                                     </div>
                                     <div className="kanban-cards">
                                         {cards.length === 0 && (
-                                            <div style={{ padding: 24, textAlign: 'center', border: '1px dashed var(--border)', borderRadius: 10, color: 'var(--text-muted)', fontSize: 12, opacity: 0.5 }}>
+                                            <div style={{ padding: 24, textAlign: 'center', border: '1px dashed rgba(255,255,255,0.1)', background: 'rgba(255,255,255,0.02)', borderRadius: 16, color: 'var(--text-muted)', fontSize: 13, fontWeight: 600 }}>
                                                 Drag cards here
                                             </div>
                                         )}
@@ -269,37 +277,42 @@ export default function OpportunitiesPage() {
 
                 {taskModalOpp && <QuickTaskModal oppId={taskModalOpp.oppId} leadId={taskModalOpp.leadId} onClose={() => setTaskModalOpp(null)} onCreated={() => { setTaskModalOpp(null); mutateOpps() }} />}
                 {deleteConfirmId && (
-                    <div className="modal-overlay" onClick={e => e.target === e.currentTarget && setDeleteConfirmId(null)}>
-                        <div className="modal" style={{ maxWidth: 400 }}>
-                            <h3 style={{ fontSize: 18, fontWeight: 600, marginBottom: 16 }}>Delete Opportunity</h3>
-                            <p style={{ color: 'var(--text-secondary)', marginBottom: 24, fontSize: 14 }}>
-                                Are you sure you want to delete this opportunity? This action cannot be undone. Any associated lead will automatically be marked as &apos;Lost&apos;.
-                            </p>
-                            <div style={{ display: 'flex', gap: 12, justifyContent: 'flex-end' }}>
-                                <button className="btn-secondary" onClick={() => setDeleteConfirmId(null)}>Cancel</button>
-                                <button className="btn-primary" style={{ background: '#ef4444', color: 'white' }} onClick={executeDelete}>Delete Opportunity</button>
+                    <div className="modal-overlay" onClick={e => e.target === e.currentTarget && setDeleteConfirmId(null)} style={{ backdropFilter: 'blur(8px)' }}>
+                        <div className="modal" style={{ maxWidth: 400, borderRadius: 24, padding: 32, background: 'rgba(30,41,59,0.5)', backdropFilter: 'blur(30px)', border: '1px solid rgba(255,255,255,0.06)', boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.05), 0 30px 60px rgba(0,0,0,0.5)' }}>
+                            <div style={{ textAlign: 'center', marginBottom: 24 }}>
+                                <div style={{ width: 64, height: 64, background: 'rgba(239,68,68,0.1)', color: '#ef4444', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px' }}>
+                                    <Trash2 size={32} />
+                                </div>
+                                <h3 style={{ fontSize: 22, fontWeight: 800, marginBottom: 12, color: 'var(--text-primary)', letterSpacing: '-0.5px' }}>Delete Opportunity</h3>
+                                <p style={{ color: 'var(--text-secondary)', marginBottom: 0, fontSize: 14, lineHeight: 1.6 }}>
+                                    Are you sure? This action cannot be undone. Associated leads will be marked as <strong style={{ color: '#ef4444' }}>Lost</strong>.
+                                </p>
+                            </div>
+                            <div style={{ display: 'flex', gap: 12, justifyContent: 'center' }}>
+                                <button className="btn-secondary" onClick={() => setDeleteConfirmId(null)} style={{ flex: 1, padding: '12px 0', borderRadius: 10, fontWeight: 800, fontSize: 11, textTransform: 'uppercase' }}>Cancel</button>
+                                <button className="btn-primary" style={{ background: '#ef4444', border: 'none', flex: 1, padding: '12px 0', borderRadius: 10, fontWeight: 800, fontSize: 11, textTransform: 'uppercase' }} onClick={executeDelete}>Delete</button>
                             </div>
                         </div>
                     </div>
                 )}
                 {stageConfirm && (
-                    <div className="modal-overlay" onClick={e => e.target === e.currentTarget && setStageConfirm(null)}>
-                        <div className="modal" style={{ maxWidth: 440, padding: 32 }}>
-                            <div style={{ textAlign: 'center', marginBottom: 24 }}>
-                                <div style={{ width: 64, height: 64, background: stageConfirm.newStage === 'Closed Won' ? 'rgba(16, 185, 129, 0.1)' : 'rgba(239, 68, 68, 0.1)', color: stageConfirm.newStage === 'Closed Won' ? '#10b981' : '#ef4444', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px' }}>
+                    <div className="modal-overlay" onClick={e => e.target === e.currentTarget && setStageConfirm(null)} style={{ backdropFilter: 'blur(8px)' }}>
+                        <div className="modal" style={{ maxWidth: 440, borderRadius: 24, padding: 40, background: 'rgba(30,41,59,0.5)', backdropFilter: 'blur(30px)', border: '1px solid rgba(255,255,255,0.06)', boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.05), 0 30px 60px rgba(0,0,0,0.5)' }}>
+                            <div style={{ textAlign: 'center', marginBottom: 28 }}>
+                                <div style={{ width: 64, height: 64, background: stageConfirm.newStage === 'Closed Won' ? 'rgba(16, 185, 129, 0.1)' : 'rgba(239, 68, 68, 0.1)', color: stageConfirm.newStage === 'Closed Won' ? '#10b981' : '#ef4444', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 20px' }}>
                                     <CheckCircle2 size={32} />
                                 </div>
-                                <h3 style={{ fontSize: 22, fontWeight: 700, marginBottom: 8, color: 'var(--text-primary)' }}>
+                                <h3 style={{ fontSize: 24, fontWeight: 800, marginBottom: 12, color: 'var(--text-primary)', letterSpacing: '-0.5px' }}>
                                     Mark as {stageConfirm.newStage === 'Closed Won' ? 'Won' : 'Lost'}
                                 </h3>
-                                <p style={{ color: 'var(--text-secondary)', fontSize: 14, lineHeight: 1.6 }}>
-                                    Are you sure you want to mark <strong style={{ color: 'var(--text-primary)' }}>{stageConfirm.oppTitle}</strong> as {stageConfirm.newStage === 'Closed Won' ? 'Won' : 'Lost'}?
+                                <p style={{ color: 'var(--text-secondary)', fontSize: 15, lineHeight: 1.6, marginBottom: 0 }}>
+                                    Confirm marking <strong style={{ color: 'var(--text-primary)' }}>{stageConfirm.oppTitle}</strong> as {stageConfirm.newStage === 'Closed Won' ? 'Won' : 'Lost'}?
                                 </p>
                             </div>
                             <div style={{ display: 'flex', gap: 12, justifyContent: 'center' }}>
-                                <button className="btn-secondary" onClick={() => setStageConfirm(null)} style={{ flex: 1, padding: '12px 0' }}>Cancel</button>
-                                <button className="btn-primary" onClick={() => executeStageUpdate(stageConfirm.id, stageConfirm.newStage)} disabled={stageUpdating} style={{ flex: 1, padding: '12px 0', background: stageConfirm.newStage === 'Closed Won' ? '#10b981' : '#ef4444', borderColor: stageConfirm.newStage === 'Closed Won' ? '#10b981' : '#ef4444' }}>
-                                    {stageUpdating ? 'Saving...' : `Yes, Mark as ${stageConfirm.newStage === 'Closed Won' ? 'Won' : 'Lost'}`}
+                                <button className="btn-secondary" onClick={() => setStageConfirm(null)} style={{ flex: 1, padding: '14px 0', borderRadius: 10, fontWeight: 800, fontSize: 11, textTransform: 'uppercase' }}>Cancel</button>
+                                <button className="btn-primary" onClick={() => executeStageUpdate(stageConfirm.id, stageConfirm.newStage)} disabled={stageUpdating} style={{ flex: 1.5, padding: '14px 0', borderRadius: 10, background: stageConfirm.newStage === 'Closed Won' ? '#10b981' : '#ef4444', borderColor: 'transparent', fontWeight: 800, fontSize: 11, textTransform: 'uppercase' }}>
+                                    {stageUpdating ? 'Processing...' : `Confirm ${stageConfirm.newStage === 'Closed Won' ? 'Won' : 'Lost'}`}
                                 </button>
                             </div>
                         </div>

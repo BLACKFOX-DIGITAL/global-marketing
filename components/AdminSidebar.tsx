@@ -61,8 +61,8 @@ export default function AdminSidebar({ user }: AdminSidebarProps) {
 
     const initials = user?.name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2) || 'A'
     
-    // Very subtle, modern color for admin avatar
-    const avatarBg = 'linear-gradient(135deg, #1e293b, #0f172a)'
+    const adminColors = ['#6366f1', '#8b5cf6', '#06b6d4', '#10b981']
+    const adminColorIdx = (user?.name.charCodeAt(0) || 0) % adminColors.length
 
     const NavLink = ({ href, label, icon: Icon, active }: { href: string; label: string; icon: any; active: boolean }) => (
         <Link href={href} style={{
@@ -91,6 +91,7 @@ export default function AdminSidebar({ user }: AdminSidebarProps) {
     )
 
     return (
+        <>
         <aside style={{
             width: isCollapsed ? 80 : 260,
             background: 'var(--bg-card)',
@@ -115,14 +116,15 @@ export default function AdminSidebar({ user }: AdminSidebarProps) {
                     </div>
                 )}
                 <button 
+                    className="admin-collapse-btn"
                     onClick={() => setIsCollapsed(!isCollapsed)}
                     style={{
                         position: 'absolute', right: isCollapsed ? '50%' : '-12px', top: isCollapsed ? '85%' : '50%',
                         transform: isCollapsed ? 'translateX(50%)' : 'translateY(-50%)',
                         background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: '50%',
                         width: 24, height: 24, display: 'flex', alignItems: 'center', justifyContent: 'center',
-                        color: 'var(--text-muted)', cursor: 'pointer', zIndex: 50, transition: 'all 0.2s',
-                        boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
+                        color: 'var(--text-muted)', cursor: 'pointer', zIndex: 50,
+                        boxShadow: '0 4px 12px rgba(0,0,0,0.15)'
                     }}
                 >
                     {isCollapsed ? <ChevronRight size={14} /> : <ChevronLeft size={14} />}
@@ -146,41 +148,65 @@ export default function AdminSidebar({ user }: AdminSidebarProps) {
 
             <div ref={menuRef} style={{ padding: isCollapsed ? '12px 10px' : '16px', borderTop: '1px solid var(--border)', position: 'relative' }}>
                 {menuOpen && (
-                    <div style={{
+                    <div className="admin-sidebar-menu-popup" style={{
                         position: 'absolute', bottom: 'calc(100% + 10px)', left: isCollapsed ? 10 : 16, right: isCollapsed ? 'auto' : 16,
-                        width: isCollapsed ? 220 : 'auto', background: 'var(--bg-card)', border: '1px solid var(--border)',
-                        borderRadius: 12, boxShadow: '0 10px 40px rgba(0,0,0,0.3)', padding: 12, zIndex: 100,
-                        animation: 'fadeSlideUp 0.15s ease-out'
+                        width: isCollapsed ? 240 : 'auto', background: 'rgba(15,23,42,0.8)', border: '1px solid rgba(255,255,255,0.08)',
+                        borderRadius: 24, boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.05), 0 20px 50px rgba(0,0,0,0.6)', padding: 24, zIndex: 1000,
+                        backdropFilter: 'blur(40px)'
                     }}>
-                        <div style={{ padding: '4px 8px 12px', borderBottom: '1px solid var(--border)', marginBottom: 8 }}>
-                            <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-primary)' }}>{user?.name}</div>
-                            <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>{user?.email}</div>
+                        <div style={{ marginBottom: 16 }}>
+                            <div style={{ fontSize: 10, color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 700, letterSpacing: '1px', marginBottom: 12 }}>Admin Account</div>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                                <div className="avatar" style={{
+                                    background: `linear-gradient(135deg, ${adminColors[adminColorIdx]}, ${adminColors[(adminColorIdx + 1) % adminColors.length]})`,
+                                    color: 'white', width: 40, height: 40, fontSize: 14, fontWeight: 700,
+                                    border: '2px solid rgba(255,255,255,0.1)',
+                                }}>{initials}</div>
+                                <div style={{ flex: 1, minWidth: 0 }}>
+                                    <div style={{ fontSize: 14, fontWeight: 700, color: 'white', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{user?.name}</div>
+                                    <div style={{ fontSize: 11, color: 'var(--text-muted)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{user?.email}</div>
+                                </div>
+                            </div>
                         </div>
-                        <div style={{ padding: '4px 8px 12px', borderBottom: '1px solid var(--border)', marginBottom: 8 }}>
-                            <div style={{ fontSize: 11, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: 8 }}>Theme</div>
+                        <div style={{ padding: '14px 0', borderTop: '1px solid rgba(255,255,255,0.04)', borderBottom: '1px solid rgba(255,255,255,0.04)', marginBottom: 14 }}>
+                            <div style={{ fontSize: 10, color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 700, letterSpacing: '1px', marginBottom: 10 }}>Appearance</div>
                             <ThemeSwitcher variant="sidebar" />
                         </div>
-                        <button onClick={handleLogout} style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 10, padding: '8px', color: '#ef4444', background: 'transparent', border: 'none', borderRadius: 6, cursor: 'pointer', fontSize: 13, fontWeight: 500 }} onMouseEnter={e => e.currentTarget.style.background = 'rgba(239, 68, 68, 0.05)'} onMouseLeave={e => e.currentTarget.style.background = 'transparent'}>
-                            <LogOut size={14} /> Sign out
+                        <button className="admin-logout-btn" onClick={handleLogout} style={{
+                            width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+                            padding: '10px', color: '#ef4444', background: 'rgba(239, 68, 68, 0.08)',
+                            border: '1px solid rgba(239, 68, 68, 0.15)', borderRadius: 10, cursor: 'pointer',
+                            fontSize: 13, fontWeight: 600,
+                        }}>
+                            <LogOut size={15} /> <span>Sign out</span>
                         </button>
                     </div>
                 )}
 
-                <button onClick={() => setMenuOpen(prev => !prev)} style={{
-                    width: '100%', background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.05)', padding: isCollapsed ? '6px' : '6px 8px', borderRadius: 10,
-                    display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer', transition: 'all 0.2s'
-                }} onMouseEnter={e => e.currentTarget.style.background = 'rgba(255, 255, 255, 0.05)'} onMouseLeave={e => e.currentTarget.style.background = 'rgba(255,255,255,0.02)'}>
-                    <div style={{ background: avatarBg, color: '#fff', width: 26, height: 26, borderRadius: 6, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 10, fontWeight: 900, border: '1px solid rgba(255,255,255,0.1)' }}>
+                <button className="admin-user-btn" onClick={() => setMenuOpen(prev => !prev)} style={{
+                    width: '100%', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)', padding: isCollapsed ? '8px 4px' : '10px 12px', borderRadius: 14,
+                    display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer', textAlign: 'left',
+                    boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.02)',
+                    transition: 'all 0.2s'
+                }}>
+                    <div className="avatar" style={{
+                        background: `linear-gradient(135deg, ${adminColors[adminColorIdx]}, ${adminColors[(adminColorIdx + 1) % adminColors.length]})`,
+                        color: '#fff', width: 30, height: 30, borderRadius: 8, fontSize: 11, fontWeight: 800, flexShrink: 0,
+                    }}>
                         {initials}
                     </div>
                     {!isCollapsed && (
-                        <div style={{ flex: 1, textAlign: 'left', overflow: 'hidden' }}>
-                            <div style={{ fontSize: 12, fontWeight: 800, color: '#f1f5f9', whiteSpace: 'nowrap', textOverflow: 'ellipsis' }}>{user?.name || 'Admin'}</div>
-                            <div style={{ fontSize: 9, fontWeight: 700, color: 'var(--accent-primary)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Administrator</div>
-                        </div>
+                        <>
+                            <div style={{ flex: 1, textAlign: 'left', overflow: 'hidden' }}>
+                                <div style={{ fontSize: 12, fontWeight: 700, color: '#f1f5f9', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{user?.name || 'Admin'}</div>
+                                <div style={{ fontSize: 9, fontWeight: 700, color: 'var(--accent-primary)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Administrator</div>
+                            </div>
+                            <ChevronRight size={14} color="var(--text-muted)" style={{ opacity: 0.4 }} />
+                        </>
                     )}
                 </button>
             </div>
         </aside>
+        </>
     )
 }

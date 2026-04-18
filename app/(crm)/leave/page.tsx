@@ -159,10 +159,10 @@ export default function LeavePage() {
     return (
         <>
             <div className="crm-content" style={{ paddingTop: 16 }}>
-                <div className="page-header" style={{ marginBottom: 20 }}>
+                <div className="page-header" style={{ marginBottom: 24, display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                     <div>
-                        <h2>Leave</h2>
-                        <p>Apply for leave and track your remaining balance.</p>
+                        <h2 style={{ fontSize: 26, fontWeight: 800, marginBottom: 4, letterSpacing: '-0.5px' }}>Leave</h2>
+                        <p style={{ color: 'var(--text-muted)', fontSize: 13, margin: 0 }}>Apply for leave and track your remaining balance.</p>
                     </div>
                     <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
                         <NotificationCenter />
@@ -175,34 +175,35 @@ export default function LeavePage() {
                 {/* Balances Block */}
                 <div style={{ display: 'flex', gap: 16, marginBottom: 24 }}>
                     {balances.map(b => (
-                        <div key={b.id} className="card" style={{ flex: 1, padding: 20, display: 'flex', gap: 20, alignItems: 'center' }}>
+                        <div key={b.id} className="card" style={{ flex: 1, padding: 24, display: 'flex', gap: 20, alignItems: 'center', borderRadius: 24, background: 'rgba(30,41,59,0.4)', backdropFilter: 'blur(20px)', border: '1px solid rgba(255,255,255,0.06)', boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.05), 0 8px 30px rgba(0,0,0,0.1)' }}>
                             <div style={{ position: 'relative', width: 64, height: 64 }}>
                                 <svg width="64" height="64" viewBox="0 0 64 64" style={{ transform: 'rotate(-90deg)' }}>
-                                    <circle cx="32" cy="32" r="28" fill="none" stroke="var(--bg-input)" strokeWidth="6" />
+                                    <circle cx="32" cy="32" r="28" fill="none" stroke="rgba(255,255,255,0.05)" strokeWidth="6" />
                                     <circle cx="32" cy="32" r="28" fill="none" stroke={b.color || 'var(--accent-primary)'} strokeWidth="6" strokeDasharray={28 * 2 * Math.PI} strokeDashoffset={(28 * 2 * Math.PI) * (1 - (b.remaining / b.total))} style={{ transition: 'stroke-dashoffset 1s ease' }} strokeLinecap="round" />
                                 </svg>
-                                <div style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: 16 }}>{b.remaining}</div>
+                                <div style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, fontSize: 18 }}>{b.remaining}</div>
                             </div>
                             <div>
-                                <h3 style={{ fontSize: 14, fontWeight: 700, margin: '0 0 4px 0', color: 'var(--text-primary)' }}>{b.value}</h3>
-                                <div style={{ fontSize: 13, color: 'var(--text-secondary)' }}>{b.consumed} used out of {b.total} days</div>
+                                <h3 style={{ fontSize: 13, fontWeight: 800, margin: '0 0 4px 0', color: 'var(--text-primary)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>{b.value}</h3>
+                                <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>{b.consumed} used / {b.total} total</div>
                             </div>
                         </div>
                     ))}
 
-                    <div className="card" style={{ flex: 1.2, padding: '16px 20px', display: 'flex', flexDirection: 'column', background: 'rgba(99,102,241,0.02)', borderStyle: 'dashed' }}>
-                        <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-muted)', marginBottom: 12, textTransform: 'uppercase', letterSpacing: '0.5px' }}>Upcoming Holidays</div>
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                    <div className="card" style={{ flex: 1.2, padding: '24px 24px', display: 'flex', flexDirection: 'column', background: 'rgba(99,102,241,0.02)', borderStyle: 'dashed', borderRadius: 24, border: '1px dashed rgba(99,102,241,0.2)', boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.02), 0 4px 20px rgba(0,0,0,0.05)' }}>
+                        <div style={{ fontSize: 11, fontWeight: 800, color: 'var(--text-muted)', marginBottom: 16, textTransform: 'uppercase', letterSpacing: '0.8px', display: 'flex', alignItems: 'center', gap: 8 }}>
+                            <Calendar size={14} color="var(--accent-primary)" /> Upcoming Holidays
+                        </div>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
                             {apiHolidays.length === 0 ? (
                                 <div style={{ fontSize: 11, color: 'var(--text-muted)', fontStyle: 'italic' }}>No upcoming holidays.</div>
                             ) : (
                                 apiHolidays.map((h, i) => (
-                                    <div key={i} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                                    <div key={i} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 14px', background: 'rgba(255,255,255,0.02)', borderRadius: 12, border: '1px solid rgba(255,255,255,0.04)' }}>
                                         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                                            <div style={{ color: 'var(--accent-primary)', opacity: 0.8 }}><Calendar size={14} /></div>
-                                            <span style={{ fontSize: 13, fontWeight: 600 }}>{h.name}</span>
+                                            <span style={{ fontSize: 13, fontWeight: 700 }}>{h.name}</span>
                                         </div>
-                                        <div style={{ fontSize: 11, color: 'var(--text-muted)' }}>{format(new Date(h.date), 'MMM d, yyyy')}</div>
+                                        <div style={{ fontSize: 11, color: 'var(--text-muted)', fontWeight: 600 }}>{format(new Date(h.date), 'MMM d, yyyy')}</div>
                                     </div>
                                 ))
                             )}
@@ -212,19 +213,19 @@ export default function LeavePage() {
 
 
                 {/* Table */}
-                <div className="card" style={{ padding: 0 }}>
-                    <div style={{ padding: '16px 20px', borderBottom: '1px solid var(--border)' }}>
-                        <h3 style={{ fontSize: 15, fontWeight: 600 }}>My Leave History</h3>
+                <div className="card" style={{ padding: 0, borderRadius: 24, background: 'rgba(30,41,59,0.4)', backdropFilter: 'blur(20px)', border: '1px solid rgba(255,255,255,0.06)', boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.05), 0 8px 30px rgba(0,0,0,0.1)', overflow: 'hidden' }}>
+                    <div style={{ padding: '20px 24px', borderBottom: '1px solid rgba(255,255,255,0.05)', background: 'rgba(255,255,255,0.02)' }}>
+                        <h3 style={{ fontSize: 11, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '1px', color: 'var(--text-muted)', margin: 0 }}>My Leave History</h3>
                     </div>
                     <table className="data-table" style={{ borderTop: 'none' }}>
                         <thead>
-                            <tr>
-                                <th>Type</th>
-                                <th>Date Range</th>
-                                <th>Duration</th>
-                                <th>Reason</th>
-                                <th>Status</th>
-                                <th style={{ textAlign: 'right' }}>Actions</th>
+                            <tr style={{ background: 'var(--bg-secondary)', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+                                <th style={{ fontSize: 11, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.8px', color: 'var(--text-muted)' }}>Type</th>
+                                <th style={{ fontSize: 11, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.8px', color: 'var(--text-muted)' }}>Date Range</th>
+                                <th style={{ fontSize: 11, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.8px', color: 'var(--text-muted)' }}>Duration</th>
+                                <th style={{ fontSize: 11, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.8px', color: 'var(--text-muted)' }}>Reason</th>
+                                <th style={{ fontSize: 11, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.8px', color: 'var(--text-muted)' }}>Status</th>
+                                <th style={{ textAlign: 'right', fontSize: 11, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.8px', color: 'var(--text-muted)' }}>Actions</th>
                             </tr>
                         </thead>
                         <tbody>

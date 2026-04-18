@@ -402,16 +402,16 @@ function Stepper({ lead, onRefresh, onConvert, onNotify, availableStatuses }: { 
                             <button key={opt.value}
                                 onClick={() => logCallAttempt(opt.value)}
                                 disabled={submitting}
+                                className="outcome-option-btn"
                                 style={{
                                     display: 'flex', alignItems: 'center', gap: 8, padding: '8px 12px',
                                     borderRadius: 8, cursor: 'pointer', fontSize: 12, fontWeight: 600,
-                                    border: '1px solid var(--border)', background: 'transparent',
-                                    color: opt.color, transition: 'all 0.15s', textAlign: 'left',
+                                    border: '1px solid var(--border)', color: opt.color, textAlign: 'left',
                                     borderColor: (opt.value === 'call_back_later' && showDatePicker) ? opt.color : 'var(--border)',
-                                    boxShadow: (opt.value === 'call_back_later' && showDatePicker) ? `0 0 0 2px ${opt.color}15` : 'none'
-                                }}
-                                onMouseOver={e => { e.currentTarget.style.background = `${opt.color}12`; e.currentTarget.style.borderColor = `${opt.color}40` }}
-                                onMouseOut={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.borderColor = (opt.value === 'call_back_later' && showDatePicker) ? opt.color : 'var(--border)' }}
+                                    boxShadow: (opt.value === 'call_back_later' && showDatePicker) ? `0 0 0 2px ${opt.color}15` : 'none',
+                                    '--outcome-hover-bg': `${opt.color}12`,
+                                    '--outcome-hover-border': `${opt.color}40`,
+                                } as React.CSSProperties}
                             >
                                 <span style={{ fontSize: 14 }}>{opt.icon}</span> {opt.label}
                             </button>
@@ -451,14 +451,14 @@ function Stepper({ lead, onRefresh, onConvert, onNotify, availableStatuses }: { 
                             <button key={opt.value}
                                 onClick={() => logMailAttempt(opt.value)}
                                 disabled={submitting}
+                                className="outcome-option-btn"
                                 style={{
                                     display: 'flex', alignItems: 'center', gap: 8, padding: '8px 12px',
                                     borderRadius: 8, cursor: 'pointer', fontSize: 12, fontWeight: 600,
-                                    border: '1px solid var(--border)', background: 'transparent',
-                                    color: opt.color, transition: 'all 0.15s', textAlign: 'left'
-                                }}
-                                onMouseOver={e => { e.currentTarget.style.background = `${opt.color}12`; e.currentTarget.style.borderColor = `${opt.color}40` }}
-                                onMouseOut={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.borderColor = 'var(--border)' }}
+                                    border: '1px solid var(--border)', color: opt.color, textAlign: 'left',
+                                    '--outcome-hover-bg': `${opt.color}12`,
+                                    '--outcome-hover-border': `${opt.color}40`,
+                                } as React.CSSProperties}
                             >
                                 <span style={{ fontSize: 14 }}>{opt.icon}</span> {opt.label}
                             </button>
@@ -469,7 +469,6 @@ function Stepper({ lead, onRefresh, onConvert, onNotify, availableStatuses }: { 
                 </div>
             )}
 
-            <style>{`@keyframes fadeIn { from { opacity: 0; transform: translateY(-4px); } to { opacity: 1; transform: translateY(0); } }`}</style>
         </div>
     )
 }
@@ -804,27 +803,26 @@ export default function LeadDetailContent({ id, linkPrefix = '', currentUserId =
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
 
                     {/* Identity Card */}
-                    <div className="card" style={{ padding: 24, position: 'relative' }}>
+                    <div className="card" style={{ padding: 28, position: 'relative', borderRadius: 24, boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.05), 0 8px 30px rgba(0,0,0,0.1)' }}>
                         {/* Top row: Identity & Buttons */}
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                            <div style={{ display: 'flex', gap: 16 }}>
-                                <div style={{ width: 42, height: 42, borderRadius: 10, background: 'var(--accent-primary)', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16, fontWeight: 700, boxShadow: '0 4px 12px -2px rgba(99, 102, 241, 0.3)' }}>
+                            <div style={{ display: 'flex', gap: 20 }}>
+                                <div style={{ width: 56, height: 56, borderRadius: 16, background: 'linear-gradient(135deg, #6366f1, #8b5cf6)', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 22, fontWeight: 800, boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.3), 0 8px 16px -4px rgba(99, 102, 241, 0.4)' }}>
                                     {initials}
                                 </div>
-                                <div style={{ minWidth: 0 }}>
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                                        <h1 style={{ fontSize: 18, fontWeight: 700, margin: 0, color: 'var(--text-primary)', lineHeight: 1.1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{displayTitle}</h1>
+                                <div style={{ minWidth: 0, display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                                        <h1 style={{ fontSize: 24, fontWeight: 900, margin: 0, color: 'var(--text-primary)', lineHeight: 1.1, letterSpacing: '-0.5px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{displayTitle}</h1>
                                         <button 
                                             onClick={() => copyToClipboard(displayTitle, 'Company Name')}
                                             style={{ background: 'none', border: 'none', padding: 0, color: 'var(--text-muted)', cursor: 'pointer', display: 'flex', alignItems: 'center', opacity: 0.6 }} 
                                             className="hover-copy"
                                         >
-                                            <Copy size={12} />
+                                            <Copy size={14} />
                                         </button>
-
                                     </div>
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: 6, color: 'var(--text-secondary)', fontSize: 11, marginTop: 4 }}>
-                                        <User size={12} /> {lead.name}{lead.industry ? ` • ${lead.industry}` : ''}
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: 6, color: 'var(--text-secondary)', fontSize: 13, marginTop: 6, fontWeight: 500 }}>
+                                        <User size={14} /> {lead.name}{lead.industry ? ` • ${lead.industry}` : ''}
                                     </div>
                                 </div>
                             </div>
@@ -846,11 +844,11 @@ export default function LeadDetailContent({ id, linkPrefix = '', currentUserId =
                             <Stepper lead={lead} onRefresh={fetchLeadAndOptions} onConvert={handleConvert} onNotify={(msg, type) => setNotification({ message: msg, type })} availableStatuses={statuses} />
                         </div>
 
-                        <div style={{ marginTop: 16, borderTop: '1px solid var(--border)', paddingTop: 16, display: 'flex', gap: 20, flexWrap: 'wrap' }}>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: 10, minWidth: 150 }}>
-                                <div style={{ width: 28, height: 28, borderRadius: 6, background: 'rgba(99,102,241,0.08)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Mail size={13} color="var(--accent-primary)" /></div>
+                        <div style={{ marginTop: 24, borderTop: '1px solid var(--border)', paddingTop: 20, display: 'flex', gap: 24, flexWrap: 'wrap' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 12, minWidth: 150 }}>
+                                <div style={{ width: 34, height: 34, borderRadius: 10, background: 'rgba(99,102,241,0.08)', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px solid rgba(99,102,241,0.2)' }}><Mail size={16} color="var(--accent-primary)" /></div>
                                 <div style={{ minWidth: 0 }}>
-                                    <div style={{ fontSize: 9, color: 'var(--text-muted)', fontWeight: 700, textTransform: 'uppercase', display: 'flex', alignItems: 'center', gap: 6 }}>Email <EmailBadge email={lead.email || ''} /></div>
+                                    <div style={{ fontSize: 10, color: 'var(--text-muted)', fontWeight: 800, textTransform: 'uppercase', display: 'flex', alignItems: 'center', gap: 6, letterSpacing: '0.5px' }}>Email <EmailBadge email={lead.email || ''} /></div>
                                     <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
                                         {lead.email ? lead.email.split(',').map((email) => (
                                             <div key={email.trim()} style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
@@ -866,10 +864,10 @@ export default function LeadDetailContent({ id, linkPrefix = '', currentUserId =
                                     </div>
                                 </div>
                             </div>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: 10, minWidth: 120 }}>
-                                <div style={{ width: 28, height: 28, borderRadius: 6, background: 'rgba(34,197,94,0.08)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Phone size={13} color="#22c55e" /></div>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 12, minWidth: 120 }}>
+                                <div style={{ width: 34, height: 34, borderRadius: 10, background: 'rgba(34,197,94,0.08)', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px solid rgba(34,197,94,0.2)' }}><Phone size={16} color="#22c55e" /></div>
                                 <div>
-                                    <div style={{ fontSize: 9, color: 'var(--text-muted)', fontWeight: 700, textTransform: 'uppercase' }}>Phone</div>
+                                    <div style={{ fontSize: 10, color: 'var(--text-muted)', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.5px' }}>Phone</div>
                                     <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
                                         {lead.phone ? lead.phone.split(',').map((phone) => (
                                             <div key={phone.trim()} style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
@@ -927,7 +925,7 @@ export default function LeadDetailContent({ id, linkPrefix = '', currentUserId =
                     </div>
 
                     {/* Tabs Section */}
-                    <div className="card" style={{ padding: 0, minHeight: 0, display: 'flex', flexDirection: 'column' }}>
+                    <div className="card" style={{ padding: 0, minHeight: 0, display: 'flex', flexDirection: 'column', borderRadius: 24, boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.05), 0 8px 30px rgba(0,0,0,0.1)' }}>
                         <div style={{ borderBottom: '1px solid var(--border)', display: 'flex', gap: 0, padding: '0 20px' }}>
                             {(() => {
                                 const overdueCount = lead.tasks?.filter(t => !t.completed && t.dueDate && new Date(t.dueDate) < new Date()).length ?? 0
@@ -1014,15 +1012,13 @@ export default function LeadDetailContent({ id, linkPrefix = '', currentUserId =
 
                                                 return (
                                                     <div key={task.id}
+                                                        className={`task-row-inline${task.completed ? ' completed' : ''}`}
                                                         style={{
                                                             display: 'flex', alignItems: 'center', gap: 10, padding: '10px 12px',
                                                             background: task.completed ? 'transparent' : 'var(--bg-input)',
                                                             borderRadius: 8, border: '1px solid transparent',
-                                                            transition: 'all 0.15s', cursor: 'default',
-                                                            opacity: task.completed ? 0.6 : 1,
+                                                            cursor: 'default', opacity: task.completed ? 0.6 : 1,
                                                         }}
-                                                        onMouseOver={e => { if (!task.completed) e.currentTarget.style.borderColor = 'var(--border)' }}
-                                                        onMouseOut={e => e.currentTarget.style.borderColor = 'transparent'}
                                                     >
                                                         <button onClick={() => handleToggleTask(task.id)} className={`task-check ${task.completed ? 'checked' : ''}`} style={{ flexShrink: 0 }}>
                                                             {task.completed && <CheckCircle size={12} color="white" />}
@@ -1065,7 +1061,7 @@ export default function LeadDetailContent({ id, linkPrefix = '', currentUserId =
                     </div>
 
                     {/* Threaded Notes Section */}
-                    <div className="card" style={{ padding: '20px 24px' }}>
+                    <div className="card" style={{ padding: '20px 24px', borderRadius: 24, boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.05), 0 8px 30px rgba(0,0,0,0.1)' }}>
                         <LeadNotes leadId={id} currentUserId={currentUserId} isAdmin={isAdmin} />
                     </div>
                 </div>
@@ -1090,12 +1086,12 @@ export default function LeadDetailContent({ id, linkPrefix = '', currentUserId =
                     )}
 
                     {/* Reminders */}
-                    <div className="card" style={{ padding: '16px' }}>
+                    <div className="card" style={{ padding: '20px 24px', borderRadius: 20, boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.02), 0 4px 20px rgba(0,0,0,0.05)' }}>
                         <LeadReminders leadId={id} />
                     </div>
 
                     {/* Contacts */}
-                    <div className="card" style={{ padding: 16 }}>
+                    <div className="card" style={{ padding: '20px 24px', borderRadius: 20, boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.02), 0 4px 20px rgba(0,0,0,0.05)' }}>
                         <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-muted)', letterSpacing: '0.5px', marginBottom: 12, display: 'flex', alignItems: 'center', gap: 6 }}>
                             <User size={13} color="var(--accent-primary)" /> Contacts
                         </div>
@@ -1150,7 +1146,7 @@ export default function LeadDetailContent({ id, linkPrefix = '', currentUserId =
                     </div>
 
                     {/* Overview */}
-                    <div className="card" style={{ padding: 16 }}>
+                    <div className="card" style={{ padding: '20px 24px', borderRadius: 20, boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.02), 0 4px 20px rgba(0,0,0,0.05)' }}>
                         <div style={{ fontSize: 11, color: 'var(--text-muted)', marginBottom: 12, display: 'flex', alignItems: 'center', gap: 6 }}>
                             <Calendar size={12} color="var(--accent-primary)" />
                             <span style={{ fontWeight: 700 }}>Created</span>
@@ -1178,7 +1174,7 @@ export default function LeadDetailContent({ id, linkPrefix = '', currentUserId =
                     </div>
 
                     {/* Activity */}
-                    <div className="card" style={{ padding: 20 }}>
+                    <div className="card" style={{ padding: '20px 24px', borderRadius: 24, boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.05), 0 8px 30px rgba(0,0,0,0.1)' }}>
                         <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--text-muted)', letterSpacing: '0.5px', marginBottom: 15, display: 'flex', alignItems: 'center', gap: 6 }}>
                             <History size={14} /> Activity
                         </div>
@@ -1234,7 +1230,7 @@ export default function LeadDetailContent({ id, linkPrefix = '', currentUserId =
 
             {/* In-app Notification (Toast) */}
             {notification && (
-                <div style={{ position: 'fixed', bottom: 32, left: '50%', transform: 'translateX(-50%)', background: 'var(--bg-card)', border: '1px solid var(--border)', padding: '12px 24px', borderRadius: 12, display: 'flex', alignItems: 'center', gap: 12, zIndex: 1000, boxShadow: '0 8px 32px rgba(0,0,0,0.15)', animation: 'slideUp 0.3s ease-out' }}>
+                <div style={{ position: 'fixed', bottom: 32, left: '50%', transform: 'translateX(-50%)', background: 'var(--bg-card)', border: '1px solid var(--border)', padding: '12px 24px', borderRadius: 12, display: 'flex', alignItems: 'center', gap: 12, zIndex: 1000, boxShadow: '0 8px 32px rgba(0,0,0,0.15)', animation: 'slideUpCentered 0.3s ease-out' }}>
                     {notification.type === 'error'
                         ? <div style={{ width: 24, height: 24, borderRadius: '50%', background: 'rgba(239,68,68,0.1)', color: '#ef4444', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><AlertCircle size={14} /></div>
                         : <div style={{ width: 24, height: 24, borderRadius: '50%', background: 'rgba(34,197,94,0.1)', color: '#22c55e', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><CheckCircle size={14} /></div>
@@ -1243,16 +1239,6 @@ export default function LeadDetailContent({ id, linkPrefix = '', currentUserId =
                 </div>
             )}
 
-            <style>{`
-                @keyframes slideUp {
-                    from { transform: translate(-50%, 20px); opacity: 0; }
-                    to { transform: translate(-50%, 0); opacity: 1; }
-                }
-                @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
-                .hover-copy { opacity: 0.3; transition: opacity 0.2s; }
-                .hover-copy:hover { opacity: 1 !important; }
-                div:hover > .hover-copy { opacity: 0.8; }
-            `}</style>
             </div>
         </div >
     )

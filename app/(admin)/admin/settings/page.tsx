@@ -373,13 +373,13 @@ export default function AdminSettings() {
             <div style={{ display: 'grid', gridTemplateColumns: '260px 1fr', gap: 32 }}>
                 
                 {/* Precision Sidebar */}
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 24, background: 'rgba(30,41,59,0.2)', backdropFilter: 'blur(20px)', borderRadius: 24, padding: '24px 16px', border: '1px solid rgba(255,255,255,0.04)' }}>
                     {SETTINGS_GROUPS.map(group => (
                         <div key={group.name}>
-                            <div style={{ fontSize: 9, fontWeight: 900, color: '#475569', textTransform: 'uppercase', letterSpacing: '1.2px', marginBottom: 10, paddingLeft: 12 }}>
+                            <div style={{ fontSize: 10, fontWeight: 900, color: '#475569', textTransform: 'uppercase', letterSpacing: '1.5px', marginBottom: 12, paddingLeft: 12, opacity: 0.8 }}>
                                 {group.name}
                             </div>
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
                                 {group.categories.map(cat => {
                                     const active = activeCategory === cat.id
                                     return (
@@ -387,16 +387,15 @@ export default function AdminSettings() {
                                             key={cat.id}
                                             onClick={() => { setActiveCategory(cat.id); setAdding(false) }}
                                             style={{
-                                                width: '100%', textAlign: 'left', padding: '7px 12px', borderRadius: 8,
-                                                background: active ? 'rgba(99, 102, 241, 0.08)' : 'transparent',
-                                                color: active ? '#f8fafc' : '#94a3b8',
-                                                display: 'flex', alignItems: 'center', gap: 10, fontSize: '12.5px', fontWeight: active ? 700 : 600,
-                                                cursor: 'pointer', transition: 'all 0.2s', position: 'relative',
-                                                border: 'none', overflow: 'hidden'
+                                                width: '100%', textAlign: 'left', padding: '10px 14px', borderRadius: 12,
+                                                background: active ? 'rgba(99, 102, 241, 0.12)' : 'transparent',
+                                                color: active ? '#fff' : '#94a3b8',
+                                                display: 'flex', alignItems: 'center', gap: 12, fontSize: '13px', fontWeight: active ? 800 : 700,
+                                                cursor: 'pointer', transition: 'all 0.25s cubic-bezier(0.4, 0, 0.2, 1)', position: 'relative',
+                                                border: active ? '1px solid rgba(99, 102, 241, 0.2)' : '1px solid transparent', overflow: 'hidden'
                                             }}
                                         >
-                                            {active && <div style={{ position: 'absolute', left: 0, top: '20%', bottom: '20%', width: 3, background: 'var(--accent-primary)', borderRadius: '0 4px 4px 0' }} />}
-                                            <cat.icon size={14} strokeWidth={active ? 2.5 : 2} style={{ color: active ? 'var(--accent-primary)' : 'inherit', opacity: active ? 1 : 0.7 }} />
+                                            <cat.icon size={16} strokeWidth={active ? 2.5 : 2} style={{ color: active ? 'var(--accent-primary)' : 'inherit', opacity: active ? 1 : 0.6 }} />
                                             {cat.label}
                                         </button>
                                     )
@@ -407,8 +406,8 @@ export default function AdminSettings() {
                 </div>
 
                 {/* Matrix Content Area */}
-                <div style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 16, minHeight: 600, backdropFilter: 'blur(20px)', position: 'relative' }}>
-                    <div style={{ padding: '16px 24px', borderBottom: '1px solid var(--border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'rgba(255,255,255,0.01)' }}>
+                 <div style={{ background: 'rgba(30,41,59,0.4)', border: '1px solid rgba(255,255,255,0.06)', borderRadius: 24, minHeight: 600, backdropFilter: 'blur(30px)', position: 'relative', boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.05), 0 8px 30px rgba(0,0,0,0.1)', overflow: 'hidden' }}>
+                    <div style={{ padding: '24px 28px', borderBottom: '1px solid rgba(255,255,255,0.05)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'rgba(255,255,255,0.02)' }}>
                         <h2 style={{ fontSize: 15, fontWeight: 800, margin: 0, color: '#f8fafc', letterSpacing: '-0.3px' }}>{CATEGORIES.find(c => c.id === activeCategory)?.label}</h2>
                         <div style={{ display: 'flex', gap: 8 }}>
                             {activeCategory === 'LEAD_POSITION' && !adding && (
@@ -440,7 +439,7 @@ export default function AdminSettings() {
                             <div style={{ maxWidth: 800, display: 'flex', flexDirection: 'column', gap: 32 }}>
                                 
                                 {/* Export Section */}
-                                <div style={{ background: 'rgba(255,255,255,0.01)', border: '1px solid var(--border)', borderRadius: 16, padding: 24 }}>
+                                <div style={{ background: 'rgba(255,255,255,0.01)', border: '1px solid var(--border)', borderRadius: 20, padding: 24, boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.02), 0 4px 20px rgba(0,0,0,0.05)' }}>
                                     <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 16 }}>
                                         <div style={{ width: 40, height: 40, borderRadius: 12, background: 'rgba(99, 102, 241, 0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--accent-primary)' }}>
                                             <Database size={20} />
@@ -461,7 +460,7 @@ export default function AdminSettings() {
                                 </div>
 
                                 {/* Import Section (Danger Zone) */}
-                                <div style={{ border: '1px solid rgba(239, 68, 68, 0.2)', background: 'linear-gradient(135deg, rgba(239, 68, 68, 0.05), transparent)', borderRadius: 16, padding: 24 }}>
+                                <div style={{ border: '1px solid rgba(239, 68, 68, 0.2)', background: 'linear-gradient(135deg, rgba(239, 68, 68, 0.05), transparent)', borderRadius: 20, padding: 24, boxShadow: 'inset 0 1px 0 rgba(239, 68, 68, 0.1), 0 4px 20px rgba(0,0,0,0.05)' }}>
                                     <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 16 }}>
                                         <div style={{ width: 40, height: 40, borderRadius: 12, background: 'rgba(239, 68, 68, 0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#ef4444' }}>
                                             <ShieldAlert size={20} />
@@ -519,7 +518,7 @@ export default function AdminSettings() {
                                             { id: 'MEDIUM', label: 'Priority: Mid', color: '#f59e0b', warn: configs.WARN_MEDIUM, reclaim: configs.RECLAIM_MEDIUM },
                                             { id: 'LOW', label: 'Priority: Low', color: '#10b981', warn: configs.WARN_LOW, reclaim: configs.RECLAIM_LOW },
                                         ].map(lvl => (
-                                            <div key={lvl.id} style={{ background: 'rgba(255,255,255,0.02)', borderRadius: 12, padding: 16, border: '1px solid var(--border)', backdropFilter: 'blur(10px)' }}>
+                                            <div key={lvl.id} style={{ background: 'rgba(255,255,255,0.02)', borderRadius: 20, padding: 20, border: '1px solid var(--border)', backdropFilter: 'blur(10px)', boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.02), 0 4px 20px rgba(0,0,0,0.05)' }}>
                                                 <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
                                                     <div style={{ width: 6, height: 6, borderRadius: '50%', background: lvl.color }} />
                                                     <h5 style={{ fontSize: 11, fontWeight: 900, color: '#94a3b8', textTransform: 'uppercase' }}>{lvl.label}</h5>
@@ -539,7 +538,7 @@ export default function AdminSettings() {
                                     </div>
                                 </div>
                                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
-                                    <div style={{ background: 'rgba(255,255,255,0.01)', border: '1px solid var(--border)', borderRadius: 12, padding: 16 }}>
+                                    <div style={{ background: 'rgba(255,255,255,0.01)', border: '1px solid var(--border)', borderRadius: 20, padding: 20, boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.02), 0 4px 20px rgba(0,0,0,0.05)' }}>
                                         <label style={{ display: 'block', fontSize: 11, fontWeight: 900, marginBottom: 4, color: '#f8fafc', textTransform: 'uppercase' }}>Lost Lead Cooldown</label>
                                         <p style={{ fontSize: 10, color: '#64748b', marginBottom: 12, fontWeight: 600 }}>Days before a 'Lost' lead re-enters the pool.</p>
                                         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
@@ -547,7 +546,7 @@ export default function AdminSettings() {
                                             <span style={{ fontSize: 10, fontWeight: 900, color: '#475569' }}>DAYS</span>
                                         </div>
                                     </div>
-                                    <div style={{ background: 'rgba(255,255,255,0.01)', border: '1px solid var(--border)', borderRadius: 12, padding: 16 }}>
+                                    <div style={{ background: 'rgba(255,255,255,0.01)', border: '1px solid var(--border)', borderRadius: 20, padding: 20, boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.02), 0 4px 20px rgba(0,0,0,0.05)' }}>
                                         <label style={{ display: 'block', fontSize: 11, fontWeight: 900, marginBottom: 4, color: '#f8fafc', textTransform: 'uppercase' }}>Max Active Leads</label>
                                         <p style={{ fontSize: 10, color: '#64748b', marginBottom: 12, fontWeight: 600 }}>Maximum leads a rep can actively own at once.</p>
                                         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
@@ -558,7 +557,7 @@ export default function AdminSettings() {
                                 </div>
 
                                 {/* Manual Maintenance Runner */}
-                                <div style={{ background: 'rgba(255,255,255,0.01)', border: '1px solid var(--border)', borderRadius: 12, padding: 20 }}>
+                                <div style={{ background: 'rgba(255,255,255,0.01)', border: '1px solid var(--border)', borderRadius: 20, padding: 24, boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.02), 0 4px 20px rgba(0,0,0,0.05)' }}>
                                     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
                                         <div>
                                             <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
@@ -624,7 +623,7 @@ export default function AdminSettings() {
                                         { key: 'OPPORTUNITY_WON', label: 'Deal Won', desc: 'Opportunity closed as won' },
                                         { key: 'POOL_CLAIM', label: 'Pool Claim', desc: 'Lead claimed from the pool' },
                                     ].map(({ key, label, desc }) => (
-                                        <div key={key} style={{ background: 'rgba(255,255,255,0.02)', borderRadius: 10, padding: 12, border: '1px solid var(--border)', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+                                        <div key={key} style={{ background: 'rgba(255,255,255,0.02)', borderRadius: 16, padding: 16, border: '1px solid var(--border)', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.02), 0 4px 20px rgba(0,0,0,0.05)' }}>
                                             <div>
                                                 <label style={{ display: 'block', fontSize: 10, fontWeight: 900, color: '#f8fafc', textTransform: 'uppercase', marginBottom: 2 }}>{label}</label>
                                                 <label style={{ display: 'block', fontSize: 9, color: '#475569', fontWeight: 700, lineHeight: 1.2, marginBottom: 10 }}>{desc}</label>
@@ -640,7 +639,7 @@ export default function AdminSettings() {
                         ) : activeCategory === 'TEAM_MEMBERS' ? (
                             <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
                                 {adding && (
-                                    <form onSubmit={handleAddUser} style={{ border: '1px solid var(--border)', borderRadius: 12, padding: 20, marginBottom: 12, background: 'rgba(255,255,255,0.02)', backdropFilter: 'blur(20px)' }}>
+                                    <form onSubmit={handleAddUser} style={{ border: '1px solid var(--border)', borderRadius: 20, padding: 24, marginBottom: 12, background: 'rgba(255,255,255,0.02)', backdropFilter: 'blur(20px)', boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.02), 0 4px 20px rgba(0,0,0,0.05)' }}>
                                         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12, marginBottom: 16 }}>
                                             <div><label style={{ display: 'block', fontSize: 9, fontWeight: 900, marginBottom: 6, color: '#475569', textTransform: 'uppercase' }}>Full Name</label><input value={newUserName} onChange={e => setNewUserName(e.target.value)} required style={{ width: '100%', padding: '8px 10px', borderRadius: 6, border: '1px solid var(--border)', background: 'rgba(0,0,0,0.2)', color: '#f8fafc', fontSize: 12, fontWeight: 800, outline: 'none' }} /></div>
                                             <div><label style={{ display: 'block', fontSize: 9, fontWeight: 900, marginBottom: 6, color: '#475569', textTransform: 'uppercase' }}>Email Address</label><input type="email" value={newUserEmail} onChange={e => setNewUserEmail(e.target.value)} required style={{ width: '100%', padding: '8px 10px', borderRadius: 6, border: '1px solid var(--border)', background: 'rgba(0,0,0,0.2)', color: '#f8fafc', fontSize: 12, fontWeight: 800, outline: 'none' }} /></div>
@@ -666,7 +665,7 @@ export default function AdminSettings() {
                                     </form>
                                 )}
                                 {teamMembers.map(member => (
-                                    <div key={member.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 16px', borderRadius: 10, border: '1px solid var(--border)', background: 'rgba(255,255,255,0.01)', transition: 'all 0.2s' }}>
+                                    <div key={member.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 16px', borderRadius: 16, border: '1px solid var(--border)', background: 'rgba(255,255,255,0.01)', transition: 'all 0.2s', boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.02)' }}>
                                         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
                                             <div style={{ width: 30, height: 30, borderRadius: 8, background: 'linear-gradient(135deg, #1e293b, #0f172a)', border: '1px solid rgba(255,255,255,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 10, fontWeight: 900, color: 'var(--accent-primary)' }}>{member.name.substring(0,2).toUpperCase()}</div>
                                             <div>
@@ -727,7 +726,7 @@ export default function AdminSettings() {
                         ) : activeCategory === 'HOLIDAYS' ? (
                             <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
                                 {adding && (
-                                     <form onSubmit={handleAddHoliday} style={{ border: '1px solid var(--border)', borderRadius: 12, padding: 20, marginBottom: 8, background: 'rgba(255,255,255,0.02)', backdropFilter: 'blur(10px)' }}>
+                                     <form onSubmit={handleAddHoliday} style={{ border: '1px solid var(--border)', borderRadius: 20, padding: 24, marginBottom: 8, background: 'rgba(255,255,255,0.02)', backdropFilter: 'blur(10px)', boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.02), 0 4px 20px rgba(0,0,0,0.05)' }}>
                                         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12, marginBottom: 16 }}>
                                             <div><label style={{ display: 'block', fontSize: 9, fontWeight: 900, marginBottom: 6, color: '#475569', textTransform: 'uppercase' }}>Holiday Name</label><input value={holidayName} onChange={e => setHolidayName(e.target.value)} required style={{ width: '100%', padding: '8px 10px', borderRadius: 6, border: '1px solid var(--border)', background: 'rgba(0,0,0,0.2)', color: '#f8fafc', fontSize: 12, fontWeight: 800, outline: 'none' }} /></div>
                                             <div><label style={{ display: 'block', fontSize: 9, fontWeight: 900, marginBottom: 6, color: '#475569', textTransform: 'uppercase' }}>Date</label><input type="date" value={holidayDate} onChange={e => setHolidayDate(e.target.value)} required style={{ width: '100%', padding: '8px 10px', borderRadius: 6, border: '1px solid var(--border)', background: 'rgba(0,0,0,0.2)', color: '#f8fafc', fontSize: 12, fontWeight: 800, outline: 'none' }} /></div>
@@ -741,7 +740,7 @@ export default function AdminSettings() {
                                 )}
                                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))', gap: 12 }}>
                                     {holidays.map(h => (
-                                        <div key={h.id} style={{ padding: '12px 16px', borderRadius: 12, border: '1px solid var(--border)', background: 'rgba(255,255,255,0.01)', position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                                        <div key={h.id} style={{ padding: '16px 20px', borderRadius: 16, border: '1px solid var(--border)', background: 'rgba(255,255,255,0.01)', position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'space-between', boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.02), 0 4px 20px rgba(0,0,0,0.05)' }}>
                                             <div>
                                                 <div style={{ fontWeight: 800, fontSize: 13, color: '#f8fafc' }}>{h.name}</div>
                                                 <div style={{ fontSize: 10, color: 'var(--accent-primary)', fontWeight: 900, marginTop: 2, textTransform: 'uppercase' }}>{format(parseISO(h.date), 'MMM dd, yyyy')}</div>

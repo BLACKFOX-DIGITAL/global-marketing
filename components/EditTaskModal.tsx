@@ -34,9 +34,10 @@ function SearchableLeadPicker({ leads, value, onChange }: { leads: any[], value:
             <div
                 onClick={() => setIsOpen(!isOpen)}
                 style={{
-                    padding: '10px 12px', borderRadius: 10, border: '1px solid var(--border)',
-                    background: 'var(--bg-input)', cursor: 'pointer', display: 'flex',
-                    justifyContent: 'space-between', alignItems: 'center', fontSize: 13
+                    padding: '12px 14px', borderRadius: 12, border: '1px solid rgba(255,255,255,0.08)',
+                    background: 'rgba(0,0,0,0.2)', cursor: 'pointer', display: 'flex',
+                    justifyContent: 'space-between', alignItems: 'center', fontSize: 13,
+                    boxShadow: 'inset 0 2px 4px rgba(0,0,0,0.1)'
                 }}
             >
                 {selectedLead ? (
@@ -164,20 +165,22 @@ export default function EditTaskModal({ taskId, onClose, onSuccess, leads, prior
     }
 
     if (loading) return (
-        <div className="modal-overlay">
-            <div className="modal" style={{ maxWidth: 520, display: 'flex', justifyContent: 'center', padding: 100 }}>
+        <div className="modal-overlay" style={{ background: 'rgba(15,23,42,0.6)', backdropFilter: 'blur(30px)' }}>
+            <div className="modal" style={{ maxWidth: 520, display: 'flex', justifyContent: 'center', padding: 100, borderRadius: 24, boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.05), 0 25px 50px -12px rgba(0,0,0,0.5)' }}>
                 <div className="spinner" />
             </div>
         </div>
     )
 
     return (
-        <div className="modal-overlay" onClick={e => e.target === e.currentTarget && onClose()}>
-            <div className="modal" style={{ maxWidth: 520 }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 22 }}>
-                    <h3 style={{ fontSize: 17, fontWeight: 700 }}>Edit Follow-Up Task</h3>
+        <div className="modal-overlay" onClick={e => e.target === e.currentTarget && onClose()} style={{ background: 'rgba(15,23,42,0.6)', backdropFilter: 'blur(30px)' }}>
+            <div className="modal" style={{ maxWidth: 520, borderRadius: 24, padding: 0, overflow: 'hidden', boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.05), 0 25px 50px -12px rgba(0,0,0,0.5)' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '20px 24px', borderBottom: '1px solid rgba(255,255,255,0.08)', background: 'rgba(30,41,59,0.8)', backdropFilter: 'blur(20px)' }}>
+                    <h3 style={{ fontSize: 17, fontWeight: 700, margin: 0 }}>Edit Follow-Up Task</h3>
                     <button className="btn-ghost" onClick={onClose} style={{ padding: '4px 8px' }}>✕</button>
                 </div>
+                
+                <div style={{ padding: 24 }}>
                 
                 {error && (
                     <div style={{ 
@@ -253,13 +256,14 @@ export default function EditTaskModal({ taskId, onClose, onSuccess, leads, prior
                         </div>
                     </div>
 
-                    <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end', marginTop: 8 }}>
-                        <button type="button" className="btn-secondary" onClick={onClose}>Cancel</button>
-                        <button type="submit" className="btn-primary" disabled={submitting}>
-                            {submitting ? <div className="spinner" /> : 'Save Changes'}
-                        </button>
-                    </div>
-                </form>
+                        <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end', marginTop: 8 }}>
+                            <button type="button" className="btn-secondary" onClick={onClose}>Cancel</button>
+                            <button type="submit" className="btn-primary" disabled={submitting}>
+                                {submitting ? <div className="spinner" /> : 'Save Changes'}
+                            </button>
+                        </div>
+                    </form>
+                </div>
             </div>
         </div>
     )

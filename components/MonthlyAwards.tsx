@@ -40,9 +40,9 @@ export default function MonthlyAwards() {
                     const Icon = config.icon
                     return (
                         <div key={award.category} style={{
-                            background: 'var(--bg-card)', border: '1px solid var(--border)',
-                            borderRadius: 16, padding: '16px', display: 'flex', alignItems: 'center', gap: 16,
-                            boxShadow: '0 4px 20px rgba(0,0,0,0.2)'
+                            background: 'var(--bg-card)', border: '1px solid rgba(255,255,255,0.06)',
+                            borderRadius: 20, padding: '20px', display: 'flex', alignItems: 'center', gap: 16,
+                            boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.05), 0 8px 24px rgba(0,0,0,0.15)'
                         }}>
                             <div style={{
                                 width: 44, height: 44, borderRadius: 12, background: config.bg,

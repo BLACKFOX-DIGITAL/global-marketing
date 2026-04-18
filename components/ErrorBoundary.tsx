@@ -47,8 +47,9 @@ export class ErrorBoundary extends Component<Props, State> {
                 <div style={{
                     display: 'flex', flexDirection: 'column', alignItems: 'center',
                     justifyContent: 'center', minHeight: 300, padding: 40, gap: 16,
-                    background: 'var(--bg-card)', border: '1px solid var(--border)',
-                    borderRadius: 16, textAlign: 'center',
+                    background: 'rgba(30,41,59,0.4)', border: '1px solid rgba(255,255,255,0.06)',
+                    borderRadius: 24, textAlign: 'center', backdropFilter: 'blur(20px)',
+                    boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.05), 0 8px 30px rgba(0,0,0,0.1)',
                 }}>
                     <div style={{ fontSize: 40 }}>⚠️</div>
                     <div style={{ fontSize: 16, fontWeight: 700, color: 'var(--text-primary)' }}>

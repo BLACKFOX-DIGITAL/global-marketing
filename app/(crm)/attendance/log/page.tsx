@@ -113,10 +113,10 @@ export default function AttendanceLogPage() {
 
     return (
         <div className="crm-content" style={{ paddingTop: 16 }}>
-                <div className="page-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <div className="page-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
                     <div>
-                        <h2>Attendance Timesheet</h2>
-                        <p>Track your daily hours, breaks, and overtime progress.</p>
+                        <h2 style={{ fontSize: 26, fontWeight: 800, marginBottom: 4, letterSpacing: '-0.5px' }}>Attendance Timesheet</h2>
+                        <p style={{ color: 'var(--text-muted)', fontSize: 13, margin: 0 }}>Track your daily hours, breaks, and overtime progress.</p>
                     </div>
                     <NotificationCenter />
                 </div>
@@ -124,9 +124,9 @@ export default function AttendanceLogPage() {
                 {/* Tracking Cards */}
                 <div style={{ display: 'grid', gridTemplateColumns: '1.5fr 1fr 1fr', gap: 16, marginBottom: 24 }}>
                     {/* Time Progress Card */}
-                    <div className="card" style={{ padding: 20, display: 'flex', flexDirection: 'column', gap: 12 }}>
+                    <div className="card" style={{ padding: 24, display: 'flex', flexDirection: 'column', gap: 12, borderRadius: 20, boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.05), 0 4px 20px rgba(0,0,0,0.05)' }}>
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                            <div style={{ fontWeight: 600, color: 'var(--text-secondary)' }}>Period Progress</div>
+                            <div style={{ fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.8px', fontSize: 11 }}>Period Progress</div>
                             <div style={{ fontSize: 13, background: 'var(--bg-input)', padding: '4px 10px', borderRadius: 100, color: 'var(--text-muted)' }}>{currentPeriodObj?.label} Target: {formatMinutes(targetMinutes)}</div>
                         </div>
                         <div style={{ display: 'flex', alignItems: 'flex-end', gap: 12 }}>
@@ -139,8 +139,8 @@ export default function AttendanceLogPage() {
                     </div>
 
                     {/* Deficit / Overtime */}
-                    <div className="card" style={{ padding: 20, display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
-                        <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-muted)', marginBottom: 8, textTransform: 'uppercase', letterSpacing: '0.5px' }}>{isOvertime ? 'Overtime' : 'Time Deficit'}</div>
+                    <div className="card" style={{ padding: 24, display: 'flex', flexDirection: 'column', justifyContent: 'center', borderRadius: 20, boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.05), 0 4px 20px rgba(0,0,0,0.05)' }}>
+                        <div style={{ fontSize: 11, fontWeight: 800, color: 'var(--text-muted)', marginBottom: 8, textTransform: 'uppercase', letterSpacing: '0.8px' }}>{isOvertime ? 'Overtime' : 'Time Deficit'}</div>
                         <div style={{ fontSize: 28, fontWeight: 700, color: isOvertime ? '#10b981' : '#ef4444', display: 'flex', alignItems: 'center', gap: 10 }}>
                             {formatMinutes(Math.abs(diffMinutes))}
                             {isOvertime && <span style={{ fontSize: 11, background: 'rgba(16,185,129,0.1)', color: '#10b981', padding: '4px 8px', borderRadius: 100, verticalAlign: 'middle' }}>+ Extra</span>}
@@ -148,9 +148,9 @@ export default function AttendanceLogPage() {
                     </div>
 
                     {/* Sessions Avg */}
-                    <div className="stat-card" style={{ padding: 20, margin: 0, border: '1px solid var(--border)' }}>
+                    <div className="stat-card" style={{ padding: 24, margin: 0, border: '1px solid var(--border)', borderRadius: 20, boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.05), 0 4px 20px rgba(0,0,0,0.05)', background: 'var(--bg-card)' }}>
                         <div>
-                            <div className="stat-card-label">Avg / Session</div>
+                            <div className="stat-card-label" style={{ fontSize: 11, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.8px', color: 'var(--text-muted)', marginBottom: 8 }}>Avg / Session</div>
                             <div className="stat-card-value">{total > 0 ? formatMinutes(Math.round(correctedTotalMinutes / total)) : '—'}</div>
                             <div className="stat-card-change" style={{ color: 'var(--text-muted)' }}>Over {total} sessions</div>
                         </div>
@@ -220,17 +220,16 @@ export default function AttendanceLogPage() {
                             const hasAnomaly = dayRecords.some(r => !r.punchOut && differenceInHours(new Date(), toUTC(r.punchIn)) > 16)
 
                             return (
-                                <div key={day} className="card" style={{ padding: 0, overflow: 'hidden' }}>
+                                <div key={day} className="card" style={{ padding: 0, overflow: 'hidden', borderRadius: 20, boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.02), 0 4px 20px rgba(0,0,0,0.05)' }}>
                                     {/* Day Header */}
                                     <div
                                         onClick={() => toggleDay(day)}
+                                        className={`attendance-day-row${isExpanded ? ' expanded' : ''}`}
                                         style={{
                                             padding: '16px 20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center',
                                             cursor: 'pointer', background: isExpanded ? 'var(--bg-input)' : 'transparent',
-                                            transition: 'background 0.2s', borderBottom: isExpanded ? '1px solid var(--border)' : 'none'
+                                            borderBottom: isExpanded ? '1px solid var(--border)' : 'none'
                                         }}
-                                        onMouseOver={e => e.currentTarget.style.background = 'var(--bg-input)'}
-                                        onMouseOut={e => !isExpanded && (e.currentTarget.style.background = 'transparent')}
                                     >
                                         <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
                                             <div style={{ width: 44, height: 44, borderRadius: 10, background: isToday ? 'var(--accent-primary)' : 'rgba(255,255,255,0.05)', color: isToday ? '#fff' : 'var(--text-secondary)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', border: `1px solid ${isToday ? 'var(--accent-primary)' : 'var(--border)'}` }}>
@@ -260,12 +259,12 @@ export default function AttendanceLogPage() {
                                     {isExpanded && (
                                         <div style={{ padding: 0 }}>
                                             <table className="data-table" style={{ borderTop: 'none' }}>
-                                                <thead style={{ background: 'var(--bg-card)' }}>
-                                                    <tr>
-                                                        <th style={{ paddingLeft: 80 }}>Punch In</th>
-                                                        <th>Punch Out</th>
-                                                        <th>Duration</th>
-                                                        <th>Status</th>
+                                                <thead>
+                                                    <tr style={{ background: 'var(--bg-secondary)', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+                                                        <th style={{ paddingLeft: 80, fontSize: 11, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.8px', color: 'var(--text-muted)' }}>Punch In</th>
+                                                        <th style={{ fontSize: 11, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.8px', color: 'var(--text-muted)' }}>Punch Out</th>
+                                                        <th style={{ fontSize: 11, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.8px', color: 'var(--text-muted)' }}>Duration</th>
+                                                        <th style={{ fontSize: 11, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.8px', color: 'var(--text-muted)' }}>Status</th>
                                                     </tr>
                                                 </thead>
                                                 <tbody>

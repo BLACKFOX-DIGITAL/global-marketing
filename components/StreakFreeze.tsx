@@ -38,11 +38,12 @@ export default function StreakFreeze() {
 
     return (
         <div style={{
-            background: streakAtRisk ? 'rgba(239,68,68,0.1)' : 'var(--bg-card)',
-            border: streakAtRisk ? '1px solid rgba(239,68,68,0.3)' : '1px solid var(--border)',
-            borderRadius: 16, padding: '16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-            boxShadow: streakAtRisk ? '0 0 20px rgba(239,68,68,0.15)' : 'none',
-            animation: streakAtRisk ? 'pulse 2s infinite' : 'none'
+            background: streakAtRisk ? 'rgba(239,68,68,0.15)' : 'var(--bg-card)',
+            border: streakAtRisk ? '1px solid rgba(239,68,68,0.4)' : '1px solid rgba(255,255,255,0.06)',
+            borderRadius: 20, padding: '20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+            boxShadow: streakAtRisk ? 'inset 0 1px 0 rgba(255,255,255,0.1), 0 8px 30px rgba(239,68,68,0.2)' : 'inset 0 1px 0 rgba(255,255,255,0.05), 0 4px 20px rgba(0,0,0,0.1)',
+            animation: streakAtRisk ? 'streak-risk-pulse 2s infinite' : 'none',
+            backdropFilter: 'blur(20px)'
         }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
                 <div style={{
@@ -88,13 +89,6 @@ export default function StreakFreeze() {
             )}
             {message && <div style={{ fontSize: 11, color: '#10b981', fontWeight: 600 }}>{message}</div>}
 
-            <style>{`
-                @keyframes pulse {
-                    0% { box-shadow: 0 0 0 0 rgba(239,68,68,0.4); }
-                    70% { box-shadow: 0 0 0 10px rgba(239,68,68,0); }
-                    100% { box-shadow: 0 0 0 0 rgba(239,68,68,0); }
-                }
-            `}</style>
         </div>
     )
 }

@@ -145,8 +145,8 @@ export default function PayrollDashboard() {
                     { label: 'Total Deducted', val: `৳${Math.round(totals.deducted).toLocaleString()}`, icon: TrendingDown, col: '#f59e0b', sub: 'from absences' },
                     { label: 'Total Absences', val: totals.absences, icon: UserX, col: '#f43f5e', sub: 'unexcused absent days' }
                 ].map((stat, i) => (
-                    <div key={i} style={{ padding: '12px 16px', borderRadius: 14, background: 'rgba(255,255,255,0.03)', border: '1px solid var(--border)', backdropFilter: 'blur(24px)', position: 'relative', overflow: 'hidden' }}>
-                        <div style={{ position: 'absolute', top: 0, right: 0, width: 50, height: 50, background: `radial-gradient(circle at 100% 0%, ${stat.col}10, transparent)`, pointerEvents: 'none' }} />
+                    <div key={i} style={{ padding: '20px', borderRadius: 20, background: 'rgba(255,255,255,0.03)', border: '1px solid var(--border)', backdropFilter: 'blur(24px)', position: 'relative', overflow: 'hidden', boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.02), 0 4px 20px rgba(0,0,0,0.05)' }}>
+                        <div style={{ position: 'absolute', top: 0, right: 0, width: 80, height: 80, background: `radial-gradient(circle at 100% 0%, ${stat.col}10, transparent)`, pointerEvents: 'none' }} />
                         <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10 }}>
                             <div style={{ width: 28, height: 28, borderRadius: 8, background: `${stat.col}15`, display: 'flex', alignItems: 'center', justifyContent: 'center', color: stat.col, border: `1px solid ${stat.col}20` }}>
                                 <stat.icon size={14} strokeWidth={2.5} />
@@ -160,8 +160,8 @@ export default function PayrollDashboard() {
             </div>
 
             {/* Salary History Chart */}
-            <div style={{ background: 'rgba(15,23,42,0.45)', backdropFilter: 'blur(40px)', border: '1px solid rgba(255,255,255,0.06)', borderRadius: 18, padding: '16px 20px', marginBottom: 16 }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+            <div style={{ background: 'rgba(15,23,42,0.45)', backdropFilter: 'blur(40px)', border: '1px solid rgba(255,255,255,0.06)', borderRadius: 24, padding: '24px 28px', marginBottom: 20, boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.05), 0 8px 30px rgba(0,0,0,0.1)' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
                     <h3 style={{ fontSize: 13, fontWeight: 900, margin: 0, color: '#f8fafc', display: 'flex', alignItems: 'center', gap: 6 }}>
                         <BarChart3 size={14} color="var(--accent-primary)" /> 6-Month Salary History
                     </h3>
@@ -225,7 +225,7 @@ export default function PayrollDashboard() {
             )}
 
             {/* Table */}
-            <div style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 16, overflow: 'hidden', backdropFilter: 'blur(20px)' }}>
+            <div style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 24, overflow: 'hidden', backdropFilter: 'blur(20px)', boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.02), 0 8px 30px rgba(0,0,0,0.1)' }}>
                 <div style={{ overflowX: 'auto' }}>
                     <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', minWidth: 900 }}>
                         <thead style={{ background: 'rgba(255,255,255,0.02)', borderBottom: '1px solid var(--border)' }}>
@@ -307,7 +307,7 @@ export default function PayrollDashboard() {
                                                     <td colSpan={8} style={{ padding: '0 20px 16px 20px', background: 'rgba(0,0,0,0.15)' }}>
                                                         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12, paddingTop: 12 }}>
                                                             {/* Attendance Breakdown */}
-                                                            <div style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid var(--border)', borderRadius: 12, padding: 14 }}>
+                                                            <div style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid var(--border)', borderRadius: 16, padding: '16px 20px', boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.02), 0 4px 20px rgba(0,0,0,0.05)' }}>
                                                                 <div style={{ fontSize: 9, fontWeight: 900, color: '#475569', textTransform: 'uppercase', letterSpacing: '0.8px', marginBottom: 10 }}>Attendance</div>
                                                                 <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
                                                                     {[
@@ -324,7 +324,7 @@ export default function PayrollDashboard() {
                                                                 </div>
                                                             </div>
                                                             {/* Hours Breakdown */}
-                                                            <div style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid var(--border)', borderRadius: 12, padding: 14 }}>
+                                                            <div style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid var(--border)', borderRadius: 16, padding: '16px 20px', boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.02), 0 4px 20px rgba(0,0,0,0.05)' }}>
                                                                 <div style={{ fontSize: 9, fontWeight: 900, color: '#475569', textTransform: 'uppercase', letterSpacing: '0.8px', marginBottom: 10 }}>Hours</div>
                                                                 <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
                                                                     {[
@@ -340,7 +340,7 @@ export default function PayrollDashboard() {
                                                                 </div>
                                                             </div>
                                                             {/* Salary Breakdown */}
-                                                            <div style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid var(--border)', borderRadius: 12, padding: 14 }}>
+                                                            <div style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid var(--border)', borderRadius: 16, padding: '16px 20px', boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.02), 0 4px 20px rgba(0,0,0,0.05)' }}>
                                                                 <div style={{ fontSize: 9, fontWeight: 900, color: '#475569', textTransform: 'uppercase', letterSpacing: '0.8px', marginBottom: 10 }}>Salary Calc</div>
                                                                 <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
                                                                     {[
@@ -357,7 +357,7 @@ export default function PayrollDashboard() {
                                                             </div>
                                                             {/* Projection */}
                                                             {isCurrentMonth && (
-                                                                <div style={{ background: 'rgba(99,102,241,0.05)', border: '1px solid rgba(99,102,241,0.15)', borderRadius: 12, padding: 14 }}>
+                                                                <div style={{ background: 'rgba(99,102,241,0.05)', border: '1px solid rgba(99,102,241,0.15)', borderRadius: 16, padding: '16px 20px', boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.02), 0 4px 20px rgba(99,102,241,0.05)' }}>
                                                                     <div style={{ fontSize: 9, fontWeight: 900, color: '#6366f1', textTransform: 'uppercase', letterSpacing: '0.8px', marginBottom: 10 }}>Month-End Estimate</div>
                                                                     <div style={{ fontSize: 22, fontWeight: 900, color: '#6366f1', letterSpacing: '-1px' }}>
                                                                         ৳{Math.round(report.projectedSalary).toLocaleString()}

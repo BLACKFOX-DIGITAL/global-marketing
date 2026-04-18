@@ -66,9 +66,10 @@ function SearchableLeadPicker({ leads, value, onChange }: { leads: any[], value:
             <div
                 onClick={() => setIsOpen(!isOpen)}
                 style={{
-                    padding: '10px 12px', borderRadius: 10, border: '1px solid var(--border)',
-                    background: 'var(--bg-input)', cursor: 'pointer', display: 'flex',
-                    justifyContent: 'space-between', alignItems: 'center', fontSize: 13
+                    padding: '12px 14px', borderRadius: 12, border: '1px solid rgba(255,255,255,0.08)',
+                    background: 'rgba(0,0,0,0.2)', cursor: 'pointer', display: 'flex',
+                    justifyContent: 'space-between', alignItems: 'center', fontSize: 13,
+                    boxShadow: 'inset 0 2px 4px rgba(0,0,0,0.1)'
                 }}
             >
                 {selectedLead ? (
@@ -413,30 +414,30 @@ export default function TasksPage() {
     return (
         <>
             <div className="crm-content" style={{ paddingTop: 12, paddingBottom: 12, display: 'flex', flexDirection: 'column' }}>
-                <div className="page-header" style={{ marginBottom: 16 }}>
+                <div className="page-header" style={{ marginBottom: 24 }}>
                     <div>
-                        <h2 style={{ fontSize: 22 }}>Tasks & Follow-Ups</h2>
-                        <p style={{ fontSize: 12 }}>Track calls, emails, meetings and follow-ups.</p>
+                        <h2 style={{ fontSize: 26, fontWeight: 800, letterSpacing: '-0.5px' }}>Tasks & Follow-Ups</h2>
+                        <p style={{ fontSize: 13, color: 'var(--text-secondary)' }}>Track calls, emails, meetings and follow-ups.</p>
                     </div>
                     <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
                         <NotificationCenter />
-                        <div style={{ display: 'flex', background: 'var(--bg-input)', padding: 4, borderRadius: 10, border: '1px solid var(--border)' }}>
+                        <div style={{ display: 'flex', background: 'rgba(0,0,0,0.2)', padding: 4, borderRadius: 12, border: '1px solid rgba(255,255,255,0.06)' }}>
                             <button
                                 onClick={() => setView('list')}
                                 style={{
                                     padding: '6px 12px', borderRadius: 8, border: 'none', background: view === 'list' ? 'var(--bg-card)' : 'transparent',
-                                    color: view === 'list' ? 'var(--accent-primary)' : 'var(--text-muted)', fontSize: 13, fontWeight: 600,
+                                    color: view === 'list' ? 'var(--accent-primary)' : 'var(--text-muted)', fontSize: 13, fontWeight: 700,
                                     cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6,
-                                    boxShadow: view === 'list' ? '0 2px 4px rgba(0,0,0,0.05)' : 'none'
+                                    boxShadow: view === 'list' ? '0 2px 8px rgba(0,0,0,0.2)' : 'none'
                                 }}
                             ><LayoutList size={14} /> List</button>
                             <button
                                 onClick={() => setView('calendar')}
                                 style={{
                                     padding: '6px 12px', borderRadius: 8, border: 'none', background: view === 'calendar' ? 'var(--bg-card)' : 'transparent',
-                                    color: view === 'calendar' ? 'var(--accent-primary)' : 'var(--text-muted)', fontSize: 13, fontWeight: 600,
+                                    color: view === 'calendar' ? 'var(--accent-primary)' : 'var(--text-muted)', fontSize: 13, fontWeight: 700,
                                     cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6,
-                                    boxShadow: view === 'calendar' ? '0 2px 4px rgba(0,0,0,0.05)' : 'none'
+                                    boxShadow: view === 'calendar' ? '0 2px 8px rgba(0,0,0,0.2)' : 'none'
                                 }}
                             ><CalendarIcon size={14} /> Calendar</button>
                         </div>
@@ -447,9 +448,9 @@ export default function TasksPage() {
                 </div>
 
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
-                    <div className="tabs" style={{ padding: 2 }}>
+                    <div className="tabs" style={{ padding: 3, background: 'rgba(0,0,0,0.2)', borderRadius: 12, border: '1px solid rgba(255,255,255,0.06)' }}>
                         {TABS.map(t => (
-                            <button key={t} className={`tab ${tab === t ? 'active' : ''}`} onClick={() => { setTab(t); setPage(1); }} style={{ padding: '5px 12px', fontSize: 12 }}>
+                            <button key={t} className={`tab ${tab === t ? 'active' : ''}`} onClick={() => { setTab(t); setPage(1); }} style={{ padding: '6px 16px', fontSize: 12, borderRadius: 9, fontWeight: 700 }}>
                                 {t} {tasksData?.counts?.[t] !== undefined && <span style={{ marginLeft: 4, opacity: 0.6 }}>({tasksData.counts[t]})</span>}
                             </button>
                         ))}
@@ -477,7 +478,7 @@ export default function TasksPage() {
                         onTaskClick={(task) => setViewTask(task as any)}
                     />
                 ) : (
-                    <div className="card" style={{ padding: 0 }}>
+                    <div className="card" style={{ padding: 0, borderRadius: 24, background: 'rgba(30,41,59,0.4)', backdropFilter: 'blur(20px)', border: '1px solid rgba(255,255,255,0.06)', boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.05), 0 8px 30px rgba(0,0,0,0.1)', overflow: 'hidden' }}>
                         {tasksError ? (
                             <div style={{ textAlign: 'center', padding: 48, color: 'var(--text-muted)' }}>
                                 <div style={{ fontSize: 28, marginBottom: 12 }}>⚠️</div>
@@ -499,21 +500,21 @@ export default function TasksPage() {
                                     const typeInfo = getTaskTypeInfo(task.taskType)
                                     return (
                                         <div key={task.id} className="task-row" style={{
-                                            padding: '8px 16px',
+                                            padding: '12px 20px',
                                             display: 'flex',
                                             alignItems: 'center',
-                                            gap: 12,
-                                            minHeight: 52,
-                                            transition: 'all 0.2s ease',
+                                            gap: 16,
+                                            minHeight: 56,
+                                            transition: 'background 0.2s cubic-bezier(0.16, 1, 0.3, 1)',
                                             cursor: 'pointer'
                                         }} onClick={() => setViewTask(task)}>
                                             <button
                                                 className={`task-check ${task.completed ? 'checked' : ''}`}
                                                 onClick={e => { e.stopPropagation(); toggleTask(task.id); }}
                                                 style={{
-                                                    width: 22, height: 22,
-                                                    background: task.completed ? 'var(--accent-primary)' : 'transparent',
-                                                    border: `2px solid ${task.completed ? 'var(--accent-primary)' : 'var(--border-light)'}`,
+                                                    width: 24, height: 24,
+                                                    background: task.completed ? 'var(--accent-primary)' : 'rgba(255,255,255,0.02)',
+                                                    border: `2px solid ${task.completed ? 'var(--accent-primary)' : 'rgba(255,255,255,0.1)'}`,
                                                     borderRadius: '50%',
                                                     display: 'flex', alignItems: 'center', justifyContent: 'center',
                                                     cursor: 'pointer', transition: 'all 0.2s',
@@ -531,7 +532,7 @@ export default function TasksPage() {
                                             </div>
 
                                             <div style={{ flex: 1, minWidth: 0 }}>
-                                                <div style={{ fontSize: 14, fontWeight: 500, color: task.completed ? 'var(--text-muted)' : 'var(--text-primary)', textDecoration: task.completed ? 'line-through' : 'none' }}>
+                                                <div style={{ fontSize: 15, fontWeight: task.completed ? 500 : 700, color: task.completed ? 'var(--text-muted)' : 'var(--text-primary)', textDecoration: task.completed ? 'line-through' : 'none' }}>
                                                     {task.title}
                                                 </div>
                                                 {task.lead && (

@@ -20,8 +20,8 @@ export default function LeadsLoading() {
                 <div style={{ display: 'flex', gap: 16, marginBottom: 24 }}>
                     {[1, 2, 3].map(i => (
                         <div key={i} style={{
-                            flex: 1, height: 72, background: 'var(--bg-card)', border: '1px solid var(--border)',
-                            borderRadius: 12, animation: 'pulse 1.5s ease-in-out infinite',
+                            flex: 1, height: 72, background: 'rgba(30,41,59,0.4)', border: '1px solid rgba(255,255,255,0.06)',
+                            borderRadius: 20, animation: 'pulse 1.5s ease-in-out infinite',
                             animationDelay: `${i * 0.1}s`,
                         }} />
                     ))}
@@ -34,13 +34,13 @@ export default function LeadsLoading() {
                 </div>
 
                 {/* Table Skeleton */}
-                <div style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 12, overflow: 'hidden' }}>
+                <div style={{ background: 'rgba(30,41,59,0.4)', border: '1px solid rgba(255,255,255,0.06)', borderRadius: 24, overflow: 'hidden' }}>
                     {/* Header row */}
-                    <div style={{ height: 40, borderBottom: '1px solid var(--border)', background: 'var(--bg-secondary)', animation: 'pulse 1.5s ease-in-out infinite' }} />
+                    <div style={{ height: 48, borderBottom: '1px solid rgba(255,255,255,0.04)', background: 'rgba(255,255,255,0.02)', animation: 'pulse 1.5s ease-in-out infinite' }} />
                     {/* Data rows */}
                     {[1, 2, 3, 4, 5, 6, 7, 8].map(i => (
                         <div key={i} style={{
-                            height: 52, borderBottom: '1px solid var(--border)',
+                            height: 52, borderBottom: '1px solid rgba(255,255,255,0.04)',
                             animation: 'pulse 1.5s ease-in-out infinite',
                             animationDelay: `${i * 0.05}s`,
                         }} />
@@ -48,12 +48,6 @@ export default function LeadsLoading() {
                 </div>
             </div>
 
-            <style>{`
-                @keyframes pulse {
-                    0%, 100% { opacity: 1; }
-                    50% { opacity: 0.4; }
-                }
-            `}</style>
         </div>
     )
 }

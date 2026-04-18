@@ -331,14 +331,14 @@ function Stepper({ lead, onRefresh, onConvert, availableStatuses }: { lead: Lead
                             <button key={opt.value}
                                 onClick={() => opt.value === 'call_back_later' && !dueDate ? setDueDate('show') : logCallAttempt(opt.value)}
                                 disabled={submitting}
+                                className="outcome-option-btn"
                                 style={{
                                     display: 'flex', alignItems: 'center', gap: 8, padding: '8px 12px',
                                     borderRadius: 8, cursor: 'pointer', fontSize: 12, fontWeight: 600,
-                                    border: '1px solid var(--border)', background: 'transparent',
-                                    color: opt.color, transition: 'all 0.15s', textAlign: 'left'
-                                }}
-                                onMouseOver={e => { e.currentTarget.style.background = `${opt.color}12`; e.currentTarget.style.borderColor = `${opt.color}40` }}
-                                onMouseOut={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.borderColor = 'var(--border)' }}
+                                    border: '1px solid var(--border)', color: opt.color, textAlign: 'left',
+                                    '--outcome-hover-bg': `${opt.color}12`,
+                                    '--outcome-hover-border': `${opt.color}40`,
+                                } as React.CSSProperties}
                             >
                                 <span style={{ fontSize: 14 }}>{opt.icon}</span> {opt.label}
                             </button>
@@ -378,14 +378,14 @@ function Stepper({ lead, onRefresh, onConvert, availableStatuses }: { lead: Lead
                             <button key={opt.value}
                                 onClick={() => logMailAttempt(opt.value)}
                                 disabled={submitting}
+                                className="outcome-option-btn"
                                 style={{
                                     display: 'flex', alignItems: 'center', gap: 8, padding: '8px 12px',
                                     borderRadius: 8, cursor: 'pointer', fontSize: 12, fontWeight: 600,
-                                    border: '1px solid var(--border)', background: 'transparent',
-                                    color: opt.color, transition: 'all 0.15s', textAlign: 'left'
-                                }}
-                                onMouseOver={e => { e.currentTarget.style.background = `${opt.color}12`; e.currentTarget.style.borderColor = `${opt.color}40` }}
-                                onMouseOut={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.borderColor = 'var(--border)' }}
+                                    border: '1px solid var(--border)', color: opt.color, textAlign: 'left',
+                                    '--outcome-hover-bg': `${opt.color}12`,
+                                    '--outcome-hover-border': `${opt.color}40`,
+                                } as React.CSSProperties}
                             >
                                 <span style={{ fontSize: 14 }}>{opt.icon}</span> {opt.label}
                             </button>
@@ -396,7 +396,6 @@ function Stepper({ lead, onRefresh, onConvert, availableStatuses }: { lead: Lead
                 </div>
             )}
 
-            <style>{`@keyframes fadeIn { from { opacity: 0; transform: translateY(-4px); } to { opacity: 1; transform: translateY(0); } }`}</style>
         </div>
     )
 }
@@ -588,16 +587,16 @@ export default function LeadDetailPage({ params }: { params: Promise<{ id: strin
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
 
                     {/* Identity Card */}
-                    <div className="card" style={{ padding: 24, position: 'relative' }}>
+                    <div className="card" style={{ padding: 28, borderRadius: 24, position: 'relative', boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.05), 0 8px 30px rgba(0,0,0,0.1)' }}>
                         {/* Top row: Identity & Buttons */}
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                            <div style={{ display: 'flex', gap: 16 }}>
-                                <div style={{ width: 56, height: 56, borderRadius: 12, background: 'var(--accent-primary)', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 22, fontWeight: 700, boxShadow: '0 8px 16px -4px rgba(99, 102, 241, 0.4)' }}>
+                            <div style={{ display: 'flex', gap: 20 }}>
+                                <div style={{ width: 64, height: 64, borderRadius: 16, background: 'linear-gradient(135deg, #6366f1, #4f46e5)', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 24, fontWeight: 800, boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.3), 0 8px 16px -4px rgba(99, 102, 241, 0.4)' }}>
                                     {initials}
                                 </div>
-                                <div>
-                                    <h1 style={{ fontSize: 22, fontWeight: 700, margin: '0 0 4px 0', color: 'var(--text-primary)' }}>{displayTitle}</h1>
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, color: 'var(--text-secondary)', fontSize: 13 }}>
+                                <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+                                    <h1 style={{ fontSize: 24, fontWeight: 900, margin: '0 0 6px 0', color: 'var(--text-primary)', letterSpacing: '-0.5px' }}>{displayTitle}</h1>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, color: 'var(--text-secondary)', fontSize: 13, fontWeight: 500 }}>
                                         <User size={14} /> {lead.name && lead.name !== lead.company ? `${lead.name} • ${position}` : 'Lead Company'}
                                     </div>
                                 </div>
@@ -624,7 +623,7 @@ export default function LeadDetailPage({ params }: { params: Promise<{ id: strin
                                 display: 'flex', alignItems: 'center', gap: 12, padding: '10px 14px',
                                 background: 'var(--bg-input)', borderRadius: 10, border: '1px solid transparent',
                                 transition: 'border-color 0.2s',
-                            }} onMouseOver={e => e.currentTarget.style.borderColor = 'var(--border)'} onMouseOut={e => e.currentTarget.style.borderColor = 'transparent'}>
+                            }} className="contact-info-row">
                                 <div style={{ width: 32, height: 32, borderRadius: 8, background: 'rgba(99,102,241,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                                     <Mail size={14} color="var(--accent-primary)" />
                                 </div>
@@ -643,7 +642,7 @@ export default function LeadDetailPage({ params }: { params: Promise<{ id: strin
                                 display: 'flex', alignItems: 'center', gap: 12, padding: '10px 14px',
                                 background: 'var(--bg-input)', borderRadius: 10, border: '1px solid transparent',
                                 transition: 'border-color 0.2s',
-                            }} onMouseOver={e => e.currentTarget.style.borderColor = 'var(--border)'} onMouseOut={e => e.currentTarget.style.borderColor = 'transparent'}>
+                            }} className="contact-info-row">
                                 <div style={{ width: 32, height: 32, borderRadius: 8, background: 'rgba(6,182,212,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                                     <MapPin size={14} color="#06b6d4" />
                                 </div>
@@ -657,7 +656,7 @@ export default function LeadDetailPage({ params }: { params: Promise<{ id: strin
                                 display: 'flex', alignItems: 'center', gap: 12, padding: '10px 14px',
                                 background: 'var(--bg-input)', borderRadius: 10, border: '1px solid transparent',
                                 transition: 'border-color 0.2s',
-                            }} onMouseOver={e => e.currentTarget.style.borderColor = 'var(--border)'} onMouseOut={e => e.currentTarget.style.borderColor = 'transparent'}>
+                            }} className="contact-info-row">
                                 <div style={{ width: 32, height: 32, borderRadius: 8, background: 'rgba(34,197,94,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                                     <Phone size={14} color="#22c55e" />
                                 </div>
@@ -673,7 +672,7 @@ export default function LeadDetailPage({ params }: { params: Promise<{ id: strin
                                 display: 'flex', alignItems: 'center', gap: 12, padding: '10px 14px',
                                 background: 'var(--bg-input)', borderRadius: 10, border: '1px solid transparent',
                                 transition: 'border-color 0.2s',
-                            }} onMouseOver={e => e.currentTarget.style.borderColor = 'var(--border)'} onMouseOut={e => e.currentTarget.style.borderColor = 'transparent'}>
+                            }} className="contact-info-row">
                                 <div style={{ width: 32, height: 32, borderRadius: 8, background: 'rgba(245,158,11,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                                     <Globe size={14} color="#f59e0b" />
                                 </div>
@@ -703,7 +702,7 @@ export default function LeadDetailPage({ params }: { params: Promise<{ id: strin
                     </div>
 
                     {/* Tabs Section */}
-                    <div className="card" style={{ padding: 0, minHeight: 0, display: 'flex', flexDirection: 'column' }}>
+                    <div className="card" style={{ padding: 0, minHeight: 0, display: 'flex', flexDirection: 'column', borderRadius: 24, boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.02), 0 4px 20px rgba(0,0,0,0.05)' }}>
                         <div style={{ borderBottom: '1px solid var(--border)', display: 'flex', gap: 0, padding: '0 24px' }}>
                             {[
                                 { key: 'tasks' as const, icon: <CheckSquare size={15} />, label: 'Tasks', count: lead.tasks?.filter(t => !t.completed).length },
@@ -782,15 +781,13 @@ export default function LeadDetailPage({ params }: { params: Promise<{ id: strin
 
                                                 return (
                                                     <div key={task.id}
+                                                        className={`task-row-inline${task.completed ? ' completed' : ''}`}
                                                         style={{
                                                             display: 'flex', alignItems: 'center', gap: 10, padding: '10px 12px',
                                                             background: task.completed ? 'transparent' : 'var(--bg-input)',
                                                             borderRadius: 8, border: '1px solid transparent',
-                                                            transition: 'all 0.15s', cursor: 'default',
-                                                            opacity: task.completed ? 0.6 : 1,
+                                                            cursor: 'default', opacity: task.completed ? 0.6 : 1,
                                                         }}
-                                                        onMouseOver={e => { if (!task.completed) e.currentTarget.style.borderColor = 'var(--border)' }}
-                                                        onMouseOut={e => e.currentTarget.style.borderColor = 'transparent'}
                                                     >
                                                         <button onClick={() => handleToggleTask(task.id)} className={`task-check ${task.completed ? 'checked' : ''}`} style={{ flexShrink: 0 }}>
                                                             {task.completed && <CheckCircle size={12} color="white" />}
@@ -827,7 +824,7 @@ export default function LeadDetailPage({ params }: { params: Promise<{ id: strin
                     </div>
 
                     {/* Private Notes Card - Dedicated Space */}
-                    <div className="card" style={{ padding: 20 }}>
+                    <div className="card" style={{ padding: 24, borderRadius: 20, boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.02), 0 4px 20px rgba(0,0,0,0.05)' }}>
                         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
                             <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                                 <div style={{ width: 28, height: 28, borderRadius: 6, background: 'rgba(139,92,246,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
@@ -861,14 +858,15 @@ export default function LeadDetailPage({ params }: { params: Promise<{ id: strin
                         <button
                             onClick={handleConvert}
                             disabled={converting}
+                            className={`convert-opp-btn${converting ? ' loading' : ''}`}
                             style={{
                                 width: '100%', padding: '16px', background: 'var(--bg-card)',
                                 border: '1px dashed rgba(99,102,241,0.5)', borderRadius: 12,
                                 display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10,
                                 color: 'var(--accent-primary)', fontSize: 16, fontWeight: 600,
-                                cursor: converting ? 'not-allowed' : 'pointer', transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+                                cursor: converting ? 'not-allowed' : 'pointer',
                                 opacity: converting ? 0.7 : 1
-                            }} onMouseOver={e => !converting && (e.currentTarget.style.background = 'rgba(99,102,241,0.05)', e.currentTarget.style.transform = 'translateY(-2px)')} onMouseOut={e => !converting && (e.currentTarget.style.background = 'var(--bg-card)', e.currentTarget.style.transform = 'translateY(0)')}>
+                            }}>
                             <Rocket size={20} className={converting ? 'animate-pulse' : ''} /> {converting ? 'Converting...' : 'Convert to Opportunity'}
                         </button>
                     )}
@@ -910,8 +908,8 @@ export default function LeadDetailPage({ params }: { params: Promise<{ id: strin
                     </div>
 
                     {/* Overview */}
-                    <div className="card" style={{ padding: 16 }}>
-                        <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-muted)', letterSpacing: '0.5px', marginBottom: 16 }}>LEAD OVERVIEW</div>
+                    <div className="card" style={{ padding: 24, borderRadius: 20, boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.02), 0 4px 20px rgba(0,0,0,0.05)' }}>
+                        <div style={{ fontSize: 11, fontWeight: 800, color: 'var(--text-muted)', letterSpacing: '0.8px', marginBottom: 20 }}>LEAD OVERVIEW</div>
                         <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
                             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: 12 }}>
                                 <span style={{ color: 'var(--text-secondary)' }}>Created</span>
@@ -967,8 +965,8 @@ export default function LeadDetailPage({ params }: { params: Promise<{ id: strin
                     </div>
 
                     {/* Activity */}
-                    <div className="card" style={{ padding: 20 }}>
-                        <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--text-muted)', letterSpacing: '0.5px', marginBottom: 20, display: 'flex', alignItems: 'center', gap: 6 }}>
+                    <div className="card" style={{ padding: 24, borderRadius: 20, boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.02), 0 4px 20px rgba(0,0,0,0.05)' }}>
+                        <div style={{ fontSize: 11, fontWeight: 800, color: 'var(--text-muted)', letterSpacing: '0.8px', marginBottom: 20, display: 'flex', alignItems: 'center', gap: 8 }}>
                             <History size={14} /> ACTIVITY TIMELINE
                         </div>
                         <div style={{ maxHeight: 400, overflowY: 'auto' }}>
@@ -1017,7 +1015,7 @@ export default function LeadDetailPage({ params }: { params: Promise<{ id: strin
                         position: 'fixed', bottom: 32, left: '50%', transform: 'translateX(-50%)',
                         background: 'var(--bg-card)', border: '1px solid var(--border)', boxShadow: '0 8px 32px rgba(0,0,0,0.4)',
                         padding: '12px 24px', borderRadius: 12, display: 'flex', alignItems: 'center', gap: 12,
-                        zIndex: 1000, animation: 'slideUp 0.3s ease-out', color: 'var(--text-primary)'
+                        zIndex: 1000, animation: 'slideUpCentered 0.3s ease-out', color: 'var(--text-primary)'
                     }}>
                         <div style={{ width: 24, height: 24, borderRadius: '50%', background: 'rgba(34,197,94,0.1)', color: '#22c55e', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                             <CheckCircle size={14} />
@@ -1027,16 +1025,6 @@ export default function LeadDetailPage({ params }: { params: Promise<{ id: strin
                 )
             }
 
-            <style>{`
-                @keyframes slideUp {
-                    from { transform: translate(-50%, 20px); opacity: 0; }
-                    to { transform: translate(-50%, 0); opacity: 1; }
-                }
-                @keyframes spin {
-                    from { transform: rotate(0deg); }
-                    to { transform: rotate(360deg); }
-                }
-            `}</style>
         </div >
     )
 }

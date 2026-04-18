@@ -61,15 +61,16 @@ export default function ActivityTimeline({ leadId, activities: passedActivities 
                         {!isLast && (
                             <div style={{
                                 position: 'absolute', left: 15, top: 36, bottom: 0,
-                                width: 1.5, background: `linear-gradient(to bottom, ${config.color}30, var(--border))`,
+                                width: 2, background: `linear-gradient(to bottom, ${config.color}50, transparent)`,
                             }} />
                         )}
 
                         {/* Icon dot */}
                         <div style={{
-                            width: 32, height: 32, borderRadius: '50%', background: config.bg,
-                            display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1,
-                            border: `1.5px solid ${config.color}40`, flexShrink: 0, fontSize: 14,
+                            width: 32, height: 32, borderRadius: '50%', background: `linear-gradient(145deg, ${config.bg}, transparent)`,
+                            display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1, backdropFilter: 'blur(10px)',
+                            border: `1px solid ${config.color}50`, flexShrink: 0, fontSize: 14,
+                            boxShadow: `0 4px 12px ${config.color}15, inset 0 2px 4px rgba(255,255,255,0.05)`
                         }}>
                             {config.icon}
                         </div>
@@ -83,8 +84,9 @@ export default function ActivityTimeline({ leadId, activities: passedActivities 
                                     {item.action?.replace(/_/g, ' ') || 'ACTIVITY'}
                                 </div>
                                 <div style={{
-                                    fontSize: 10, color: 'var(--text-muted)', fontWeight: 500,
-                                    background: 'var(--bg-input)', padding: '2px 6px', borderRadius: 4,
+                                    fontSize: 10, color: 'var(--text-muted)', fontWeight: 600,
+                                    background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.05)',
+                                    padding: '2px 8px', borderRadius: 12, backdropFilter: 'blur(10px)'
                                 }}>
                                     {item.createdAt ? formatDistanceToNow(new Date(item.createdAt), { addSuffix: true }) : '—'}
                                 </div>

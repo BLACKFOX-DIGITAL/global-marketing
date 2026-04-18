@@ -33,8 +33,9 @@ function StatCard({ label, value, icon: Icon, color, trend, sparklineData }: {
 }) {
     const isPositive = (trend || 0) >= 0
     return (
-        <div style={{ padding: '12px 14px', borderRadius: 14, background: 'rgba(30,41,59,0.4)', backdropFilter: 'blur(20px)', border: '1px solid rgba(255,255,255,0.05)', display: 'flex', flexDirection: 'column', gap: 6, position: 'relative', overflow: 'hidden' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <div style={{ padding: '20px', borderRadius: 20, background: 'rgba(30,41,59,0.4)', backdropFilter: 'blur(20px)', border: '1px solid rgba(255,255,255,0.05)', display: 'flex', flexDirection: 'column', gap: 6, position: 'relative', overflow: 'hidden', boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.02), 0 4px 20px rgba(0,0,0,0.05)' }}>
+            <div style={{ position: 'absolute', top: 0, right: 0, width: 80, height: 80, background: `radial-gradient(circle at 100% 0%, ${color}10, transparent)`, pointerEvents: 'none' }} />
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', zIndex: 1 }}>
                 <div style={{ fontSize: 9, color: '#64748b', fontWeight: 800, letterSpacing: '0.8px', textTransform: 'uppercase' }}>{label}</div>
                 <div style={{ width: 22, height: 22, borderRadius: 6, background: `${color}15`, color, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                     <Icon size={12} strokeWidth={2.5} />
@@ -172,8 +173,8 @@ export default function ReportsPage() {
                     {(reportData.inactivityAlerts?.length > 0 || reportData.goalAlerts?.length > 0) && (
                         <div style={{ display: 'grid', gridTemplateColumns: reportData.inactivityAlerts?.length > 0 && reportData.goalAlerts?.length > 0 ? '1fr 1fr' : '1fr', gap: 12 }}>
                             {reportData.inactivityAlerts?.length > 0 && (
-                                <div style={{ background: 'rgba(15,23,42,0.4)', border: '1px solid rgba(244,63,94,0.15)', borderRadius: 16, padding: '12px 16px' }}>
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 10 }}>
+                                <div style={{ background: 'rgba(15,23,42,0.4)', border: '1px solid rgba(244,63,94,0.15)', borderRadius: 20, padding: '16px 20px', boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.02), 0 4px 20px rgba(244,63,94,0.05)' }}>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 12 }}>
                                         <Clock size={13} color="#f43f5e" />
                                         <h3 style={{ fontSize: 11, fontWeight: 900, margin: 0, color: '#f43f5e', textTransform: 'uppercase', letterSpacing: '0.8px' }}>Inactive Reps</h3>
                                     </div>
@@ -195,8 +196,8 @@ export default function ReportsPage() {
                                 </div>
                             )}
                             {reportData.goalAlerts?.length > 0 && (
-                                <div style={{ background: 'rgba(15,23,42,0.4)', border: '1px solid rgba(245,158,11,0.15)', borderRadius: 16, padding: '12px 16px' }}>
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 10 }}>
+                                <div style={{ background: 'rgba(15,23,42,0.4)', border: '1px solid rgba(245,158,11,0.15)', borderRadius: 20, padding: '16px 20px', boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.02), 0 4px 20px rgba(245,158,11,0.05)' }}>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 12 }}>
                                         <AlertTriangle size={13} color="#f59e0b" />
                                         <h3 style={{ fontSize: 11, fontWeight: 900, margin: 0, color: '#f59e0b', textTransform: 'uppercase', letterSpacing: '0.8px' }}>Behind on Goals</h3>
                                     </div>
@@ -220,8 +221,8 @@ export default function ReportsPage() {
                     )}
 
                     {/* Trend Chart */}
-                    <div style={{ background: 'rgba(15,23,42,0.4)', backdropFilter: 'blur(40px)', border: '1px solid rgba(255,255,255,0.05)', borderRadius: 18, padding: '16px 20px' }}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+                    <div style={{ background: 'rgba(15,23,42,0.4)', backdropFilter: 'blur(40px)', border: '1px solid rgba(255,255,255,0.05)', borderRadius: 24, padding: '24px 28px', boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.02), 0 8px 30px rgba(0,0,0,0.1)' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
                             <h3 style={{ fontSize: 13, fontWeight: 900, margin: 0, color: '#f8fafc', display: 'flex', alignItems: 'center', gap: 6 }}>
                                 <Activity size={14} color="#3b82f6" /> 14-Day Trend
                             </h3>
@@ -249,8 +250,8 @@ export default function ReportsPage() {
                     </div>
 
                     {/* Rep Table */}
-                    <div style={{ background: 'rgba(15,23,42,0.6)', backdropFilter: 'blur(40px)', border: '1px solid rgba(255,255,255,0.05)', borderRadius: 18, overflow: 'hidden' }}>
-                        <div style={{ padding: '12px 18px', borderBottom: '1px solid rgba(255,255,255,0.05)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <div style={{ background: 'rgba(15,23,42,0.6)', backdropFilter: 'blur(40px)', border: '1px solid rgba(255,255,255,0.05)', borderRadius: 24, overflow: 'hidden', boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.02), 0 8px 30px rgba(0,0,0,0.1)' }}>
+                        <div style={{ padding: '16px 24px', borderBottom: '1px solid rgba(255,255,255,0.05)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                             <h3 style={{ fontSize: 11, fontWeight: 900, margin: 0, textTransform: 'uppercase', letterSpacing: '1px', color: '#64748b' }}>Rep Breakdown</h3>
                             <div style={{ background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 6, padding: '2px 8px', display: 'flex', alignItems: 'center', gap: 6 }}>
                                 <Search size={12} color="#475569" />

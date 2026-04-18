@@ -39,8 +39,8 @@ export default function TaskCalendar({
     }
 
     return (
-        <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 20px', borderBottom: '1px solid var(--border)' }}>
+        <div className="card" style={{ padding: 0, overflow: 'hidden', borderRadius: 24, boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.05), 0 8px 30px rgba(0,0,0,0.1)' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '16px 24px', borderBottom: '1px solid rgba(255,255,255,0.08)', background: 'rgba(0,0,0,0.2)' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                     <CalendarIcon size={16} color="var(--accent-primary)" />
                     <h3 style={{ fontSize: 15, fontWeight: 700, margin: 0 }}>{format(currentMonth, 'MMMM yyyy')}</h3>

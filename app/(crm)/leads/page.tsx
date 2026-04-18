@@ -42,35 +42,29 @@ function StatCard({ icon, label, value, color, periodLabel, onClick }: {
     return (
         <div
             onClick={onClick}
+            className="stat-card-dynamic"
             style={{
-                background: 'var(--bg-card)', border: '1px solid var(--border)',
-                borderRadius: 10, padding: '10px 14px', cursor: 'pointer',
-                transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+                background: 'rgba(30,41,59,0.4)', border: '1px solid rgba(255,255,255,0.06)',
+                borderRadius: 20, padding: '16px 20px', cursor: 'pointer',
                 display: 'flex', justifyContent: 'space-between', alignItems: 'center',
                 userSelect: 'none', position: 'relative', overflow: 'hidden',
-                minWidth: 160, flex: 1
-            }}
-            onMouseOver={e => {
-                e.currentTarget.style.transform = 'translateY(-1px)'
-                e.currentTarget.style.boxShadow = `0 4px 12px ${color}15`
-                e.currentTarget.style.borderColor = `${color}30`
-            }}
-            onMouseOut={e => {
-                e.currentTarget.style.transform = 'translateY(0)'
-                e.currentTarget.style.boxShadow = 'none'
-                e.currentTarget.style.borderColor = 'var(--border)'
-            }}
+                minWidth: 160, flex: 1, boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.05), 0 4px 20px rgba(0,0,0,0.1)',
+                backdropFilter: 'blur(20px)',
+                '--card-hover-shadow': `0 12px 30px -10px ${color}30`,
+                '--card-hover-border': `${color}40`,
+            } as React.CSSProperties}
         >
             <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                 <div style={{
-                    width: 32, height: 32, borderRadius: 8,
+                    width: 38, height: 38, borderRadius: 12,
                     background: `${color}12`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
+                    boxShadow: `inset 0 1px 0 ${color}20`
                 }}>
                     {React.isValidElement(icon) ? React.cloneElement(icon as React.ReactElement<any>, { size: 18 }) : null}
                 </div>
                 <div>
-                    <div style={{ fontSize: 10, color: 'var(--text-muted)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.4px' }}>{label}</div>
-                    <div style={{ fontSize: 18, fontWeight: 700, color: 'var(--text-primary)', lineHeight: 1 }}>{value}</div>
+                    <div style={{ fontSize: 10, color: 'var(--text-muted)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.6px', marginBottom: 2 }}>{label}</div>
+                    <div style={{ fontSize: 24, fontWeight: 900, color: 'var(--text-primary)', lineHeight: 1, letterSpacing: '-0.5px' }}>{value}</div>
                 </div>
             </div>
             <div style={{ fontSize: 9, color, fontWeight: 700, background: `${color}12`, padding: '2px 6px', borderRadius: 4 }}>
@@ -87,9 +81,10 @@ function StatusBadge({ status }: { status: string }) {
 
 function Avatar({ name }: { name: string }) {
     const initials = name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)
-    const colors = ['#6366f1', '#8b5cf6', '#06b6d4', '#10b981', '#f59e0b']
-    const bg = colors[name.charCodeAt(0) % colors.length]
-    return <div className="avatar" style={{ background: bg, color: 'white', fontSize: 11, width: 30, height: 30 }}>{initials}</div>
+    const colors = ['#6366f1', '#8b5cf6', '#ec4899', '#f59e0b', '#10b981', '#06b6d4']
+    const bg1 = colors[name.charCodeAt(0) % colors.length]
+    const bg2 = colors[(name.charCodeAt(0) + 1) % colors.length]
+    return <div className="avatar" style={{ background: `linear-gradient(135deg, ${bg1}, ${bg2})`, color: 'white', fontSize: 11, fontWeight: 800, width: 30, height: 30, border: '1px solid rgba(255,255,255,0.1)' }}>{initials}</div>
 }
 
 const fetcher = (url: string) => fetch(url).then(res => res.json())
@@ -225,8 +220,8 @@ export default function LeadsPage() {
                     marginBottom: isScrolled ? 0 : 12,
                 }}>
                     <div style={{ display: 'flex', alignItems: 'baseline', gap: 12 }}>
-                        <h2 style={{ marginBottom: 0 }}>Leads</h2>
-                        <span style={{ fontSize: 13, color: 'var(--text-muted)' }}>{total} leads</span>
+                        <h2 style={{ marginBottom: 0, fontSize: 24, fontWeight: 900, letterSpacing: '-0.5px' }}>Leads</h2>
+                        <span style={{ fontSize: 13, color: 'var(--text-muted)', fontWeight: 600 }}>{total} total</span>
                     </div>
 
                     <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
@@ -278,18 +273,18 @@ export default function LeadsPage() {
                 </div>
 
                 {/* Toolbar */}
-                <div style={{ display: 'flex', gap: 8, marginBottom: 12, alignItems: 'center' }}>
-                    <div className="search-bar" style={{ flex: 1, maxWidth: 400, height: 32 }}>
-                        <Search size={14} color="var(--text-muted)" />
+                <div style={{ display: 'flex', gap: 12, marginBottom: 16, alignItems: 'center' }}>
+                    <div className="search-bar" style={{ flex: 1, maxWidth: 400, height: 40, borderRadius: 12 }}>
+                        <Search size={16} color="var(--text-muted)" />
                         <input
-                            placeholder="Find leads..."
+                            placeholder="Search by name, email, company..."
                             value={searchInput}
                             onChange={e => { setSearchInput(e.target.value); setPage(1) }}
                             style={{ fontSize: 13 }}
                         />
                     </div>
-                    <select value={status} onChange={e => { setStatus(e.target.value); setPage(1) }} style={{ width: 120, height: 32, fontSize: 12, padding: '0 8px' }}>
-                        {statusOptions.map(s => <option key={s} value={s}>{s || 'All Status'}</option>)}
+                    <select value={status} onChange={e => { setStatus(e.target.value); setPage(1) }} style={{ width: 140, height: 40, fontSize: 13, fontWeight: 600, padding: '0 12px', borderRadius: 12, background: 'rgba(0,0,0,0.2)', border: '1px solid rgba(255,255,255,0.06)', color: 'var(--text-primary)', cursor: 'pointer', boxShadow: 'inset 0 2px 4px rgba(0,0,0,0.1)' }}>
+                        {statusOptions.map(s => <option key={s} value={s}>{s || 'All Statuses'}</option>)}
                     </select>
 
                     {/* Mini Stats (Persistent while scrolled) */}
@@ -311,12 +306,12 @@ export default function LeadsPage() {
 
                 </div>
 
-                <div className="card" style={{ padding: 0, display: 'flex', flexDirection: 'column', flex: 1, overflow: 'hidden' }}>
+                <div className="card" style={{ padding: 0, display: 'flex', flexDirection: 'column', flex: 1, overflow: 'hidden', borderRadius: 24, border: '1px solid rgba(255,255,255,0.06)', background: 'rgba(30,41,59,0.4)', backdropFilter: 'blur(20px)', boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.05), 0 8px 30px rgba(0,0,0,0.1)' }}>
                     <div style={{ 
-                        display: 'flex', background: 'var(--bg-card)', 
-                        borderBottom: '1px solid var(--border)', 
-                        padding: '12px 18px', fontWeight: 600, fontSize: 13, color: 'var(--text-muted)',
-                        textTransform: 'uppercase', letterSpacing: '0.05em', height: 44, alignItems: 'center'
+                        display: 'flex', background: 'rgba(255,255,255,0.02)', 
+                        borderBottom: '1px solid rgba(255,255,255,0.04)', 
+                        padding: '12px 18px', fontWeight: 800, fontSize: 11, color: 'var(--text-muted)',
+                        textTransform: 'uppercase', letterSpacing: '1px', height: 48, alignItems: 'center'
                     }}>
                         <div style={{ width: '20%' }}>Company / Contact</div>
                         <div style={{ width: '18%' }}>Website & Email</div>

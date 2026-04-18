@@ -115,8 +115,10 @@ export function AttendanceWidget() {
     return (
         <div className="card glass" style={{ 
             padding: '24px', 
-            background: punchedIn ? 'linear-gradient(145deg, var(--bg-card) 0%, rgba(16, 185, 129, 0.05) 100%)' : 'var(--bg-card)',
-            border: punchedIn ? '1px solid rgba(16, 185, 129, 0.2)' : '1px solid var(--border)',
+            background: punchedIn ? 'linear-gradient(145deg, rgba(30,41,59,0.4) 0%, rgba(16, 185, 129, 0.05) 100%)' : 'var(--bg-card)',
+            border: punchedIn ? '1px solid rgba(16, 185, 129, 0.2)' : '1px solid rgba(255,255,255,0.06)',
+            borderRadius: 24,
+            boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.05), 0 8px 30px rgba(0,0,0,0.1)',
             display: 'flex',
             flexDirection: 'column',
             gap: 20,

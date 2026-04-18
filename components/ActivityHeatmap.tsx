@@ -92,7 +92,7 @@ export default function ActivityHeatmap() {
     const activeDays = data?.heatmap?.filter(d => d.count > 0).length || 0
 
     return (
-        <div className="card" style={{ padding: '20px 24px' }}>
+        <div className="card" style={{ padding: '24px 28px', borderRadius: 24, boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.05), 0 8px 30px rgba(0,0,0,0.1)' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
                 <div>
                     <div style={{ fontSize: 9, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.8px', color: 'var(--text-muted)', marginBottom: 4 }}>Activity</div>
