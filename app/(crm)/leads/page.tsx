@@ -143,10 +143,10 @@ export default function LeadsPage() {
                 padding: '0 18px', borderBottom: '1px solid var(--border)',
                 background: index % 2 === 0 ? 'transparent' : 'rgba(0,0,0,0.01)'
             }} className="lead-row-container">
-                <div style={{ width: '10%', fontSize: 11, color: 'var(--text-muted)', fontWeight: 500 }}>
+                <div style={{ width: '9%', fontSize: 11, color: 'var(--text-muted)', fontWeight: 500 }}>
                     {new Date(lead.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
                 </div>
-                <div style={{ width: '20%', display: 'flex', alignItems: 'center', gap: 10 }}>
+                <div style={{ width: '22%', display: 'flex', alignItems: 'center', gap: 10 }}>
                     <div style={{ flexShrink: 0, scale: '0.85', transformOrigin: 'left center' }}>
                         <Avatar name={lead.company || lead.name} />
                     </div>
@@ -159,9 +159,13 @@ export default function LeadsPage() {
                     <div style={{ color: 'var(--text-secondary)', fontSize: 12, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{lead.website || '—'}</div>
                     {lead.email && <div style={{ fontSize: 11, color: 'var(--text-muted)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{lead.email}</div>}
                 </div>
-                <div style={{ width: '10%', paddingRight: 10, fontSize: 12, color: 'var(--text-secondary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{lead.phone || '—'}</div>
-                <div style={{ width: '12%', color: 'var(--text-secondary)', fontSize: 12, fontWeight: 500 }}>{lead.industry || '—'}</div>
-                <div style={{ width: '10%' }}>
+                <div style={{ width: '12%', paddingRight: 10 }}>
+                    {lead.phone ? lead.phone.split(',').map(p => p.trim()).filter(Boolean).map((p, idx) => (
+                        <div key={idx} style={{ fontSize: idx === 0 ? 12 : 11, color: idx === 0 ? 'var(--text-secondary)' : 'var(--text-muted)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{p}</div>
+                    )) : <span style={{ fontSize: 12, color: 'var(--text-secondary)' }}>—</span>}
+                </div>
+                <div style={{ width: '10%', color: 'var(--text-secondary)', fontSize: 12, fontWeight: 500 }}>{lead.industry || '—'}</div>
+                <div style={{ width: '8%' }}>
                     {lead.priority ? (
                         <span style={{
                             fontSize: 10, padding: '3px 8px', borderRadius: 4, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.5px',
@@ -171,7 +175,7 @@ export default function LeadsPage() {
                         }}>{lead.priority}</span>
                     ) : '—'}
                 </div>
-                <div style={{ width: '12%' }}>
+                <div style={{ width: '9%' }}>
                     <StatusBadge status={lead.status} />
                 </div>
                 <div style={{ width: '8%', display: 'flex', gap: 6, justifyContent: 'flex-end' }}>
@@ -293,13 +297,13 @@ export default function LeadsPage() {
                         padding: '12px 18px', fontWeight: 800, fontSize: 11, color: 'var(--text-muted)',
                         textTransform: 'uppercase', letterSpacing: '1px', height: 48, alignItems: 'center'
                     }}>
-                        <div style={{ width: '10%' }}>Created</div>
-                        <div style={{ width: '20%' }}>Company / Contact</div>
+                        <div style={{ width: '9%' }}>Created</div>
+                        <div style={{ width: '22%' }}>Company / Contact</div>
                         <div style={{ width: '22%' }}>Website & Email</div>
-                        <div style={{ width: '10%' }}>Phone</div>
-                        <div style={{ width: '12%' }}>Industry</div>
-                        <div style={{ width: '10%' }}>Priority</div>
-                        <div style={{ width: '8%' }}>Status</div>
+                        <div style={{ width: '12%' }}>Phone</div>
+                        <div style={{ width: '10%' }}>Industry</div>
+                        <div style={{ width: '8%' }}>Priority</div>
+                        <div style={{ width: '9%' }}>Status</div>
                         <div style={{ width: '8%', textAlign: 'right' }}>Actions</div>
                     </div>
 
