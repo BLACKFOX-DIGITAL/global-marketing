@@ -281,7 +281,7 @@ export default function NewLeadModal({ onSuccess, onClose }: { onSuccess: () => 
                                             readOnly tabIndex={-1}
                                         />
                                         <input
-                                            style={{ position: 'relative', zIndex: 2, background: 'transparent' }}
+                                            style={{ position: 'relative', zIndex: 2, background: 'transparent', backdropFilter: 'none', boxShadow: 'none' }}
                                             placeholder="e.g. United States"
                                             value={form.country}
                                             onFocus={() => setShowCountryDropdown(true)}
@@ -392,7 +392,7 @@ export default function NewLeadModal({ onSuccess, onClose }: { onSuccess: () => 
                                             readOnly tabIndex={-1}
                                         />
                                         <input
-                                            style={{ position: 'relative', zIndex: 2, background: 'transparent' }}
+                                            style={{ position: 'relative', zIndex: 2, background: 'transparent', backdropFilter: 'none', boxShadow: 'none' }}
                                             placeholder="Start typing..."
                                             value={form.industry}
                                             onFocus={() => setShowIndustryDropdown(true)}
@@ -505,7 +505,7 @@ export default function NewLeadModal({ onSuccess, onClose }: { onSuccess: () => 
                                                     readOnly tabIndex={-1}
                                                 />
                                                 <input
-                                                    style={{ position: 'relative', zIndex: 2, background: 'transparent' }}
+                                                    style={{ position: 'relative', zIndex: 2, background: 'transparent', backdropFilter: 'none', boxShadow: 'none' }}
                                                     placeholder="e.g. Senior Retoucher"
                                                     value={contact.position}
                                                     onFocus={() => setActivePositionIdx(i)}
