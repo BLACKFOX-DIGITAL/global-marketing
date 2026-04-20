@@ -1149,14 +1149,16 @@ export default function LeadDetailContent({ id, linkPrefix = '', currentUserId =
                             </span>
                         </div>
                         <div style={{ fontSize: 11, color: 'var(--text-muted)', marginBottom: 10, display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontWeight: 700 }}>
-                            <span>Owner</span>
-                            <select
-                                value={lead.owner?.id || ''}
-                                onChange={e => reassignLead(e.target.value)}
-                                style={{ background: 'none', border: 'none', color: 'var(--accent-primary)', fontSize: 10, fontWeight: 600, cursor: 'pointer', padding: 0 }}>
-                                <option value="">Reassign</option>
-                                {users.map(u => <option key={u.id} value={u.id}>{u.name}</option>)}
-                            </select>
+                            <span style={{ textTransform: 'uppercase', letterSpacing: '0.5px' }}>Owner</span>
+                            <div style={{ position: 'relative' }}>
+                                <select
+                                    value=""
+                                    onChange={e => { if (e.target.value) reassignLead(e.target.value) }}
+                                    style={{ background: 'none', border: 'none', color: 'var(--accent-primary)', fontSize: 10, fontWeight: 600, cursor: 'pointer', padding: 0, appearance: 'none', WebkitAppearance: 'none' }}>
+                                    <option value="">Reassign →</option>
+                                    {users.map(u => <option key={u.id} value={u.id}>{u.name}</option>)}
+                                </select>
+                            </div>
                         </div>
                         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                             <div style={{ width: 32, height: 32, borderRadius: '50%', background: 'rgba(99,102,241,0.1)', color: 'var(--accent-primary)', fontSize: 12, display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px solid rgba(99,102,241,0.2)', fontWeight: 600 }}>{ownerInitials}</div>
