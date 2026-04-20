@@ -17,8 +17,6 @@ interface Lead {
     website: string | null; status: string; createdAt: string
     industry: string | null; priority: string | null
     owner: { name: string } | null;
-    lastCallOutcome: string | null;
-    lastMailOutcome: string | null;
 }
 
 const PERIODS = [
@@ -138,8 +136,6 @@ export default function LeadsPage() {
 
     const LeadRow = useCallback(({ index, style }: { index: number; style: React.CSSProperties }) => {
         const lead = leads[index]
-        const CALL_LABELS: Record<string, string> = { connected_interested: 'Interested', no_answer: 'No Answer', voicemail: 'Voicemail Left', call_back_later: 'Call Back Later', connected_not_interested: 'Not Interested' }
-        const MAIL_LABELS: Record<string, string> = { sent: 'Mail Sent', follow_up: 'Follow-up Sent', response_interested: 'Replied — Interested', response_not_interested: 'Replied — Not Interested' }
         return (
             <div style={{
                 ...style,
@@ -147,7 +143,10 @@ export default function LeadsPage() {
                 padding: '0 18px', borderBottom: '1px solid var(--border)',
                 background: index % 2 === 0 ? 'transparent' : 'rgba(0,0,0,0.01)'
             }} className="lead-row-container">
-                <div style={{ width: '20%', display: 'flex', alignItems: 'center', gap: 10 }}>
+                <div style={{ width: '10%', fontSize: 11, color: 'var(--text-muted)', fontWeight: 500 }}>
+                    {new Date(lead.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                </div>
+                <div style={{ width: '22%', display: 'flex', alignItems: 'center', gap: 10 }}>
                     <div style={{ flexShrink: 0, scale: '0.85', transformOrigin: 'left center' }}>
                         <Avatar name={lead.company || lead.name} />
                     </div>
@@ -156,12 +155,13 @@ export default function LeadsPage() {
                         {lead.name && lead.name !== lead.company && <div style={{ fontSize: 10, color: 'var(--text-muted)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{lead.name}</div>}
                     </div>
                 </div>
-                <div style={{ width: '18%', paddingRight: 10 }}>
+                <div style={{ width: '24%', paddingRight: 10 }}>
                     <div style={{ color: 'var(--text-secondary)', fontSize: 12, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{lead.website || '—'}</div>
                     {lead.email && <div style={{ fontSize: 11, color: 'var(--text-muted)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{lead.email}</div>}
+                    {lead.phone && <div style={{ fontSize: 11, color: 'var(--text-muted)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{lead.phone}</div>}
                 </div>
-                <div style={{ width: '10%', color: 'var(--text-secondary)', fontSize: 12, fontWeight: 500 }}>{lead.industry || '—'}</div>
-                <div style={{ width: '8%' }}>
+                <div style={{ width: '14%', color: 'var(--text-secondary)', fontSize: 12, fontWeight: 500 }}>{lead.industry || '—'}</div>
+                <div style={{ width: '10%' }}>
                     {lead.priority ? (
                         <span style={{
                             fontSize: 10, padding: '3px 8px', borderRadius: 4, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.5px',
@@ -171,27 +171,7 @@ export default function LeadsPage() {
                         }}>{lead.priority}</span>
                     ) : '—'}
                 </div>
-                <div style={{ width: '14%' }}>
-                    {lead.lastCallOutcome ? (
-                        <div style={{ fontSize: 11, color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: 6, fontWeight: 500 }}>
-                            <div style={{ width: 22, height: 22, borderRadius: '50%', background: 'rgba(245, 158, 11, 0.1)', color: '#f59e0b', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                                <PhoneCall size={10} />
-                            </div>
-                            <span>{CALL_LABELS[lead.lastCallOutcome] || lead.lastCallOutcome.replace(/_/g, ' ')}</span>
-                        </div>
-                    ) : <span style={{ color: 'var(--text-muted)', fontSize: 11 }}>No calls yet</span>}
-                </div>
-                <div style={{ width: '14%' }}>
-                    {lead.lastMailOutcome ? (
-                        <div style={{ fontSize: 11, color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: 6, fontWeight: 500 }}>
-                            <div style={{ width: 22, height: 22, borderRadius: '50%', background: 'rgba(16, 185, 129, 0.1)', color: '#10b981', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                                <Mail size={10} />
-                            </div>
-                            <span>{MAIL_LABELS[lead.lastMailOutcome] || lead.lastMailOutcome.replace(/_/g, ' ')}</span>
-                        </div>
-                    ) : <span style={{ color: 'var(--text-muted)', fontSize: 11 }}>No emails yet</span>}
-                </div>
-                <div style={{ width: '8%' }}>
+                <div style={{ width: '12%' }}>
                     <StatusBadge status={lead.status} />
                 </div>
                 <div style={{ width: '8%', display: 'flex', gap: 6, justifyContent: 'flex-end' }}>
@@ -313,13 +293,12 @@ export default function LeadsPage() {
                         padding: '12px 18px', fontWeight: 800, fontSize: 11, color: 'var(--text-muted)',
                         textTransform: 'uppercase', letterSpacing: '1px', height: 48, alignItems: 'center'
                     }}>
-                        <div style={{ width: '20%' }}>Company / Contact</div>
-                        <div style={{ width: '18%' }}>Website & Email</div>
-                        <div style={{ width: '10%' }}>Industry</div>
-                        <div style={{ width: '8%' }}>Priority</div>
-                        <div style={{ width: '14%' }}>Last Call</div>
-                        <div style={{ width: '14%' }}>Last Email</div>
-                        <div style={{ width: '8%' }}>Status</div>
+                        <div style={{ width: '10%' }}>Created</div>
+                        <div style={{ width: '22%' }}>Company / Contact</div>
+                        <div style={{ width: '24%' }}>Website / Email / Phone</div>
+                        <div style={{ width: '14%' }}>Industry</div>
+                        <div style={{ width: '10%' }}>Priority</div>
+                        <div style={{ width: '12%' }}>Status</div>
                         <div style={{ width: '8%', textAlign: 'right' }}>Actions</div>
                     </div>
 
