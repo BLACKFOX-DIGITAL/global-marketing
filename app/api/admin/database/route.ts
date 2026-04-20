@@ -20,7 +20,6 @@ const TABLES_ORDER = [
     'CallAttempt',
     'MailAttempt',
     'LeadNote',
-    'Reminder',
     'AttendanceRecord',
     'LeaveRequest',
     'UserAchievement',

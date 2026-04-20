@@ -35,7 +35,6 @@ model User {
   achievements      UserAchievement[]
   xpHistory         XPHistory[]
   leadNotes         LeadNote[]
-  reminders         Reminder[]
   monthlyAwards     MonthlyAward[]
   isSuspended       Boolean            @default(false)
   createdHolidays   Holiday[]          @relation("HolidayCreator")
@@ -83,7 +82,6 @@ model Lead {
   callAttempts  CallAttempt[]
   mailAttempts  MailAttempt[]
   leadNotes     LeadNote[]
-  reminders     Reminder[]
 
   @@index([ownerId, isDeleted])
   @@index([status, isDeleted])
@@ -359,21 +357,6 @@ model LeadNote {
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([leadId, createdAt])
-}
-
-model Reminder {
-  id          String   @id @default(cuid())
-  leadId      String
-  userId      String
-  message     String?
-  remindAt    DateTime
-  isTriggered Boolean  @default(false)
-  createdAt   DateTime @default(now())
-  lead        Lead     @relation(fields: [leadId], references: [id], onDelete: Cascade)
-  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@index([userId, isTriggered])
-  @@index([remindAt, isTriggered])
 }
 
 model MonthlyAward {

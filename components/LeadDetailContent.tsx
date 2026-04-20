@@ -8,7 +8,6 @@ import EditLeadModal from '@/components/EditLeadModal'
 import ActivityTimeline from '@/components/ActivityTimeline'
 import Editor from '@/components/Editor'
 import LeadNotes from '@/components/LeadNotes'
-import LeadReminders from '@/components/LeadReminders'
 
 import EditTaskModal from '@/components/EditTaskModal'
 
@@ -1084,11 +1083,6 @@ export default function LeadDetailContent({ id, linkPrefix = '', currentUserId =
                             <Rocket size={16} className={converting ? 'animate-pulse' : ''} /> {converting ? 'Converting...' : 'Convert to Opportunity'}
                         </button>
                     )}
-
-                    {/* Reminders */}
-                    <div className="card" style={{ padding: '20px 24px', borderRadius: 20, boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.02), 0 4px 20px rgba(0,0,0,0.05)' }}>
-                        <LeadReminders leadId={id} />
-                    </div>
 
                     {/* Contacts */}
                     <div className="card" style={{ padding: '20px 24px', borderRadius: 20, boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.02), 0 4px 20px rgba(0,0,0,0.05)' }}>
