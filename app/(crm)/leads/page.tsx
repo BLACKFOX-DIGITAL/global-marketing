@@ -159,10 +159,8 @@ export default function LeadsPage() {
                     <div style={{ color: 'var(--text-secondary)', fontSize: 12, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{lead.website || '—'}</div>
                     {lead.email && <div style={{ fontSize: 11, color: 'var(--text-muted)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{lead.email}</div>}
                 </div>
-                <div style={{ width: '12%', paddingRight: 10 }}>
-                    {lead.phone ? lead.phone.split(',').map(p => p.trim()).filter(Boolean).map((p, idx) => (
-                        <div key={idx} style={{ fontSize: idx === 0 ? 12 : 11, color: idx === 0 ? 'var(--text-secondary)' : 'var(--text-muted)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{p}</div>
-                    )) : <span style={{ fontSize: 12, color: 'var(--text-secondary)' }}>—</span>}
+                <div style={{ width: '12%', paddingRight: 10, fontSize: 12, color: 'var(--text-secondary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                    {lead.phone ? lead.phone.split(',')[0].trim() : '—'}
                 </div>
                 <div style={{ width: '10%', color: 'var(--text-secondary)', fontSize: 12, fontWeight: 500 }}>{lead.industry || '—'}</div>
                 <div style={{ width: '8%' }}>
