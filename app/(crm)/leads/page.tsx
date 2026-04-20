@@ -146,7 +146,7 @@ export default function LeadsPage() {
                 <div style={{ width: '10%', fontSize: 11, color: 'var(--text-muted)', fontWeight: 500 }}>
                     {new Date(lead.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
                 </div>
-                <div style={{ width: '22%', display: 'flex', alignItems: 'center', gap: 10 }}>
+                <div style={{ width: '20%', display: 'flex', alignItems: 'center', gap: 10 }}>
                     <div style={{ flexShrink: 0, scale: '0.85', transformOrigin: 'left center' }}>
                         <Avatar name={lead.company || lead.name} />
                     </div>
@@ -155,12 +155,12 @@ export default function LeadsPage() {
                         {lead.name && lead.name !== lead.company && <div style={{ fontSize: 10, color: 'var(--text-muted)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{lead.name}</div>}
                     </div>
                 </div>
-                <div style={{ width: '24%', paddingRight: 10 }}>
+                <div style={{ width: '18%', paddingRight: 10 }}>
                     <div style={{ color: 'var(--text-secondary)', fontSize: 12, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{lead.website || '—'}</div>
                     {lead.email && <div style={{ fontSize: 11, color: 'var(--text-muted)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{lead.email}</div>}
-                    {lead.phone && <div style={{ fontSize: 11, color: 'var(--text-muted)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{lead.phone}</div>}
                 </div>
-                <div style={{ width: '14%', color: 'var(--text-secondary)', fontSize: 12, fontWeight: 500 }}>{lead.industry || '—'}</div>
+                <div style={{ width: '10%', paddingRight: 10, fontSize: 12, color: 'var(--text-secondary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{lead.phone || '—'}</div>
+                <div style={{ width: '12%', color: 'var(--text-secondary)', fontSize: 12, fontWeight: 500 }}>{lead.industry || '—'}</div>
                 <div style={{ width: '10%' }}>
                     {lead.priority ? (
                         <span style={{
@@ -294,9 +294,10 @@ export default function LeadsPage() {
                         textTransform: 'uppercase', letterSpacing: '1px', height: 48, alignItems: 'center'
                     }}>
                         <div style={{ width: '10%' }}>Created</div>
-                        <div style={{ width: '22%' }}>Company / Contact</div>
-                        <div style={{ width: '24%' }}>Website / Email / Phone</div>
-                        <div style={{ width: '14%' }}>Industry</div>
+                        <div style={{ width: '20%' }}>Company / Contact</div>
+                        <div style={{ width: '18%' }}>Website & Email</div>
+                        <div style={{ width: '10%' }}>Phone</div>
+                        <div style={{ width: '12%' }}>Industry</div>
                         <div style={{ width: '10%' }}>Priority</div>
                         <div style={{ width: '12%' }}>Status</div>
                         <div style={{ width: '8%', textAlign: 'right' }}>Actions</div>
