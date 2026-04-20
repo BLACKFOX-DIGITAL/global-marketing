@@ -155,7 +155,7 @@ export default function LeadsPage() {
                         {lead.name && lead.name !== lead.company && <div style={{ fontSize: 10, color: 'var(--text-muted)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{lead.name}</div>}
                     </div>
                 </div>
-                <div style={{ width: '18%', paddingRight: 10 }}>
+                <div style={{ width: '22%', paddingRight: 10 }}>
                     <div style={{ color: 'var(--text-secondary)', fontSize: 12, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{lead.website || '—'}</div>
                     {lead.email && <div style={{ fontSize: 11, color: 'var(--text-muted)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{lead.email}</div>}
                 </div>
@@ -295,11 +295,11 @@ export default function LeadsPage() {
                     }}>
                         <div style={{ width: '10%' }}>Created</div>
                         <div style={{ width: '20%' }}>Company / Contact</div>
-                        <div style={{ width: '18%' }}>Website & Email</div>
+                        <div style={{ width: '22%' }}>Website & Email</div>
                         <div style={{ width: '10%' }}>Phone</div>
                         <div style={{ width: '12%' }}>Industry</div>
                         <div style={{ width: '10%' }}>Priority</div>
-                        <div style={{ width: '12%' }}>Status</div>
+                        <div style={{ width: '8%' }}>Status</div>
                         <div style={{ width: '8%', textAlign: 'right' }}>Actions</div>
                     </div>
 
