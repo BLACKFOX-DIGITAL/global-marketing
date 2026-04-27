@@ -33,6 +33,15 @@ export async function GET(req: NextRequest) {
                 { name: { contains: search } },
                 { email: { contains: search } },
                 { company: { contains: search } },
+                { phone: { contains: search } },
+                { website: { contains: search } },
+                { country: { contains: search } },
+                { industry: { contains: search } },
+                { priority: { contains: search } },
+                { status: { contains: search } },
+                { socials: { contains: search } },
+                { notes: { contains: search } },
+                { callOutcome: { contains: search } },
             ]
         }
 
