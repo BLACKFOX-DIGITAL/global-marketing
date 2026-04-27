@@ -29,12 +29,13 @@ export async function GET(req: NextRequest) {
         }
 
         if (search) {
+            const normalizedWebsiteSearch = normalizeWebsite(search)
             where.OR = [
                 { name: { contains: search } },
                 { email: { contains: search } },
                 { company: { contains: search } },
                 { phone: { contains: search } },
-                { website: { contains: search } },
+                { website: { contains: normalizedWebsiteSearch || search } },
                 { country: { contains: search } },
                 { industry: { contains: search } },
                 { priority: { contains: search } },
