@@ -204,12 +204,19 @@ function Stepper({ lead, onRefresh, onConvert, availableStatuses }: { lead: Lead
                 <div style={{ position: 'absolute', top: 16, left: 10, width: `${(Math.max(0, effectiveIndex) / (pipelineSteps.length - 1 || 1)) * 100}%`, height: 2, background: isOutcome && status === 'Lost' ? '#ef4444' : 'var(--accent-primary)', zIndex: 1, transition: 'width 0.3s' }}></div>
 
                 {pipelineSteps.map((step, i) => {
-                    const isActive = i <= (effectiveIndex !== -1 ? effectiveIndex : -1)
+                    const stepVal = step.value.toLowerCase()
+                    const isCallStep = stepVal.includes('call')
+                    const isMailStep = stepVal.includes('mail') || stepVal.includes('email')
+                    const isActive = isCallStep
+                        ? lead.callCount > 0
+                        : isMailStep
+                            ? lead.mailCount > 0
+                            : i <= (effectiveIndex !== -1 ? effectiveIndex : -1)
                     const isCurrent = !isOutcome && i === currentIndex
                     const barColor = isOutcome && status === 'Lost' ? '#ef4444' : (step.color || 'var(--accent-primary)')
                     const badge = getStepBadge(step.value)
                     const badgeColor = getStepBadgeColor(step.value)
-                    const isClickable = step.value === 'Called' || step.value === 'Mail Sent'
+                    const isClickable = isCallStep || isMailStep
 
                     return (
                         <div key={step.value} style={{ position: 'relative', display: 'flex', flexDirection: 'column', alignItems: 'center', zIndex: 2, gap: 10, flex: 1 }}>
